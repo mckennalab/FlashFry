@@ -30,7 +30,8 @@ package main.scala
 object ScoreHit {
 
   // stolen from crispr.mit.edu
-  val offtargetCoeff = Array[Double](0.0, 0.014, 0.0, 0.0, 0.395, 0.317, 0.389, 0.079, 0.445, 0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583)
+  val offtargetCoeff = Array[Double](0.0,   0.014, 0.0,   0.0,   0.395, 0.317, 0.389, 0.079, 0.445,
+                                     0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583)
 
   // stolen from http://tefor.net/crispor/doenchScore.py
   val matches = Array(
@@ -57,6 +58,15 @@ object ScoreHit {
   val gcHigh = -0.1665878
   val gcLow = -0.2026259
 
+  // zip the a CRISPR string to teh off-target coeff., expanded to match the CRISPR length
+  def zipAndExpand(str: String): List[Tuple2[Char,Double]] = {
+    var tEffects = if (offtargetCoeff.length < str.length)
+      (new Array[Double](str.length - offtargetCoeff.length) ++ offtargetCoeff)
+    else
+      offtargetCoeff.slice(offtargetCoeff.length - str.length,offtargetCoeff.length)
+    str.zip(tEffects).toList
+  }
+
   // stolen and then translated from http://tefor.net/crispor/doenchScore.py
   def calcDoenchScore(seq: String): Double = {
     var score = intercept
@@ -76,12 +86,5 @@ object ScoreHit {
         score += weight
     }
     return 1.0 / (1.0 + math.exp(-score))
-  }
-
-  def test() {
-    println("expected result:", 0.713089368437)
-    println(ScoreHit.calcDoenchScore("TATAGCTGCGATCTGAGGTAGGGAGGGACC"))
-    println("expected result:", 0.0189838463593)
-    println(ScoreHit.calcDoenchScore("TCCGCACCTGTCACGGTCGGGGCTTGGCGC"))
   }
 }

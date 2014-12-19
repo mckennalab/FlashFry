@@ -24,8 +24,6 @@ object FindTargets extends App {
   val lengthOfCRISPR = 23
   val terminalPAM = "GG"
 
-  ScoreHit.test()
-
   // make each possible guide of the specified length
   println(testTree.size)
   println(dup)

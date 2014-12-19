@@ -41,7 +41,7 @@ import scala.io.Source
 
 
 class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[String, T, CRISPRPrefixMap[T]] {
-
+  var CRISPRLength: Option[Int] = None
   var suffixes: immutable.Map[Char, CRISPRPrefixMap[T]] = Map.empty
   var value: Option[T] = None
 
@@ -170,14 +170,44 @@ object CRISPRPrefixMap extends {
 
     val inputFl = if (fl.endsWith(".gz")) Source.fromInputStream(gis(fl)) else Source.fromFile(fl)
     val tree = new CRISPRPrefixMap[Int]()
-
+    var currentLength = -1
     var linesAdded = 0
     inputFl.getLines().foreach(ln => {
       val sp = ln.split("\t")
+      if (currentLength < 0)
+        currentLength == sp(0).length
+      else
+        if (currentLength != sp(0).length) throw new IllegalArgumentException("A CRISPR entry " + sp(0) + " isn't the same length " + sp(0).length + " as the previously set length of " + currentLength)
       tree.put(sp(0).slice(prefixDrop, sp(0).length), 0)
       linesAdded += 1
     })
+    tree.CRISPRLength = Some(currentLength)
     println("added " + linesAdded + " lines")
+    return tree
+  }
+
+  /**
+   * we assume that the name (the 4th column) is the CRISPR entry
+   * @param fl the input file
+   * @return a trie with the CRISPR targets
+   */
+  def fromBed(fl: String, prefixDrop: Int = 0): CRISPRPrefixMap[Int] = {
+
+    val inputFl = if (fl.endsWith(".gz")) Source.fromInputStream(gis(fl)) else Source.fromFile(fl)
+    val tree = new CRISPRPrefixMap[Int]()
+    var currentLength = -1
+    var linesAdded = 0
+    inputFl.getLines().foreach(ln => {
+      val sp = ln.split("\t")
+      if (currentLength < 0)
+        currentLength == sp(3).length
+      else
+      if (currentLength != sp(0).length) throw new IllegalArgumentException("A CRISPR entry " + sp(3) + " isn't the same length " + sp(3).length + " as the previously set length of " + currentLength)
+      tree.put(sp(3).slice(prefixDrop, sp(3).length), sp(1).toInt)
+      linesAdded += 1
+    })
+    println("added " + linesAdded + " lines")
+    tree.CRISPRLength = Some(currentLength)
     return tree
   }
 
