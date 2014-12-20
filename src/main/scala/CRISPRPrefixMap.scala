@@ -34,7 +34,7 @@ package main.scala
 import java.io.{BufferedInputStream, FileInputStream}
 import java.util.zip.GZIPInputStream
 
-import collection._
+import scala.collection._
 import scala.collection.mutable.{Builder, MapBuilder}
 import scala.collection.generic.CanBuildFrom
 import scala.io.Source
@@ -76,7 +76,7 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
    * score for mismatches against the prefix tree
    * @param searchCRISPR the string of sequence to search for zipped with the scores
    * @param maxMismatches the maximum number of mismatches, greatly limits the search space
-   * @return
+   * @return a mapping from
    */
   def score(searchCRISPR: List[Tuple2[Char, Double]], maxMismatches: Int = 4, ignorePerfectMatch: Boolean = true): Map[String, Double] = {
     val hits = recursiveScore(searchCRISPR, "", 1, maxMismatches)
@@ -87,8 +87,7 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
     }}
   }
 
-  //def totalScore(searchCRISPR: List[Tuple2[Char, Double]], maxMismatches: Int = 4): Double =
-  //  100.0 / (100.0 + score(searchCRISPR, maxMismatches).values.sum)
+  //
 
   /**
    *
@@ -216,4 +215,6 @@ object CRISPRPrefixMap extends {
   def CRISPRdistance(guide1: String, guide2: String): Int = {
     guide1.zip(guide2).map { case (c1, c2) => if (c1 == c2) 0 else 1}.sum
   }
+
+  def totalScore(scores: Map[String, Double], maxMismatches: Int = 4): Double = 100.0 / (100.0 + scores.values.sum)
 }

@@ -66,3 +66,7 @@ case class BedEntry(contig: String, start: Int, stop: Int, name: Option[String],
     contig + "\t" + start + "\t" + stop + tail
   }
 }
+
+object BedEntry {
+  def append(bed: BedEntry, tags: Array[String]) = BedEntry(bed.contig,bed.start,bed.stop,bed.name,if (bed.rest.isDefined) Some(bed.rest.get ++ tags) else Some(tags))
+}
