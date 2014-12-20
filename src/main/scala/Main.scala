@@ -1,9 +1,7 @@
 package main.scala
 
-import java.io.File
-
+import java.io.{PrintWriter, File}
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory
-import org.clapper.avsl.Logger
 import org.slf4j._
 
 /**
@@ -82,6 +80,9 @@ object Main extends App {
       logger.debug("Loading the target regions from " + config.targetBed.get.getAbsolutePath)
       val targetRegions = new BEDFile(config.targetBed.get)
 
+      // the output file
+      val outputFile = new PrintWriter(config.output.get)
+
       // output each target region -> hit combination for further analysis
       targetRegions.foreach { bedEntry => {
         if (bedEntry.isDefined) {
@@ -100,9 +101,11 @@ object Main extends App {
               outputCRISPR = BedEntry.append(outputCRISPR, Array[String]("off-target=" + CRISPRPrefixMap.totalScore(trie.score(ScoreHit.zipAndExpand(outputCRISPR.name.get)))))
             if (config.scoreOnTarget)
               outputCRISPR = BedEntry.append(outputCRISPR, Array[String]("on-target=" + CRISPRPrefixMap.totalScore(trie.score(ScoreHit.zipAndExpand(outputCRISPR.name.get)))))
+            outputFile.write(outputCRISPR + "\n")
           }}
         }
       }}
+      outputFile.close()
     }
   }
 }
