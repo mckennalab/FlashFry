@@ -81,13 +81,19 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
   def score(searchCRISPR: List[Tuple2[Char, Double]], maxMismatches: Int = 4, ignorePerfectMatch: Boolean = true): Map[String, Double] = {
     val hits = recursiveScore(searchCRISPR, "", 1, maxMismatches)
     val distances = hits.keySet.toList.combinations(2).map{ case (lstOfHits) => { CRISPRPrefixMap.CRISPRdistance(lstOfHits(0), lstOfHits(1)) }}.toList
-    val meanDistances = distances.sum.toDouble / distances.length.toDouble
+    val meanDistances = (distances.sum.toDouble - distances.length * 1.0) / math.max(distances.length.toDouble,hits.size)
+    println(meanDistances)
     hits.map { case (hit, scores) => {
-      (hit, scores._1 * (1.0 / (((searchCRISPR.length - meanDistances) / searchCRISPR.length) * 4.0 + 1.0)) * (1.0 / (scores._2 * scores._2)))
+      /*println(scores._1)
+      println(meanDistances)
+      println(distances.length.toDouble)
+      println(searchCRISPR.length)
+      println(1.0 / (((searchCRISPR.length.toDouble - meanDistances.toDouble) / searchCRISPR.length.toDouble) * 4.0 + 1.0))
+      println((1.0 / ((maxMismatches.toDouble-scores._2) * (maxMismatches.toDouble-scores._2))))
+      println((maxMismatches-scores._2))       */
+      (hit, scores._1.toDouble * (1.0 / (((searchCRISPR.length.toDouble - meanDistances.toDouble) / searchCRISPR.length.toDouble) * 4.0 + 1.0)) * (1.0 / ((maxMismatches.toDouble-scores._2) * (maxMismatches.toDouble-scores._2))))
     }}
   }
-
-  //
 
   /**
    *
@@ -101,8 +107,7 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
                      currentState: String,
                      currentScore: Double,
                      mismatchThreshold: Int): Map[String, Tuple2[Double, Int]] = {
-    if (false)
-      println("eval string: " + scoreParams.map { case (b, d) => b}.mkString + " state " + currentState + " score " + currentScore + " mismatches = " + mismatchThreshold + "suffixes = " + suffixes.keySet.mkString(","))
+    //println("eval string: " + scoreParams.map { case (b, d) => b}.mkString + " state " + currentState + " score " + currentScore + " mismatches = " + mismatchThreshold + "suffixes = " + suffixes.keySet.mkString(","))
     // if we're at the end of the search
     if (mismatchThreshold == 0)
       return new immutable.HashMap[String, Tuple2[Double, Int]]()
@@ -112,7 +117,10 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
 
     return suffixes.flatMap { case (ch, prefixMap) => {
       //println("trying suffix " + ch + " matches = " + (ch == scoreParams(0)._1))
-      if (ch != scoreParams(0)._1) prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore * (1.0 - scoreParams(0)._2), mismatchThreshold - 1)
+      if (ch != scoreParams(0)._1) {
+        //println("mismatch = " + scoreParams(0)._2)
+        prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore * (1.0 - scoreParams(0)._2), mismatchThreshold - 1)
+      }
       else prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore, mismatchThreshold)
     }
     }
@@ -165,7 +173,7 @@ object CRISPRPrefixMap extends {
    * @param fl the input file
    * @return a trie with the CRISPR targets
    */
-  def fromPath(fl: String, prefixDrop: Int = 0): CRISPRPrefixMap[Int] = {
+  def fromPath(fl: String, pamDrop: Boolean = true, prefixDrop: Int = 0): CRISPRPrefixMap[Int] = {
 
     val inputFl = if (fl.endsWith(".gz")) Source.fromInputStream(gis(fl)) else Source.fromFile(fl)
     val tree = new CRISPRPrefixMap[Int]()
@@ -174,10 +182,11 @@ object CRISPRPrefixMap extends {
     inputFl.getLines().foreach(ln => {
       val sp = ln.split("\t")
       if (currentLength < 0)
-        currentLength == sp(0).length
+        currentLength = sp(0).length
       else
-        if (currentLength != sp(0).length) throw new IllegalArgumentException("A CRISPR entry " + sp(0) + " isn't the same length " + sp(0).length + " as the previously set length of " + currentLength)
-      tree.put(sp(0).slice(prefixDrop, sp(0).length), 0)
+        if (currentLength != sp(0).length)
+          throw new IllegalArgumentException("A CRISPR entry " + sp(0) + " isn't the same length " + sp(0).length + " as the previously set length of " + currentLength)
+      tree.put(sp(0).slice(prefixDrop, if (pamDrop) sp(0).length -3 else sp(0).length), 0)
       linesAdded += 1
     })
     tree.CRISPRLength = Some(currentLength)
@@ -190,7 +199,7 @@ object CRISPRPrefixMap extends {
    * @param fl the input file
    * @return a trie with the CRISPR targets
    */
-  def fromBed(fl: String, prefixDrop: Int = 0): CRISPRPrefixMap[Int] = {
+  def fromBed(fl: String, pamDrop: Boolean, prefixDrop: Int = 0): CRISPRPrefixMap[Int] = {
 
     val inputFl = if (fl.endsWith(".gz")) Source.fromInputStream(gis(fl)) else Source.fromFile(fl)
     val tree = new CRISPRPrefixMap[Int]()
@@ -199,9 +208,10 @@ object CRISPRPrefixMap extends {
     inputFl.getLines().foreach(ln => {
       val sp = ln.split("\t")
       if (currentLength < 0)
-        currentLength == sp(3).length
+        currentLength = sp(3).length
       else
-      if (currentLength != sp(0).length) throw new IllegalArgumentException("A CRISPR entry " + sp(3) + " isn't the same length " + sp(3).length + " as the previously set length of " + currentLength)
+      if (currentLength != sp(3).length)
+        throw new IllegalArgumentException("A CRISPR entry " + sp(3) + " isn't the same length " + sp(3).length + " as the previously set length of " + currentLength)
       tree.put(sp(3).slice(prefixDrop, sp(3).length), sp(1).toInt)
       linesAdded += 1
     })
@@ -216,5 +226,5 @@ object CRISPRPrefixMap extends {
     guide1.zip(guide2).map { case (c1, c2) => if (c1 == c2) 0 else 1}.sum
   }
 
-  def totalScore(scores: Map[String, Double], maxMismatches: Int = 4): Double = 100.0 / (100.0 + scores.values.sum)
+  def totalScore(scores: Map[String, Double], maxMismatches: Int = 4): Double = (100.0 / (100.0 + (scores.values.sum * 100)) * 100.0)
 }

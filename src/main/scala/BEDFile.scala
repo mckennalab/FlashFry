@@ -48,20 +48,24 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
     }
     val break = currentLine.get.split("\t")
 
-    return Some(BedEntry(break(0),
+    val ret = Some(BedEntry(break(0),
       break(1).toInt,
       break(2).toInt,
       if (break.length > 3) Some(break(3)) else None,
       if (break.length > 4) Some(break.slice(4,break.length)) else None))
+    if (!inputLines.hasNext) currentLine = None
+    else currentLine = Some(inputLines.next())
+
+    ret
   }
 }
 
 case class BedEntry(contig: String, start: Int, stop: Int, name: Option[String], rest: Option[Array[String]]) {
   override def toString(): String = {
-    var tail = if (name.isDefined && rest.isDefined) "\t" + name.get + "\t" + rest.get.mkString(",") + "\n"
-    else if (name.isDefined && !rest.isDefined) "\t" + name.get + "\n"
-    else if (!name.isDefined && rest.isDefined) "\t" + rest.get.mkString(",") + "\n"
-    else "\n"
+    var tail = if (name.isDefined && rest.isDefined) "\t" + name.get + "\t" + rest.get.mkString(",")
+    else if (name.isDefined && !rest.isDefined) "\t" + name.get
+    else if (!name.isDefined && rest.isDefined) "\t" + rest.get.mkString(",")
+    else ""
 
     contig + "\t" + start + "\t" + stop + tail
   }

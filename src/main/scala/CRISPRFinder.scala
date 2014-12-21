@@ -44,7 +44,11 @@ object CRISPRFinder {
 
         val flankingRegion = seq.substring(Math.max(0, i - upstreamDownstreamFlank), Math.min(seq.length, i + crisprLength + upstreamDownstreamFlank)).toUpperCase
         if ((!allowNInFlankingRegion && (!(flankingRegion contains "N"))) || allowNInFlankingRegion) {
-          val ret = BedEntry(contig, i + offset, i + crisprLength + offset, Some(if (reverseComp) CRISPRLocator.revComp(subptr) else subptr), Some(Array[String](if (reverseComp) CRISPRLocator.revComp(flankingRegion) else flankingRegion)))
+          val ret = BedEntry(contig,
+            i + offset,
+            i + crisprLength + offset,
+            Some(if (reverseComp) CRISPRLocator.revComp(subptr) else subptr),
+            Some(Array[String]("offset="+offset))) // + "," + (if (reverseComp) CRISPRLocator.revComp(flankingRegion) else flankingRegion))))
           retArray += ret
 
         }

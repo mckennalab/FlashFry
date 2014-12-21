@@ -30,8 +30,9 @@ package main.scala
 object ScoreHit {
 
   // stolen from crispr.mit.edu
-  val offtargetCoeff = Array[Double](0.0,   0.014, 0.0,   0.0,   0.395, 0.317, 0.389, 0.079, 0.445,
-                                     0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583)
+  val offtargetCoeff = Array[Double](0.0,   0.0,   0.014, 0.0,   0.0,   0.395, 0.317, 0.0,   0.389, 0.079,
+                                     0.445, 0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583) // ,
+                                     // 0.0,   0.0,   0.0) // PAM isn't accounted for
 
   // stolen from http://tefor.net/crispor/doenchScore.py
   val matches = Array(
@@ -62,8 +63,11 @@ object ScoreHit {
   def zipAndExpand(str: String): List[Tuple2[Char,Double]] = {
     var tEffects = if (offtargetCoeff.length < str.length)
       (new Array[Double](str.length - offtargetCoeff.length) ++ offtargetCoeff)
-    else
-      offtargetCoeff.slice(offtargetCoeff.length - str.length,offtargetCoeff.length)
+    else {
+      println("From = " + (offtargetCoeff.length - str.length))
+      println("To   = " + offtargetCoeff.length)
+      offtargetCoeff.slice(offtargetCoeff.length - str.length, offtargetCoeff.length)
+    }
     str.zip(tEffects).toList
   }
 
