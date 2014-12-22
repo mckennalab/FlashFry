@@ -2,6 +2,7 @@ package main.scala
 
 import java.io.File
 
+import scala.collection.mutable
 import scala.io.Source
 
 /**
@@ -48,29 +49,57 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
     }
     val break = currentLine.get.split("\t")
 
-    val ret = Some(BedEntry(break(0),
+    val mp = new mutable.HashMap[String,String]()
+
+    if (break.length > 4)
+      break(4).split(BedEntry.entriesSeperator).map{case(tl) => {
+        val tk = tl.split(BedEntry.kvSeperator)
+        if (tk.length == 2)
+          mp(tk(0)) = tk(1)
+      }}
+    val ret = BedEntry(break(0),
       break(1).toInt,
       break(2).toInt,
-      if (break.length > 3) Some(break(3)) else None,
-      if (break.length > 4) Some(break.slice(4,break.length)) else None))
+      break(3),
+      mp)
+
     if (!inputLines.hasNext) currentLine = None
     else currentLine = Some(inputLines.next())
 
-    ret
+    Some(ret)
   }
 }
 
-case class BedEntry(contig: String, start: Int, stop: Int, name: Option[String], rest: Option[Array[String]]) {
+
+/**
+ * create a BED entry from what constitutes a line from a BED file
+ * @param contig the contig this entry is on
+ * @param start start position (0 based)
+ * @param stop the stop position (closed)
+ * @param name the name, provided in the 4th column
+ * @param rest tags to add after the name
+ */
+case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: mutable.HashMap[String,String]) {
+  var allOptions = rest
+
   override def toString(): String = {
-    var tail = if (name.isDefined && rest.isDefined) "\t" + name.get + "\t" + rest.get.mkString(",")
-    else if (name.isDefined && !rest.isDefined) "\t" + name.get
-    else if (!name.isDefined && rest.isDefined) "\t" + rest.get.mkString(",")
-    else ""
+    var tail = if (!rest.isEmpty) "\t" + name + "\t" + rest.map{case(k,v) => k + BedEntry.kvSeperator + v}.mkString(BedEntry.entriesSeperator)
+    else "\t" + name
 
     contig + "\t" + start + "\t" + stop + tail
+  }
+
+  def addOption(option: String, value: String): Unit = {
+    println(option + "\t" + value)
+    if (allOptions contains option)
+      allOptions(option) = allOptions(option) + BedEntry.valSeperator + value
+    else
+      allOptions(option) = value
   }
 }
 
 object BedEntry {
-  def append(bed: BedEntry, tags: Array[String]) = BedEntry(bed.contig,bed.start,bed.stop,bed.name,if (bed.rest.isDefined) Some(bed.rest.get ++ tags) else Some(tags))
+  val kvSeperator = "="
+  val valSeperator = ","
+  val entriesSeperator = ";"
 }

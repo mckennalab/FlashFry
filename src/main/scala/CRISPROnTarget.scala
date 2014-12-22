@@ -27,14 +27,8 @@ package main.scala
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  *
  */
-object ScoreHit {
-
-  // stolen from crispr.mit.edu
-  val offtargetCoeff = Array[Double](0.0,   0.0,   0.014, 0.0,   0.0,   0.395, 0.317, 0.0,   0.389, 0.079,
-                                     0.445, 0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583) // ,
-                                     // 0.0,   0.0,   0.0) // PAM isn't accounted for
-
-  // stolen from http://tefor.net/crispor/doenchScore.py
+object CRISPROnTarget {
+// stolen from http://tefor.net/crispor/doenchScore.py
   val matches = Array(
     (1, "G", -0.2753771), (2, "A", -0.3238875), (2, "C", 0.17212887), (3, "C", -0.1006662),
     (4, "C", -0.2018029), (4, "G", 0.24595663), (5, "A", 0.03644004), (5, "C", 0.09837684),
@@ -58,18 +52,6 @@ object ScoreHit {
   val intercept = 0.59763615
   val gcHigh = -0.1665878
   val gcLow = -0.2026259
-
-  // zip the a CRISPR string to teh off-target coeff., expanded to match the CRISPR length
-  def zipAndExpand(str: String): List[Tuple2[Char,Double]] = {
-    var tEffects = if (offtargetCoeff.length < str.length)
-      (new Array[Double](str.length - offtargetCoeff.length) ++ offtargetCoeff)
-    else {
-      println("From = " + (offtargetCoeff.length - str.length))
-      println("To   = " + offtargetCoeff.length)
-      offtargetCoeff.slice(offtargetCoeff.length - str.length, offtargetCoeff.length)
-    }
-    str.zip(tEffects).toList
-  }
 
   // stolen and then translated from http://tefor.net/crispor/doenchScore.py
   def calcDoenchScore(seq: String): Double = {

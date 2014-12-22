@@ -1,6 +1,7 @@
 package main.scala
 
 import main.java.com.zunama.Dawg
+import main.scala.trie.CRISPRPrefixMap
 import org.apache.commons.collections4.trie.PatriciaTrie
 
 import scala.io.Source

@@ -1,6 +1,7 @@
 package test.scala
 
-import main.scala.{CRISPRPrefixMap, ScoreHit}
+import main.scala.CRISPROnTarget
+import main.scala.trie.CRISPRPrefixMap
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 
@@ -33,8 +34,8 @@ import org.scalatest.matchers.ShouldMatchers
  */
 class CRISPRPrefixMapTest extends FlatSpec with ShouldMatchers {
   "CRISPRPrefixMapTest" should " find the correct score for a known hit" in {
-    val trie = CRISPRPrefixMap.fromPath("23mer_auto.txt.gz")
-    val hits = trie.score(ScoreHit.zipAndExpand("GGACTTGTGGGTGCCTGCAA"),5)
+    val trie = CRISPRPrefixMap.fromPath("/net/shendure/vol10/projects/CRISPR.Site.Finder/top30K.txt")
+    val hits = trie.next().score(CRISPRPrefixMap.zipAndExpand("GGACTTGTGGGTGCCTGCAA"),5)
     hits.foreach{case(key,value) => println(key + " => " + value)}
     println(CRISPRPrefixMap.totalScore(hits))
   }

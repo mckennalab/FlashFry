@@ -2,6 +2,7 @@ package main.scala
 
 import java.io.{PrintWriter, File}
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory
+import main.scala.trie.CRISPRPrefixMap
 import org.slf4j._
 
 /**
@@ -61,6 +62,10 @@ object Main extends App {
       (x, c) => c.copy(scoreOffTarget = !(x))
     } text ("Do not compute on-target hits (a small savings at best)")
 
+    opt[Boolean]("useName") action {
+      (x, c) => c.copy(useName = (x))
+    } text ("Dont look up the CRISPRs in the target region, instead just use the name provided (colunn 4 of a bed)")
+
     // some general command-line setup stuff
     note("Find CRISPR targets across the specified genome\n")
     help("help") text ("prints the usage information you see here")
@@ -69,48 +74,45 @@ object Main extends App {
 
   parser.parse(args, Config()) map {
     config => {
-      // load up the list of known hits in the genome
-      println("Loading the Trie from " + config.genomeCRISPRs.get.getAbsolutePath)
-      val trie = CRISPRPrefixMap.fromBed(config.genomeCRISPRs.get.getAbsolutePath,true)
-
       // load up the reference file
-      val fasta = ReferenceSequenceFileFactory.getReferenceSequenceFile(config.reference.get)
+      //val fasta = ReferenceSequenceFileFactory.getReferenceSequenceFile(config.reference.get)
 
       // score each hit for uniqueness and optimality
       println("Loading the target regions from " + config.targetBed.get.getAbsolutePath)
-      val targetRegions = new BEDFile(config.targetBed.get)
+      val targetRegions = new BEDFile(config.targetBed.get).toList
+
+
+      // load up the list of known hits in the genome
+      println("Loading the initial Trie from " + config.genomeCRISPRs.get.getAbsolutePath)
+      val trieIterator = if (config.genomeCRISPRs.get.getAbsolutePath.endsWith(".bed"))
+        CRISPRPrefixMap.fromBed(config.genomeCRISPRs.get.getAbsolutePath, true)
+        else CRISPRPrefixMap.fromPath(config.genomeCRISPRs.get.getAbsolutePath, true)
+
+      var scoredSites = 0
+
+      // since the list of CRISPR targets can be long, we split it into separate scoring bins
+      trieIterator.foreach {
+        trie => {
+          println("Scorring sites...")
+          // output each target region -> hit combination for further analysis
+          targetRegions.foreach { bedEntry => {
+            if (bedEntry.isDefined) {
+              trie.score(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
+                case(key,value) => {
+                  bedEntry.get.addOption("score",value.toString)
+                  bedEntry.get.addOption("hit",key)
+                }
+              }
+            }
+          }
+          }
+          println("fetching next entry")
+        }
+      }
 
       // the output file
       val outputFile = new PrintWriter(config.output.get)
-
-      println("Scorring sites...")
-      var scoredSites = 0
-      // output each target region -> hit combination for further analysis
-      targetRegions.foreach { bedEntry => {
-        if (bedEntry.isDefined) {
-          //println("scoring site " + bedEntry.get.contig + ":" + bedEntry.get.start)
-          val trueEntry = bedEntry.get
-
-          // get the target sequence
-          val targetSeq = fasta.getSubsequenceAt(trueEntry.contig, trueEntry.start, trueEntry.stop).getBases.map { case (b) => b.toChar}.mkString
-
-          // find and CRISPRs in the target region
-          val CRISPRs = CRISPRFinder.findCRISPRSites(targetSeq, trueEntry.contig, trueEntry.start, trie.CRISPRLength.getOrElse(0))
-
-          // grab the bed entry and score it for off-target and on-target hits
-          //println("Scoring")
-          CRISPRs.foreach { CRISPR => {
-            var outputCRISPR = CRISPR
-            if (config.scoreOffTarget)
-              outputCRISPR = BedEntry.append(outputCRISPR, Array[String]("t=" + CRISPR.name.get + ";f=" + CRISPRPrefixMap.totalScore(trie.score(ScoreHit.zipAndExpand(outputCRISPR.name.get)))))
-            if (config.scoreOnTarget)
-              outputCRISPR = BedEntry.append(outputCRISPR, Array[String]("t=" + CRISPR.name.get + ";o=" + CRISPRPrefixMap.totalScore(trie.score(ScoreHit.zipAndExpand(outputCRISPR.name.get)))))
-            outputFile.write(outputCRISPR + "\n")
-          }}
-          scoredSites += 1
-          if (scoredSites % 100 == 0) println("Scored sites " + scoredSites)
-        }
-      }}
+      targetRegions.foreach { bedEntry => outputFile.write(bedEntry + "\n")}
       outputFile.close()
     }
   }
@@ -123,5 +125,6 @@ case class Config(genomeCRISPRs: Option[File] = None,
                   targetBed: Option[File] = None,
                   reference: Option[File] = None,
                   output: Option[File] = None,
+                  useName: Boolean = false,
                   scoreOffTarget: Boolean = true,
                   scoreOnTarget: Boolean = true)

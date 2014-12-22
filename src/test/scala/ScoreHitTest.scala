@@ -1,6 +1,7 @@
 package test.scala
 
-import main.scala.ScoreHit
+import main.scala.CRISPROnTarget
+import main.scala.trie.CRISPRPrefixMap
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers._
 import org.scalatest.matchers.ShouldMatchers
@@ -34,19 +35,21 @@ import org.scalatest.matchers.ShouldMatchers
  */
 class ScoreHitTest extends FlatSpec with ShouldMatchers {
   "ScoreHit" should " calculate on-target rates correctly" in {
-    ScoreHit.calcDoenchScore("TATAGCTGCGATCTGAGGTAGGGAGGGACC") shouldEqual 0.713089368437 +- 0.001
-    ScoreHit.calcDoenchScore("TCCGCACCTGTCACGGTCGGGGCTTGGCGC") shouldEqual 0.0189838463593 +- 0.001
+    CRISPROnTarget.calcDoenchScore("TATAGCTGCGATCTGAGGTAGGGAGGGACC") shouldEqual 0.713089368437 +- 0.001
+    CRISPROnTarget.calcDoenchScore("TCCGCACCTGTCACGGTCGGGGCTTGGCGC") shouldEqual 0.0189838463593 +- 0.001
   }
 
+  //val offtargetCoeff = Array[Double](0.0,   0.0,   0.014, 0.0,   0.0,   0.395, 0.317, 0.0,   0.389, 0.079,
+  // 0.445, 0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583) // ,
   "ScoreHit" should " zip with weight vector correctly with smaller CRISPR target" in {
-    val result = ScoreHit.zipAndExpand("ATG")
+    val result = CRISPRPrefixMap.zipAndExpand("ATG")
     assert(result(0)._2 == 0.804)
     assert(result(1)._2 == 0.685)
     assert(result(2)._2 == 0.583)
   }
 
   "ScoreHit" should " zip with weight vector correctly with larger CRISPR target" in {
-    val result = ScoreHit.zipAndExpand("ATGTGATGTGATGTGATGTG")
+    val result = CRISPRPrefixMap.zipAndExpand("ATGTGATGTGATGTGATGTG")
     assert(result(0)._2 == 0.0)
     assert(result(1)._2 == 0.0)
     assert(result(2)._2 == 0.0)
@@ -55,7 +58,7 @@ class ScoreHitTest extends FlatSpec with ShouldMatchers {
   }
 
   "ScoreHit" should " zip with weight vector correctly with much larger CRISPR target" in {
-    val result = ScoreHit.zipAndExpand("ATGTGATGTGATGTGATGTGATGTGATGTGATGTGATGTG")
+    val result = CRISPRPrefixMap.zipAndExpand("ATGTGATGTGATGTGATGTGATGTGATGTGATGTGATGTG")
     assert(result(0)._2 == 0.0)
     assert(result(19)._2 == 0.0)
     assert(result(23)._2 == 0.014)

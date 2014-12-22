@@ -1,5 +1,6 @@
 package main.scala
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -31,7 +32,7 @@ import scala.collection.mutable.ArrayBuffer
  */
 object CRISPRFinder {
   // search the target chromosome for CRISPR hits
-  def findCRISPRSites(seq: String, contig: String, offset: Int, crisprLength: Int, upstreamDownstreamFlank: Int = 200, allowNInFlankingRegion: Boolean = false): ArrayBuffer[BedEntry] = {
+  def findCRISPRSites(seq: String, contig: String, offset: Int, crisprLength: Int, upstreamDownstreamFlank: Int = 200, allowNInFlankingRegion: Boolean = false): Array[BedEntry] = {
     var retArray = ArrayBuffer[BedEntry]()
 
     // the pattern is G(N*)GG, so go from 0 to seq.length -CRISPRLength and find any possible CRISPR sites
@@ -47,14 +48,14 @@ object CRISPRFinder {
           val ret = BedEntry(contig,
             i + offset,
             i + crisprLength + offset,
-            Some(if (reverseComp) CRISPRLocator.revComp(subptr) else subptr),
-            Some(Array[String]("offset="+offset))) // + "," + (if (reverseComp) CRISPRLocator.revComp(flankingRegion) else flankingRegion))))
+            if (reverseComp) CRISPRLocator.revComp(subptr) else subptr,
+            new mutable.HashMap[String,String]())
           retArray += ret
 
         }
       }
     }
-    return retArray
+    return retArray.toArray
   }
 }
 
