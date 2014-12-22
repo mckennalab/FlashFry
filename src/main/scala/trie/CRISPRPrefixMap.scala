@@ -78,7 +78,7 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
    * @param maxMismatches the maximum number of mismatches, greatly limits the search space
    * @return a mapping from
    */
-  def score(searchCRISPR: List[Tuple2[Char, Double]], maxMismatches: Int = 4, ignorePerfectMatch: Boolean = true): Map[String, Double] = {
+  def score(searchCRISPR: List[Tuple2[Char, Double]], maxMismatches: Int = 6, ignorePerfectMatch: Boolean = true): Map[String, Double] = {
     val hits = recursiveScore(searchCRISPR, "", 1, maxMismatches)
     val distances = hits.keySet.toList.combinations(2).map{ case (lstOfHits) => { CRISPRPrefixMap.CRISPRdistance(lstOfHits(0), lstOfHits(1)) }}.toList
     val meanDistances = (distances.sum.toDouble - distances.length * 1.0) / math.max(distances.length.toDouble,hits.size)
@@ -144,16 +144,16 @@ object CRISPRPrefixMap extends {
     0.445, 0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583) // ,
   // 0.0,   0.0,   0.0) // PAM isn't accounted for
 
-  // zip the a CRISPR string to teh off-target coeff., expanded to match the CRISPR length
-  def zipAndExpand(str: String): List[Tuple2[Char,Double]] = {
-    var tEffects = if (offtargetCoeff.length < str.length)
-      (new Array[Double](str.length - offtargetCoeff.length) ++ offtargetCoeff)
-    else {
-      println("From = " + (offtargetCoeff.length - str.length))
-      println("To   = " + offtargetCoeff.length)
-      offtargetCoeff.slice(offtargetCoeff.length - str.length, offtargetCoeff.length)
-    }
-    str.zip(tEffects).toList
+  def zipAndExpand(str: String, trimPam: Boolean = true): List[Tuple2[Char,Double]] = {
+    val trimmedVersion = if (trimPam) str.substring(0,str.length -3) else str
+
+    var tEffects =
+      if (offtargetCoeff.length < trimmedVersion.length)
+        new Array[Double](trimmedVersion.length - offtargetCoeff.length) ++ offtargetCoeff
+    else
+        offtargetCoeff.slice(offtargetCoeff.length - trimmedVersion.length, offtargetCoeff.length)
+
+    trimmedVersion.zip(tEffects).toList
   }
 
   def empty[T] = new CRISPRPrefixMap[T]

@@ -46,10 +46,6 @@ object Main extends App {
       (x, c) => c.copy(targetBed = Some(x))
     } text ("the output file of guides with a minimium number of hits")
 
-    opt[File]("reference") required() valueName ("<file>") action {
-      (x, c) => c.copy(reference = Some(x))
-    } text ("the reference file to pull sequence from")
-
     opt[File]("output") required() valueName ("<file>") action {
       (x, c) => c.copy(output = Some(x))
     } text ("the output file")
@@ -106,13 +102,12 @@ object Main extends App {
             }
           }
           }
-          println("fetching next entry")
         }
       }
 
       // the output file
       val outputFile = new PrintWriter(config.output.get)
-      targetRegions.foreach { bedEntry => outputFile.write(bedEntry + "\n")}
+      targetRegions.foreach { bedEntry => outputFile.write(bedEntry.get + "\n")}
       outputFile.close()
     }
   }
