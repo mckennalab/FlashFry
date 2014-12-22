@@ -93,6 +93,10 @@ object Main extends App {
           // output each target region -> hit combination for further analysis
           targetRegions.foreach { bedEntry => {
             if (bedEntry.isDefined) {
+              // score on-target
+              bedEntry.get.addOption("score",CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString,true)
+
+              // score off-target hits
               trie.score(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
                 case(key,value) => {
                   bedEntry.get.addOption("score",value.toString)

@@ -82,7 +82,7 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T] with mutable.MapLike[Str
     val hits = recursiveScore(searchCRISPR, "", 1, maxMismatches)
     val distances = hits.keySet.toList.combinations(2).map{ case (lstOfHits) => { CRISPRPrefixMap.CRISPRdistance(lstOfHits(0), lstOfHits(1)) }}.toList
     val meanDistances = (distances.sum.toDouble - distances.length * 1.0) / math.max(distances.length.toDouble,hits.size)
-    println(meanDistances)
+    //println(meanDistances)
     hits.map { case (hit, scores) => {
       (hit, scores._1.toDouble * (1.0 / (((searchCRISPR.length.toDouble - meanDistances.toDouble) / searchCRISPR.length.toDouble) * 4.0 + 1.0)) * (1.0 / ((maxMismatches.toDouble-scores._2) * (maxMismatches.toDouble-scores._2))))
     }}

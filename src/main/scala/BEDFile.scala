@@ -89,10 +89,9 @@ case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: m
     contig + "\t" + start + "\t" + stop + tail
   }
 
-  def addOption(option: String, value: String): Unit = {
-    println(option + "\t" + value)
+  def addOption(option: String, value: String, noDup: Boolean = false): Unit = {
     if (allOptions contains option)
-      allOptions(option) = allOptions(option) + BedEntry.valSeperator + value
+      if (!noDup) allOptions(option) = allOptions(option) + BedEntry.valSeperator + value
     else
       allOptions(option) = value
   }
