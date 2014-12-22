@@ -94,13 +94,13 @@ object Main extends App {
           targetRegions.foreach { bedEntry => {
             if (bedEntry.isDefined) {
               // score on-target
-              bedEntry.get.addOption("score",CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString,true)
+              bedEntry.get.addOption("on-target",CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString,false)
 
               // score off-target hits
               trie.score(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
                 case(key,value) => {
-                  bedEntry.get.addOption("score",value.toString)
-                  bedEntry.get.addOption("hit",key)
+                  bedEntry.get.addOption("off-target",value.toString)
+                  bedEntry.get.addOption("off-hit",key)
                 }
               }
             }
