@@ -80,7 +80,7 @@ object Main extends App {
 
       // load up the list of known hits in the genome
       println("Loading the initial Trie from " + config.genomeCRISPRs.get.getAbsolutePath)
-      val trieIterator = if (config.genomeCRISPRs.get.getAbsolutePath.endsWith(".bed"))
+      val trieIterator = if (config.genomeCRISPRs.get.getAbsolutePath contains (".bed"))
         CRISPRPrefixMap.fromBed(config.genomeCRISPRs.get.getAbsolutePath, true)
         else CRISPRPrefixMap.fromPath(config.genomeCRISPRs.get.getAbsolutePath, true)
 

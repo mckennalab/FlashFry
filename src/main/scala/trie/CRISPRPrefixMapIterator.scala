@@ -49,7 +49,7 @@ class CRISPRPrefixMapIterator(inputFile: String,
                                 prefixDrop: Int,
                                 linesPerIterator: Int,
                                 columnCRISPR: Int = 3,
-                                lengthCRISPR: Int = 20,
+                                lengthCRISPR: Int = 23,
                                 sep: String = "\t") extends Iterator[CRISPRPrefixMap[Int]] {
 
   val lines = if (inputFile.endsWith(".gz")) Source.fromInputStream(gis(inputFile)).getLines() else Source.fromFile(inputFile).getLines()
