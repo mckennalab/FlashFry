@@ -2,8 +2,10 @@ package main.scala
 
 import java.io.{PrintWriter, File}
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory
+import main.scala.hdf5.{HDF5Create, CreateHDF5}
 import main.scala.trie.CRISPRPrefixMap
 import org.slf4j._
+import main.scala.bin._
 
 /**
  * created by aaronmck on 12/16/14
@@ -38,13 +40,13 @@ object Main extends App {
     head("DeepFry", "1.0")
 
     // *********************************** Inputs *******************************************************
-    opt[File]("knownCrisprBed") required() valueName ("<file>") action {
+    opt[File]("knownCrisprLocation") required() valueName ("<file>") action {
       (x, c) => c.copy(genomeCRISPRs = Some(x))
-    } text ("the BED file containing the location of all the CRISPRs within the target genome")
+    } text ("the dir file containing the location of all the CRISPRs within the target genome")
 
     opt[File]("targetCrisprBeds") required() valueName ("<file>") action {
       (x, c) => c.copy(targetBed = Some(x))
-    } text ("the output file of guides with a minimium number of hits")
+    } text ("the file of guides to score")
 
     opt[File]("output") required() valueName ("<file>") action {
       (x, c) => c.copy(output = Some(x))
@@ -70,6 +72,13 @@ object Main extends App {
 
   parser.parse(args, Config()) map {
     config => {
+
+      println("quick read 1m or something")
+      //val st = new HDF5Create()
+
+      //CreateHDF5("QuickRead1M_targets.hd5")
+      println("end quick read 1m or something")
+
       // load up the reference file
       //val fasta = ReferenceSequenceFileFactory.getReferenceSequenceFile(config.reference.get)
 
@@ -80,33 +89,42 @@ object Main extends App {
 
       // load up the list of known hits in the genome
       println("Loading the initial Trie from " + config.genomeCRISPRs.get.getAbsolutePath)
-      val trieIterator = if (config.genomeCRISPRs.get.getAbsolutePath contains (".bed"))
-        CRISPRPrefixMap.fromBed(config.genomeCRISPRs.get.getAbsolutePath, true)
-        else CRISPRPrefixMap.fromPath(config.genomeCRISPRs.get.getAbsolutePath, true)
-
-      var scoredSites = 0
+      val trieIterator = BinIterator(config.genomeCRISPRs.get)
 
       // since the list of CRISPR targets can be long, we split it into separate scoring bins
-      trieIterator.foreach {
-        trie => {
-          println("Scorring sites...")
-          // output each target region -> hit combination for further analysis
-          targetRegions.foreach { bedEntry => {
-            if (bedEntry.isDefined) {
-              // score on-target
-              bedEntry.get.addOption("on-target",CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString,false)
 
-              // score off-target hits
-              trie.score(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
-                case(key,value) => {
-                  bedEntry.get.addOption("off-target",value.toString)
-                  bedEntry.get.addOption("off-hit",key)
-                }
+      while (trieIterator.hasNext()) {
+        val trie = trieIterator.next()
+        print("Started scoring... " + trie._1)
+        // output each target region -> hit combination for further analysis
+        var first = true
+
+        targetRegions.foreach { bedEntry => {
+
+          if (bedEntry.isDefined && first) {
+
+            val realEntry = bedEntry.get
+            val lastFive = realEntry.name.slice(realEntry.name.length - 5, realEntry.name.length)
+            //println(realEntry)
+
+            bedEntry.get.addOption("on-target", CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString, false)
+
+            // score off-target hits
+            trie._2.recursiveScore(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
+              case (key, value) => {
+                bedEntry.get.onTarget = value._1
+                if (bedEntry.get.offTargets contains key)
+                  bedEntry.get.offTargets(key) :+= value
+                else
+                  bedEntry.get.offTargets(key) = Array[Tuple3[Double, Int, Array[String]]](value)
+                //  (value._2.map{case(str) => {val t = str.split("\t"); t(0) + ":" + t(1) + "-" + t(2) + "#" + t(3)}}.mkString(":"))
               }
             }
           }
-          }
+
         }
+        } // iterate through each collection of CRISPR targets, dumping out how many we've matched and mismatched
+        //println("Scored. Reloading.... matched is " + matched + " mismatched = " + mismatched)
       }
 
       // the output file

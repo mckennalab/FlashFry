@@ -1,10 +1,12 @@
 package main.scala.trie
 
-import java.io.{FileInputStream, BufferedInputStream}
+import java.io.{File, FileInputStream, BufferedInputStream}
 import java.util.zip.GZIPInputStream
 
 import scala.collection.Iterator
 import scala.io.Source
+import scala.pickling._
+import binary._
 
 /**
  * created by aaronmck on 12/21/14
@@ -65,15 +67,19 @@ class CRISPRPrefixMapIterator(inputFile: String,
   override def hasNext: Boolean = !lines.isEmpty
 
   // get the next is PrefixMap
+  println("loading free tree")
   override def next(): CRISPRPrefixMap[Int] = {
     val tree = new CRISPRPrefixMap[Int]()
     lines.foreach(ln => {
       val sp = ln.split(separator)
       if (lengthCRISPR != sp(columnCRISPR).length)
         throw new IllegalArgumentException("A CRISPR entry \"" + sp(columnCRISPR) + "\" isn't the same length " + sp(columnCRISPR).length + " as the previously set length of " + knownLength)
-      tree.put(sp(columnCRISPR).slice(prefixDrop, knownLength), 0)
+      //println("adding " + sp(columnCRISPR).slice(prefixDrop, knownLength))
+      val strFrag = sp(columnCRISPR).slice(prefixDrop, knownLength)
+      tree.put(strFrag, tree.getOrElse(strFrag,1))
       linesAdded += 1
       if (linesAdded == linesPerIterator) {
+        println("returning new tree with " + linesPerIterator)
         linesAdded = 0
         return tree
       }
@@ -83,4 +89,12 @@ class CRISPRPrefixMapIterator(inputFile: String,
 
   // get a input stream from a compressed file
   def gis(s: String) = new GZIPInputStream(new BufferedInputStream(new FileInputStream(s)))
+}
+
+object CRISPRPrefixMapIterator {
+  def loadFromCacheLocation(location: File): CRISPRPrefixMapIterator = {
+    // check to see if the specified directory in-fact has a set of CPM files
+    if (location.exists) return new CRISPRPrefixMapIterator(location.getAbsolutePath,true,0,1000000)
+    else throw new IllegalArgumentException("Unable to find cache file: " + location.getAbsolutePath)
+  }
 }

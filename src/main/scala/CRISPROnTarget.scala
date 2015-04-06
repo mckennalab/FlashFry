@@ -28,7 +28,6 @@ package main.scala
  *
  */
 object CRISPROnTarget {
-// stolen from http://tefor.net/crispor/doenchScore.py
   val matches = Array(
     (1, "G", -0.2753771), (2, "A", -0.3238875), (2, "C", 0.17212887), (3, "C", -0.1006662),
     (4, "C", -0.2018029), (4, "G", 0.24595663), (5, "A", 0.03644004), (5, "C", 0.09837684),
@@ -48,12 +47,12 @@ object CRISPROnTarget {
     (21, "TC", -1.029693), (22, "CG", 0.85619782), (22, "CT", -0.4632077), (23, "AA", -0.5794924),
     (23, "AG", 0.64907554), (24, "AG", -0.0773007), (24, "CG", 0.28793562), (24, "TG", -0.2216372),
     (26, "GT", 0.11787758), (28, "GG", -0.69774))
-  // stolen from http://tefor.net/crispor/doenchScore.py
   val intercept = 0.59763615
   val gcHigh = -0.1665878
   val gcLow = -0.2026259
 
   // stolen and then translated from http://tefor.net/crispor/doenchScore.py
+  // and from http://www.broadinstitute.org/rnai/public/analysis-tools/sgrna-design
   def calcDoenchScore(seq: String): Double = {
     var score = intercept
 

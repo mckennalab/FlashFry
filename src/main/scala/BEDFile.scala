@@ -2,7 +2,9 @@ package main.scala
 
 import java.io.File
 
-import scala.collection.mutable
+import main.scala.trie.CRISPRPrefixMap
+
+import scala.collection.{Map, mutable}
 import scala.io.Source
 
 /**
@@ -57,6 +59,7 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
         if (tk.length == 2)
           mp(tk(0)) = tk(1)
       }}
+
     val ret = BedEntry(break(0),
       break(1).toInt,
       break(2).toInt,
@@ -81,12 +84,15 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
  */
 case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: mutable.HashMap[String,String]) {
   var allOptions = rest
+  var onTarget = 0.0
+  var offTargets = new mutable.HashMap[String, Array[Tuple3[Double, Int, Array[String]]]]
+  var offTargetScore = 0.0
+  var strand = "+"
 
   override def toString(): String = {
-    var tail = if (!rest.isEmpty) "\t" + name + "\t" + rest.map{case(k,v) => k + BedEntry.kvSeperator + v}.mkString(BedEntry.entriesSeperator)
-    else "\t" + name
-
-    contig + "\t" + start + "\t" + stop + tail
+    offTargetScore = aggregateScore()
+    contig + "\t" + start + "\t" + stop + "\t" + name + "\ton-target=" + onTarget + ";off-target=" + offTargetScore +
+      ";off-target-hits=" + offTargets.map{case(key,value) => value.map{case(mp) => mp._3.map{_.split("\t").mkString("-")}.mkString(";")}.mkString(";")}.mkString(",")
   }
 
   def addOption(option: String, value: String, allowDup: Boolean = true): Unit = {
@@ -97,6 +103,14 @@ case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: m
     }
     else
       allOptions(option) = value
+  }
+
+  def aggregateScore(): Double = {
+    // totalScore(scores: Map[String, Double], maxMismatches: Int = 4)
+
+    CRISPRPrefixMap.totalScore(offTargets.flatMap{case(key,value) => {
+      value.map{case(t) => (key,t._1)}
+    }})
   }
 }
 
