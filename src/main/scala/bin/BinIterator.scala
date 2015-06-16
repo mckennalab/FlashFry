@@ -40,11 +40,11 @@ case class BinIterator(binDir: File, combinations: Int = 5) {
 
   def hasNext(): Boolean = combin.hasNext
 
-  def next(): Tuple2[String,CRISPRPrefixMap[Array[String]]] = {
+  def next(): Tuple2[String,CRISPRPrefixMap[Int]] = {
     val name = combin.next
     val filename = binDir.getAbsolutePath + File.separator + "binlast5." + name + ".txt"
     println("loading " + filename)
-    Tuple2[String,CRISPRPrefixMap[Array[String]]](name,CRISPRPrefixMap.fromBed(filename, false))
+    Tuple2[String,CRISPRPrefixMap[Int]](name,CRISPRPrefixMap.fromBed(filename, false))
   }
 
 }

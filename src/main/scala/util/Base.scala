@@ -34,7 +34,6 @@ object Base extends Enumeration {
   def baseToInt(d: Base): Int = d.id
 
   def intToBase(v: Int): Base = {
-    println(Base.N.id)
     if (Base.maxId <= v) throw new IllegalAccessError("Base value = " + v + " out of range")
     else Base(v)
   }

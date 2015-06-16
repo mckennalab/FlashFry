@@ -85,14 +85,14 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
 case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: mutable.HashMap[String,String]) {
   var allOptions = rest
   var onTarget = 0.0
-  var offTargets = new mutable.HashMap[String, Array[Tuple3[Double, Int, Array[String]]]]
-  var offTargetScore = 0.0
+  var offTargets = new mutable.HashMap[String, Tuple3[Double, Int, Int]]
+  var offTargetScore = -1.0
   var strand = "+"
 
   override def toString(): String = {
     offTargetScore = aggregateScore()
     contig + "\t" + start + "\t" + stop + "\t" + name + "\ton-target=" + onTarget + ";off-target=" + offTargetScore +
-      ";off-target-hits=" + offTargets.map{case(key,value) => value.map{case(mp) => mp._3.map{_.split("\t").mkString("-")}.mkString(";")}.mkString(";")}.mkString(",")
+      ";off-target-hits=" + offTargets.map{case(key,mp) => key + "-" + mp._1 + "_" + mp._2 + "_" + mp._3}.mkString(",")
   }
 
   def addOption(option: String, value: String, allowDup: Boolean = true): Unit = {
@@ -106,11 +106,8 @@ case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: m
   }
 
   def aggregateScore(): Double = {
-    // totalScore(scores: Map[String, Double], maxMismatches: Int = 4)
-
-    CRISPRPrefixMap.totalScore(offTargets.flatMap{case(key,value) => {
-      value.map{case(t) => (key,t._1)}
-    }})
+    val hits = CRISPRPrefixMap.score(offTargets)
+    CRISPRPrefixMap.totalScore(hits)
   }
 }
 

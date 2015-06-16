@@ -62,8 +62,9 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T ] with mutable.MapLike[St
       suffixes(leading) withPrefix (s substring 1)
     }
 
-  override def update(s: String, elem: T) =
+  override def update(s: String, elem: T) = {
     withPrefix(s).value = Some(elem)
+  }
 
   override def remove(s: String): Option[T] =
     if (s.isEmpty) {
@@ -84,23 +85,30 @@ class CRISPRPrefixMap[T] extends mutable.Map[String, T ] with mutable.MapLike[St
   def recursiveScore(scoreParams: List[Tuple2[Char, Double]],
                      currentState: String = "",
                      currentScore: Double = 1.0,
-                     mismatchThreshold: Int = 6): Map[String, Tuple3[Double, Int, T]] = {
+                     mismatchThreshold: Int = CRISPRPrefixMap.maxMismatch,
+                     debug: Boolean = false): Map[String, Tuple3[Double, Int, T]] = {
 
     // return conditions
-    if (mismatchThreshold == 0)
+    if (mismatchThreshold == 0) {
+      if (debug)
+        println("returning empty hit")
       return new immutable.HashMap[String, Tuple3[Double, Int, T]]()
-    if (suffixes.isEmpty) {
+    } else if (suffixes.isEmpty) {
+      if (debug)
+        println("returning score " + currentScore + " mismatch " + mismatchThreshold + " value " + value.get)
       return immutable.HashMap[String, Tuple3[Double, Int, T]]((currentState, Tuple3[Double, Int, T](currentScore, mismatchThreshold, value.get)))
     }
 
     return suffixes.flatMap { case (ch, prefixMap) => {
       if (ch != scoreParams(0)._1) {
-        //println("against = " + ch + " toBeScored = " + scoreParams(0)._1 + " " + (scoreParams.length - 20) + " -> " + (currentScore * (1.0 - scoreParams(0)._2)) + " === " + scoreParams(0)._2)
-        prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore * (1.0 - scoreParams(0)._2), mismatchThreshold - 1)
+        if (debug)
+          println("mismatch against = " + ch + " toBeScored = " + scoreParams(0)._1 + " " + (scoreParams.length - 20) + " -> " + (currentScore * (1.0 - scoreParams(0)._2)) + " === " + scoreParams(0)._2)
+        prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore * (1.0 - scoreParams(0)._2), mismatchThreshold - 1, debug)
       }
       else {
-        //println("against = " + ch + " toBeScored = " + scoreParams(0)._1 + " " + (scoreParams.length - 20) + " -> 1")
-        prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore, mismatchThreshold)
+        if (debug)
+          println("match against = " + ch + " toBeScored = " + scoreParams(0)._1 + " " + (scoreParams.length - 20) + " -> 1")
+        prefixMap.recursiveScore(scoreParams.tail, currentState + ch, currentScore, mismatchThreshold, debug)
       }
     }
     }
@@ -180,11 +188,11 @@ object CRISPRPrefixMap extends {
    */
   //def fromBed(fl: String, pamDrop: Boolean, prefixDrop: Int = 0): Iterator[CRISPRPrefixMap[Int]] =
   //  new CRISPRPrefixMapIterator(fl,pamDrop,prefixDrop,100000,3,23,sep="\t")
-  def fromBed(fl: String, pamDrop: Boolean, prefixDrop: Int = 0): CRISPRPrefixMap[Array[String]] = {
-    val tree = new CRISPRPrefixMap[Array[String]]()
+  def fromBed(fl: String, pamDrop: Boolean, prefixDrop: Int = 0): CRISPRPrefixMap[Int] = {
+    val tree = new CRISPRPrefixMap[Int]()
     Source.fromFile(fl).getLines().foreach(ln => {
       val sp = ln.split("\t")
-      val ray: Array[String] = tree.getOrElse(sp(3),Array[String]()) :+ ln
+      val ray: Int = tree.getOrElse(sp(3),0) + 1
       if (sp.length >= 4)
         tree.put(sp(3), ray )
     })
@@ -201,22 +209,30 @@ object CRISPRPrefixMap extends {
    * @param maxMismatches the maximum number of mismatches, greatly limits the search space
    * @return a mapping from the string of the off-target hit to it's score and entry (of type T, in this case a string)
    */
-  def score(hits: Map[String, Tuple3[Double, Int, String]], maxMismatches: Int = 5): Map[String, Double] = {
+  def score(hits: Map[String, Tuple3[Double, Int, Int]], maxMismatches: Int = CRISPRPrefixMap.maxMismatch, guideSize: Int = 19): Array[Tuple2[String, Double]] = {
     val distances = hits.keySet.toList.combinations(2).map{
       case (lstOfHits) => { CRISPRPrefixMap.CRISPRdistance(lstOfHits(0), lstOfHits(1)) }
     }.toList
 
+    val meanDistances = (distances.sum.toDouble * 1.0) / math.max(distances.length.toDouble,hits.size)
 
-    val meanDistances = (distances.sum.toDouble - distances.length * 1.0) / math.max(distances.length.toDouble,hits.size)
+    hits.map{case (hit, scores) => {
+      // see crispr.mit.edu's help page about the equation.  each line is a term in their equation
+      val score = new Tuple2[String,Double](hit,(scores._1.toDouble *
+        (1.0 / (((guideSize - meanDistances.toDouble) / guideSize) * 4.0 + 1.0)) *
+        (1.0 / ((maxMismatches.toDouble-scores._2) * (maxMismatches.toDouble-scores._2)))))
 
-    return hits.map {case (hit, scores) =>
-      (hit,(scores._1.toDouble *
-        (1.0 / (((hits.size.toDouble - meanDistances.toDouble) / hits.size.toDouble) * 4.0 + 1.0)) *
-        (1.0 / ((maxMismatches.toDouble-scores._2) * (maxMismatches.toDouble-scores._2)))))}
+      var ret = new Array[Tuple2[String,Double]](scores._3)
+      for (i <- 0 until scores._3 ) ret(i) = score
+      ret
+    }}.flatten.toArray
+
   }
 
-  def totalScore(scores: Iterable[Tuple2[String, Double]], maxMismatches: Int = 4): Double = (100.0 / (100.0 + (scores.map{case(s) => s._2}.sum * 100)) * 100.0)
+  def totalScore(scores: Iterable[Tuple2[String, Double]]): Double = (100.0 / (100.0 + (scores.map{case(s) => s._2}.sum * 100)) * 100.0)
 
   def toPickle[T: SPickler: FastTypeTag](t: T) = t.pickle
   def fromPickle[T: Unpickler: FastTypeTag](bytes: Array[Byte]) = bytes.unpickle[T]
+
+  val maxMismatch = 5
 }

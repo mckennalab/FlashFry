@@ -5,6 +5,9 @@ import main.scala.trie.CRISPRPrefixMap
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 
+import scala.collection.Map
+import scala.io.Source
+
 /**
  * created by aaronmck on 12/20/14
  *
@@ -33,10 +36,70 @@ import org.scalatest.matchers.ShouldMatchers
  *
  */
 class CRISPRPrefixMapTest extends FlatSpec with ShouldMatchers {
-  "CRISPRPrefixMapTest" should " find the correct score for a known hit" in {
-    val trie = CRISPRPrefixMap.fromPath("/net/shendure/vol10/projects/CRISPR.Site.Finder/top30K.txt")
-    val hits = trie.next().score(CRISPRPrefixMap.zipAndExpand("GGACTTGTGGGTGCCTGCAA"),5)
-    hits.foreach{case(key,value) => println(key + " => " + value)}
-    println(CRISPRPrefixMap.totalScore(hits))
+
+
+  "CRISPRPrefixMapTest" should " find the correct score for another known hit" in {
+    val trie = fromTestData("test_dir/guides.txt")
+
+    // open the test file and read in the guides
+    val hits = trie.recursiveScore(CRISPRPrefixMap.zipAndExpand("TCTTAAGCAGAACAAGGGCA", true))
+    val scores= CRISPRPrefixMap.score(hits)
+    hits.foreach{case(key,value) => println(key + " => " + value._1 + "," + value._2 + "," + value._3)}
+    println("score = " + CRISPRPrefixMap.totalScore(scores))
+  }
+
+  "CRISPRPrefixMapTest" should " find the second score for another known hit" in {
+    val trie = fromTestDataAlt("test_dir/rescore.txt")
+
+    // open the test file and read in the guides
+    val hits = CRISPRPrefixMap.score(trie.recursiveScore(CRISPRPrefixMap.zipAndExpand("TCTTAAGCAGAACAAGGGCA", true), debug = false))
+    //hits.foreach{case(key,value) => println(key + " => " + value)}
+    println("score alt = " + CRISPRPrefixMap.totalScore(hits))
+  }
+
+  "CRISPRPrefixMapTest" should " find the correct score for 3rd known hit" in {
+    val scores = Source.fromFile("test_dir/rescore.txt").getLines().map(ln => {
+      //println("adding "+ ln)
+      val sp = ln.split("-")
+      val nm = sp(0)
+      val sc = sp(1).split("_")(0).toDouble
+      (nm,sc)
+    }).toMap
+    println("reworked score is " + CRISPRPrefixMap.totalScore(scores))
+  }
+
+  "CRISPRPrefixMapTest" should " load two hits correcty" in {
+    val tree = new CRISPRPrefixMap[Array[String]]()
+    val key = "AAACTTGAGGGTGCCTGCAA"
+
+    val ray: Array[String] = tree.getOrElse(key,Array[String]()) :+ key
+    tree.put(key, ray )
+    val ray2: Array[String] = tree.getOrElse(key,Array[String]()) :+ key
+    tree.put(key, ray2 )
+
+    assert(tree.get(key).get.size == 2)
+  }
+
+  def fromTestData(fl: String): CRISPRPrefixMap[Int] = {
+    val tree = new CRISPRPrefixMap[Int]()
+    Source.fromFile(fl).getLines().foreach(ln => {
+      //println("adding "+ ln)
+      val nm = ln.slice(0,20)
+      val ray: Int = tree.getOrElse(nm,0) + 1
+      tree.put(nm, ray )
+    })
+    return tree
+  }
+
+  def fromTestDataAlt(fl: String): CRISPRPrefixMap[Int] = {
+    val tree = new CRISPRPrefixMap[Int]()
+    Source.fromFile(fl).getLines().foreach(ln => {
+      val sp = ln.split("-")
+      val nm = sp(0)
+      println("adding " + nm)
+      val sc = sp(1).split("_")(0).toDouble
+      tree.update(nm,1)
+    })
+    return tree
   }
 }

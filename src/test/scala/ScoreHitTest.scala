@@ -42,26 +42,43 @@ class ScoreHitTest extends FlatSpec with ShouldMatchers {
   //val offtargetCoeff = Array[Double](0.0,   0.0,   0.014, 0.0,   0.0,   0.395, 0.317, 0.0,   0.389, 0.079,
   // 0.445, 0.508, 0.613, 0.815, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583) // ,
   "ScoreHit" should " zip with weight vector correctly with smaller CRISPR target" in {
-    val result = CRISPRPrefixMap.zipAndExpand("ATG")
+    val result = CRISPRPrefixMap.zipAndExpand("ATG",false)
     assert(result(0)._2 == 0.804)
     assert(result(1)._2 == 0.685)
     assert(result(2)._2 == 0.583)
   }
 
   "ScoreHit" should " zip with weight vector correctly with larger CRISPR target" in {
-    val result = CRISPRPrefixMap.zipAndExpand("ATGTGATGTGATGTGATGTG")
+    val result = CRISPRPrefixMap.zipAndExpand("ATGTGATGTGATGTGATGTG",false)
+    //println(result.map{case(str,scr) => str + "->" + scr}.mkString(","))
     assert(result(0)._2 == 0.0)
     assert(result(1)._2 == 0.0)
-    assert(result(2)._2 == 0.0)
-    assert(result(3)._2 == 0.014)
+    assert(result(2)._2 == 0.014)
+    assert(result(3)._2 == 0.0)
+    assert(result(4)._2 == 0.0)
+    assert(result(5)._2 == 0.395)
+    assert(result(6)._2 == 0.317)
+    assert(result(7)._2 == 0.0)
+    assert(result(8)._2 == 0.389)
+    assert(result(9)._2 == 0.079)
+    assert(result(10)._2 == 0.445)
+    assert(result(11)._2 == 0.508)
+    assert(result(12)._2 == 0.613)
+    assert(result(13)._2 == 0.851)
+    assert(result(14)._2 == 0.732)
+    assert(result(15)._2 == 0.828)
+    assert(result(16)._2 == 0.615)
+    assert(result(17)._2 == 0.804)
+    assert(result(18)._2 == 0.685)
     assert(result(19)._2 == 0.583)
   }
 
   "ScoreHit" should " zip with weight vector correctly with much larger CRISPR target" in {
-    val result = CRISPRPrefixMap.zipAndExpand("ATGTGATGTGATGTGATGTGATGTGATGTGATGTGATGTG")
+    val result = CRISPRPrefixMap.zipAndExpand("ATGTGATGTGATGTGATGTGATGTGATGTGATGTGATGTG",false)
+    //println(result.map{case(str,scr) => str + "->" + scr}.mkString(","))
     assert(result(0)._2 == 0.0)
     assert(result(19)._2 == 0.0)
-    assert(result(23)._2 == 0.014)
+    assert(result(22)._2 == 0.014)
     assert(result(39)._2 == 0.583)
   }
 }

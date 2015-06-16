@@ -95,7 +95,6 @@ object Main extends App {
 
       while (trieIterator.hasNext()) {
         val trie = trieIterator.next()
-        print("Started scoring... " + trie._1)
         // output each target region -> hit combination for further analysis
         var first = true
 
@@ -105,7 +104,6 @@ object Main extends App {
 
             val realEntry = bedEntry.get
             val lastFive = realEntry.name.slice(realEntry.name.length - 5, realEntry.name.length)
-            //println(realEntry)
 
             bedEntry.get.addOption("on-target", CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString, false)
 
@@ -113,10 +111,12 @@ object Main extends App {
             trie._2.recursiveScore(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
               case (key, value) => {
                 bedEntry.get.onTarget = value._1
-                if (bedEntry.get.offTargets contains key)
-                  bedEntry.get.offTargets(key) :+= value
+                if (bedEntry.get.offTargets contains key) {
+                  bedEntry.get.offTargets(key) = Tuple3[Double, Int, Int](value._1, value._2, bedEntry.get.offTargets(key)._3 + value._3)
+                  println("collision for key " + key)
+                }
                 else
-                  bedEntry.get.offTargets(key) = Array[Tuple3[Double, Int, Array[String]]](value)
+                  bedEntry.get.offTargets(key) = value
                 //  (value._2.map{case(str) => {val t = str.split("\t"); t(0) + ":" + t(1) + "-" + t(2) + "#" + t(3)}}.mkString(":"))
               }
             }
