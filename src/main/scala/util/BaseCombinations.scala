@@ -1,6 +1,7 @@
 package main.scala.util
 
 import main.scala.util.Base.Base
+
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -30,27 +31,35 @@ import scala.collection.mutable.ListBuffer
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  *
  */
+// make an iterator of Bases from AAAA to TTTT for example
 class BaseCombinations(count: Int) extends Iterator[String] {
   var lst = new Array[Base](count)
+  var isLast = false
   (0 until count).foreach{case(e) => lst(e) = Base.A}
 
   val terminalStr = (0 until count).map{_ => Base.T}.mkString
 
-  override def hasNext: Boolean = {terminalStr != lst.mkString}
+  override def hasNext: Boolean =
+    if (terminalStr == lst.mkString) {
+      isLast = true
+      return true
+    }
+    else return !isLast
 
   def incr(pos: Int): Unit = {
     if (lst(pos) == Base.T) {
       lst(pos) = Base.A
-      if (pos + 1 < lst.length)
-        incr(pos + 1)
-    } else {
-      lst(pos) = Base.intToBase(Base.baseToInt(lst(pos))+ 1)
+      if (pos - 1 >= 0)
+        incr(pos-1)
     }
+    else
+      lst(pos) = Base(Base.baseToInt(lst(pos)) + 1)
   }
 
   override def next(): String = {
     val ret = lst.mkString
-    incr(0)
+    incr(count - 1)
     return ret
+
   }
 }

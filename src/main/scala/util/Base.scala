@@ -1,5 +1,7 @@
 package main.scala.util
 
+import scala.util.Random
+
 /**
  * created by aaronmck on 1/3/15
  *
@@ -27,14 +29,18 @@ package main.scala.util
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  *
  */
+// the Base object, with our enumerated bases
 object Base extends Enumeration {
-    type Base = Value
-    val A, C, G, T, N = Value
+  type Base = Value
+  //val A, C, G, T, N = Value
+  val A, C, G, T = Value
 
   def baseToInt(d: Base): Int = d.id
 
   def intToBase(v: Int): Base = {
-    if (Base.maxId <= v) throw new IllegalAccessError("Base value = " + v + " out of range")
+    if (Base.values.size <= v) throw new IllegalAccessError("Base value = " + v + " out of range: our limit is " + Base.values.size)
     else Base(v)
   }
+
+  def randomBase(rand: Random): Base = intToBase(rand.nextInt(Base.values.size))
 }

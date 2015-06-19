@@ -1,11 +1,9 @@
 package main.scala
 
 import java.io.{PrintWriter, File}
-import htsjdk.samtools.reference.ReferenceSequenceFileFactory
-import main.scala.hdf5.{HDF5Create, CreateHDF5}
-import main.scala.trie.CRISPRPrefixMap
+import modules.{ScoreSites, DiscoverCRISPRSites}
 import org.slf4j._
-import main.scala.bin._
+import scopt._
 
 /**
  * created by aaronmck on 12/16/14
@@ -38,31 +36,12 @@ object Main extends App {
   // parse the command line arguments
   val parser = new scopt.OptionParser[Config]("DeepFry") {
     head("DeepFry", "1.0")
+    errorOnUnknownArgument = false
 
     // *********************************** Inputs *******************************************************
-    opt[File]("knownCrisprLocation") required() valueName ("<file>") action {
-      (x, c) => c.copy(genomeCRISPRs = Some(x))
-    } text ("the dir file containing the location of all the CRISPRs within the target genome")
-
-    opt[File]("targetCrisprBeds") required() valueName ("<file>") action {
-      (x, c) => c.copy(targetBed = Some(x))
-    } text ("the file of guides to score")
-
-    opt[File]("output") required() valueName ("<file>") action {
-      (x, c) => c.copy(output = Some(x))
-    } text ("the output file")
-
-    opt[Boolean]("noOffTarget") action {
-      (x, c) => c.copy(scoreOffTarget = !(x))
-    } text ("Do not compute off-target hits (a large cost)")
-
-    opt[Boolean]("noOnTarget") action {
-      (x, c) => c.copy(scoreOffTarget = !(x))
-    } text ("Do not compute on-target hits (a small savings at best)")
-
-    opt[Boolean]("useName") action {
-      (x, c) => c.copy(useName = (x))
-    } text ("Dont look up the CRISPRs in the target region, instead just use the name provided (colunn 4 of a bed)")
+    opt[String]("analysis") required() valueName ("<string>") action {
+      (x, c) => c.copy(analysisType = Some(x))
+    } text ("The run type: one of: discovery, score")
 
     // some general command-line setup stuff
     note("Find CRISPR targets across the specified genome\n")
@@ -73,64 +52,15 @@ object Main extends App {
   parser.parse(args, Config()) map {
     config => {
 
-      println("quick read 1m or something")
-      //val st = new HDF5Create()
-
-      //CreateHDF5("QuickRead1M_targets.hd5")
-      println("end quick read 1m or something")
-
-      // load up the reference file
-      //val fasta = ReferenceSequenceFileFactory.getReferenceSequenceFile(config.reference.get)
-
-      // score each hit for uniqueness and optimality
-      println("Loading the target regions from " + config.targetBed.get.getAbsolutePath)
-      val targetRegions = new BEDFile(config.targetBed.get).toList
-
-
-      // load up the list of known hits in the genome
-      println("Loading the initial Trie from " + config.genomeCRISPRs.get.getAbsolutePath)
-      val trieIterator = BinIterator(config.genomeCRISPRs.get)
-
-      // since the list of CRISPR targets can be long, we split it into separate scoring bins
-
-      while (trieIterator.hasNext()) {
-        val trie = trieIterator.next()
-        // output each target region -> hit combination for further analysis
-        var first = true
-
-        targetRegions.foreach { bedEntry => {
-
-          if (bedEntry.isDefined && first) {
-
-            val realEntry = bedEntry.get
-            val lastFive = realEntry.name.slice(realEntry.name.length - 5, realEntry.name.length)
-
-            bedEntry.get.addOption("on-target", CRISPROnTarget.calcDoenchScore(bedEntry.get.name).toString, false)
-
-            // score off-target hits
-            trie._2.recursiveScore(CRISPRPrefixMap.zipAndExpand(bedEntry.get.name)).foreach {
-              case (key, value) => {
-                bedEntry.get.onTarget = value._1
-                if (bedEntry.get.offTargets contains key) {
-                  bedEntry.get.offTargets(key) = Tuple3[Double, Int, Int](value._1, value._2, bedEntry.get.offTargets(key)._3 + value._3)
-                  println("collision for key " + key)
-                }
-                else
-                  bedEntry.get.offTargets(key) = value
-                //  (value._2.map{case(str) => {val t = str.split("\t"); t(0) + ":" + t(1) + "-" + t(2) + "#" + t(3)}}.mkString(":"))
-              }
-            }
-          }
-
+      config.analysisType.get match {
+        case "discovery" => {
+          new DiscoverCRISPRSites(args)
         }
-        } // iterate through each collection of CRISPR targets, dumping out how many we've matched and mismatched
-        //println("Scored. Reloading.... matched is " + matched + " mismatched = " + mismatched)
-      }
+        case "score" => {
+          new ScoreSites(args)
+        }
 
-      // the output file
-      val outputFile = new PrintWriter(config.output.get)
-      targetRegions.foreach { bedEntry => outputFile.write(bedEntry.get + "\n")}
-      outputFile.close()
+      }
     }
   }
 }
@@ -138,10 +68,4 @@ object Main extends App {
 /*
  * the configuration class, it stores the user's arguments from the command line, set defaults here
  */
-case class Config(genomeCRISPRs: Option[File] = None,
-                  targetBed: Option[File] = None,
-                  reference: Option[File] = None,
-                  output: Option[File] = None,
-                  useName: Boolean = false,
-                  scoreOffTarget: Boolean = true,
-                  scoreOnTarget: Boolean = true)
+case class Config(analysisType: Option[String] = None)
