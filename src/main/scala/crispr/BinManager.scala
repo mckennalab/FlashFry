@@ -23,7 +23,7 @@ class BinManager(crisprList: List[CRISPRGuide]) {
     val listbuild = new ListBuffer[CRISPRGuide]()
 
     crisprList.foreach(hit => {
-      if (hit.bins.get(newBin).isDefined && hit.isAlive())
+      if (hit.isAlive() && hit.validBin(newBin))
         listbuild += hit
     })
     currentScores = listbuild.result()

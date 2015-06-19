@@ -11,10 +11,9 @@ case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxM
   var offStops = List[Int]()
   var offBases = List[String]()
   val binBases = name.slice(name.length - binSize, name.length)
-  val maxEntries = 1500
+  val maxEntries = 2500
 
-  // get the names of the bins we'll possibly hit against
-  val bins = (new BaseCombinations(binSize)).filter { combination => CRISPRGuide.editDistance(combination, binBases) <= maxMismatch }.map { hit => (hit, true) }.toMap
+  def validBin(bin:String ): Boolean = CRISPRGuide.editDistance(bin, binBases) <= maxMismatch
 
   // add an off-target hit, private just to avoid confusion
   private def addOffTarget(contig: String, start: Int, stop: Int, bases: String) {

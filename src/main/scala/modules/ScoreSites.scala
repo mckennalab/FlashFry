@@ -59,7 +59,7 @@ class ScoreSites(args: Array[String]) {
       var lineCount = 0
       val crisprs = Source.fromFile(config.targetBed.get.getAbsolutePath).getLines().map{ln => {
         val sp = ln.split("\t")
-        if (lineCount % 100 == 0) println("targets read in so far = " + lineCount)
+        if (lineCount % 1000 == 0) println("targets read in so far = " + lineCount)
         lineCount += 1
         CRISPRGuide(sp(0),sp(1).toInt,sp(2).toInt,sp(3))
       }}.toList
