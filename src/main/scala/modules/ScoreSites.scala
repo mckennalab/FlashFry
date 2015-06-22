@@ -57,12 +57,13 @@ class ScoreSites(args: Array[String]) {
       // read in each of the target CRISPRs
       println("Loading targets and precomputing hit bins for each (this takes some time)")
       var lineCount = 0
-      val crisprs = Source.fromFile(config.targetBed.get.getAbsolutePath).getLines().map{ln => {
+      val crisprs = Source.fromFile(config.targetBed.get.getAbsolutePath).getLines().map { ln => {
         val sp = ln.split("\t")
         if (lineCount % 1000 == 0) println("targets read in so far = " + lineCount)
         lineCount += 1
-        CRISPRGuide(sp(0),sp(1).toInt,sp(2).toInt,sp(3))
-      }}.toList
+        CRISPRGuide(sp(0), sp(1).toInt, sp(2).toInt, sp(3))
+      }
+      }.toList
 
       println("creating manager")
       // Create a manager for our targets
@@ -72,17 +73,30 @@ class ScoreSites(args: Array[String]) {
       lineCount = 0
       // now process the input file line by line
       var oldTime = System.nanoTime()
-      val scoreLines = Source.fromFile(config.genomeBed.get).getLines().foreach{ln => {
+      var lineCounter = 1000000 // 1 million
+      val scoreLines = Source.fromFile(config.genomeBed.get).getLines().foreach { ln => {
 
-        if (lineCount % 100000 == 0) {
-          val curTime = System.nanoTime()
-          println("Processed " + lineCount/100000 + " million genomic target sites in " + ((curTime - oldTime) / 1000000000) + " seconds")
-          oldTime = curTime
+          if (lineCount % lineCounter == 0) {
+            val curTime = System.nanoTime()
+            println("Processed " + lineCount / lineCounter + " million genomic target sites (" + ((curTime - oldTime) / 1000000000) + " seconds per million)")
+            oldTime = curTime
+          }
+          lineCount += 1
+          val sp = ln.split("\t")
+          targetManager.scoreHit(sp(4), sp(0), sp(1).toInt, sp(2).toInt, sp(3))
+
+          val count = sp(5).toInt
+          if (count > 1) {
+            val otherSites = sp(6).split(";")
+            otherSites.foreach{site => {
+              val contig = site.split(":")(0)
+              val startStop = site.split(":")(1).split("-")
+              targetManager.scoreHit(sp(4), contig, startStop(0).toInt, startStop(1).toInt, sp(3))
+            }}
+          }
+
         }
-        lineCount += 1
-        val sp = ln.split("\t")
-        targetManager.scoreHit(sp(4),sp(0),sp(1).toInt,sp(2).toInt,sp(3))
-      }}
+        }
 
       // setup the scoring systems
       val scoreSystem = Array[ScoreModel](new OnTarget(), new OffTarget())
@@ -90,15 +104,17 @@ class ScoreSites(args: Array[String]) {
       println("scoring sites")
       // now score each site and output it to the right file
       val output = new PrintWriter(config.output.get)
-      targetManager.allCRISPRs.foreach{crispr => {
+      targetManager.allCRISPRs.foreach { crispr => {
         println("scoring " + crispr.name)
-        val scores = mutable.HashMap[String,String]()
-        scoreSystem.foreach{system => {
+        val scores = mutable.HashMap[String, String]()
+        scoreSystem.foreach { system => {
           scores(system.scoreName()) = system.scoreGuide(crispr)
-        }}
+        }
+        }
         val offTargetString = crispr.reconstituteOffTargets().mkString("$")
-        output.write(crispr.toBed + "\t" + scores.map{case(key,value) => key + "=" + value}.mkString(";") + ";" + offTargetString + "\n")
-      }}
+        output.write(crispr.toBed + "\t" + scores.map { case (key, value) => key + "=" + value }.mkString(";") + ";" + offTargetString + "\n")
+      }
+      }
       output.close()
     }
   }
