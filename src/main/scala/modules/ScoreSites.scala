@@ -38,6 +38,10 @@ class ScoreSites(args: Array[String]) {
       (x, c) => c.copy(output = Some(x))
     } text ("the output file")
 
+    opt[File]("outputTargetsOnly") required() valueName ("<file>") action {
+      (x, c) => c.copy(output = Some(x))
+    } text ("the midway output file")
+
     opt[Boolean]("noOffTarget") action {
       (x, c) => c.copy(scoreOffTarget = !(x))
     } text ("Do not compute off-target hits (a large cost)")
@@ -97,6 +101,13 @@ class ScoreSites(args: Array[String]) {
 
         }
         }
+
+      val outputMidway = new PrintWriter(config.output.get)
+      targetManager.allCRISPRs.foreach { crispr => {
+        val offTargetString = crispr.reconstituteOffTargets().mkString("$")
+        outputMidway.write(crispr.toBed + "\t" + offTargetString + "\n")
+      }}
+      outputMidway.close()
 
       // setup the scoring systems
       val scoreSystem = Array[ScoreModel](new OnTarget(), new OffTarget())

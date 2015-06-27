@@ -11,7 +11,7 @@ case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxM
   var offStops = List[Int]()
   var offBases = List[String]()
   val binBases = name.slice(name.length - binSize, name.length)
-  val maxEntries = 2500
+  val maxEntries = 1000
 
   def validBin(bin:String ): Boolean = CRISPRGuide.editDistance(bin, binBases) <= maxMismatch
 
