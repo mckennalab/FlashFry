@@ -17,7 +17,6 @@ case class BedReader(input: File, maxOffTargets: Int = 2500) {
     val sp = line.split("\t")
     val bedEntry = CRISPRGuide(sp(0), sp(1).toInt, sp(2).toInt, sp(3))
     logger.info("adding " + sp(3))
-    var bedCount = 0
     val splits = sp(4).split("\\$")
     if (splits.size < maxOffTargets) {
       splits.foreach { ht => {
@@ -32,10 +31,6 @@ case class BedReader(input: File, maxOffTargets: Int = 2500) {
     } else {
       logger.warn("Dropping target " + sp(3) + " as it has too many off-targets (" + splits.size + ">=" + maxOffTargets + ")")
     }
-
-    bedCount += 1
-    if (bedCount % 10 == 0)
-      println("Read in " + bedCount + " CRISPR hits")
   }
   }
 }

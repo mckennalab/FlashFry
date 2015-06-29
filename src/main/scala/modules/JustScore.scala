@@ -62,7 +62,7 @@ class JustScore(args: Array[String]) {
         val curTime = System.nanoTime()
         println("scored " + crispr.name + " in " + ((curTime - oldTime) / 1000000000) + " seconds")
         oldTime = curTime
-        output.write(crispr.toBed + "\t" + crispr.isAlive() + "\t" + scores.map { case (key, value) => key + "=" + value }.mkString(";") + ";" + offTargetString + "\n")
+        output.write(crispr.toBed + "\t" + crispr.isAlive() + "\t" + scores.map { case (key, value) => key + "=" + value }.mkString(";") + ";offtarget-count=" + (crispr.reconstituteOffTargets().length) + ";" + offTargetString + "\n")
       }
       }
       output.close()
