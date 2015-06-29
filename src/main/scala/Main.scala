@@ -1,7 +1,7 @@
 package main.scala
 
 import java.io.{PrintWriter, File}
-import modules.{ScoreSites, DiscoverCRISPRSites}
+import modules.{JustScore, TallyScoringInformation, DiscoverCRISPRSites}
 import org.slf4j._
 import scopt._
 
@@ -47,6 +47,7 @@ object Main extends App {
     note("Find CRISPR targets across the specified genome\n")
     help("help") text ("prints the usage information you see here")
   }
+
   val logger = LoggerFactory.getLogger("Main")
 
   parser.parse(args, Config()) map {
@@ -56,10 +57,12 @@ object Main extends App {
         case "discovery" => {
           new DiscoverCRISPRSites(args)
         }
-        case "score" => {
-          new ScoreSites(args)
+        case "tally" => {
+          new TallyScoringInformation(args)
         }
-
+        case "score" => {
+          new JustScore(args)
+        }
       }
     }
   }

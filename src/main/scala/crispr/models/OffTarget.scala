@@ -1,6 +1,7 @@
 package crispr.models
 
 import crispr.CRISPRGuide
+import scala.util.Random
 
 /**
  * Created by aaronmck on 6/18/15.
@@ -37,34 +38,42 @@ class OffTarget extends ScoreModel {
   }
 
 
-  def getScore(scores: Array[Tuple2[Double, Int]],meanDistance: Double): Double = {
+  def getScore(scores: Array[Tuple2[Double, Int]], meanDistance: Double): Double = {
     var finalScore = 100.0
-    scores.foreach{case(score,mismatch) => {
+    scores.foreach { case (score, mismatch) => {
       val termTwo = (1.0 / (((19.0 - meanDistance) / 19.0) * 4.0 + 1.0))
       val termThree = ((1.0 / (mismatch)) * (1.0 / (mismatch)))
       val thisScore = score * termTwo * termThree
       finalScore += 100.0 * thisScore
 
-    }}
-    return((100.0 /  (finalScore)) * 100.0)
+    }
+    }
+    return ((100.0 / (finalScore)) * 100.0)
   }
-
 
 
   def score_crispr(cRISPRHit: CRISPRGuide): Double = {
     val scores = scoreAgainstOffTargets(cRISPRHit)
     val distances = get_distances(cRISPRHit)
     val meanDist = distances.sum.toDouble / distances.length.toDouble
-    getScore(scores,meanDist)
+    getScore(scores, meanDist)
   }
 
 
-
-  def get_distances(cRISPRHit: CRISPRGuide): Array[Double] = {
+  def get_distances(cRISPRHit: CRISPRGuide, maxTargetsToSample: Int = 100): Array[Double] = {
     var distances = Array[Double]()
-    cRISPRHit.offBases.combinations(2).foreach{case(strings) => {
-      distances :+= CRISPRGuide.editDistance(strings(0),strings(1)).toDouble
-    }}
+
+    if (cRISPRHit.offBases.size > maxTargetsToSample) {
+      val newSubset = Random.shuffle(cRISPRHit.offBases).slice(0,maxTargetsToSample)
+      newSubset.combinations(2).foreach { case (strings) => {
+        distances :+= CRISPRGuide.editDistance(strings(0), strings(1)).toDouble
+      }}
+    }
+    else {
+      cRISPRHit.offBases.combinations(2).foreach { case (strings) => {
+        distances :+= CRISPRGuide.editDistance(strings(0), strings(1)).toDouble
+      }}
+    }
     return (distances)
   }
 }

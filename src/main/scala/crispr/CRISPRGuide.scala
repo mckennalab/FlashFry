@@ -11,7 +11,7 @@ case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxM
   var offStops = List[Int]()
   var offBases = List[String]()
   val binBases = name.slice(name.length - binSize, name.length)
-  val maxEntries = 1000
+  val maxEntries = 2500
 
   def validBin(bin:String ): Boolean = CRISPRGuide.editDistance(bin, binBases) <= maxMismatch
 
@@ -21,6 +21,9 @@ case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxM
     offStarts :+= start
     offStops :+= stop
     offBases :+= bases
+    if (offContigs.size == maxEntries) {
+      println("warning: target " + name + " is now dead to us since it has too many off-targets")
+    }
   }
 
   // is this CRISPR target still taking off-target entries? Here to speed everything up a bit

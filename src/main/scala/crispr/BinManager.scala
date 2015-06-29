@@ -14,7 +14,7 @@ class BinManager(crisprList: List[CRISPRGuide]) {
   def scoreHit(bin: String, contig: String, start: Int, stop: Int, target: String) {
     if (bin != currentBin)
       reorganizeBin(bin)
-    currentScores.foreach(hit => hit.addTarget(contig,start,stop,target))
+    currentScores.foreach(hit => if (hit.isAlive()) hit.addTarget(contig,start,stop,target))
   }
 
   def reorganizeBin(newBin: String): Unit = {

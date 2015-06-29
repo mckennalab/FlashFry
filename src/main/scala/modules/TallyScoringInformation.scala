@@ -15,7 +15,7 @@ import scala.io.Source
 /**
  * Created by aaronmck on 6/16/15.
  */
-class ScoreSites(args: Array[String]) {
+class TallyScoringInformation(args: Array[String]) {
   // parse the command line arguments
   val parser = new scopt.OptionParser[ScoreConfig]("DeepFry") {
     head("DeepFry", "1.0")
@@ -37,10 +37,6 @@ class ScoreSites(args: Array[String]) {
     opt[File]("output") required() valueName ("<file>") action {
       (x, c) => c.copy(output = Some(x))
     } text ("the output file")
-
-    opt[File]("outputTargetsOnly") required() valueName ("<file>") action {
-      (x, c) => c.copy(output = Some(x))
-    } text ("the midway output file")
 
     opt[Boolean]("noOffTarget") action {
       (x, c) => c.copy(scoreOffTarget = !(x))
@@ -92,41 +88,25 @@ class ScoreSites(args: Array[String]) {
           val count = sp(5).toInt
           if (count > 1) {
             val otherSites = sp(6).split(";")
-            otherSites.foreach{site => {
+            otherSites.foreach { site => {
               val contig = site.split(":")(0)
               val startStop = site.split(":")(1).split("-")
               targetManager.scoreHit(sp(4), contig, startStop(0).toInt, startStop(1).toInt, sp(3))
-            }}
+            }
+            }
           }
 
         }
         }
 
-      val outputMidway = new PrintWriter(config.output.get)
+      val output = new PrintWriter(config.midwayOutput.get)
       targetManager.allCRISPRs.foreach { crispr => {
         val offTargetString = crispr.reconstituteOffTargets().mkString("$")
-        outputMidway.write(crispr.toBed + "\t" + offTargetString + "\n")
-      }}
-      outputMidway.close()
-
-      // setup the scoring systems
-      val scoreSystem = Array[ScoreModel](new OnTarget(), new OffTarget())
-
-      println("scoring sites")
-      // now score each site and output it to the right file
-      val output = new PrintWriter(config.output.get)
-      targetManager.allCRISPRs.foreach { crispr => {
-        println("scoring " + crispr.name)
-        val scores = mutable.HashMap[String, String]()
-        scoreSystem.foreach { system => {
-          scores(system.scoreName()) = system.scoreGuide(crispr)
-        }
-        }
-        val offTargetString = crispr.reconstituteOffTargets().mkString("$")
-        output.write(crispr.toBed + "\t" + scores.map { case (key, value) => key + "=" + value }.mkString(";") + ";" + offTargetString + "\n")
+        output.write(crispr.toBed + "\t" + offTargetString + "\n")
       }
       }
       output.close()
+
     }
   }
 }
@@ -139,5 +119,6 @@ case class ScoreConfig(analysisType: Option[String] = None,
                        targetBed: Option[File] = None,
                        reference: Option[File] = None,
                        output: Option[File] = None,
+                       midwayOutput: Option[File] = None,
                        scoreOffTarget: Boolean = true,
                        scoreOnTarget: Boolean = true)
