@@ -2,7 +2,6 @@ package modules
 
 import java.io.{PrintWriter, File}
 
-import ch.systemsx.cisd.hdf5.{HDF5CompoundDataList, HDF5Factory}
 import crispr.PAMBuffer
 import main.scala.util.BaseCombinations
 import org.slf4j.LoggerFactory

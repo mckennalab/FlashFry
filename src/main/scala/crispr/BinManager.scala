@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 /**
  * Created by aaronmck on 6/18/15.
  */
-class BinManager(crisprList: List[CRISPRGuide]) {
+class BinManager(crisprList: Array[CRISPRGuide]) {
   var currentBin = "UNKNOWN"
   val allCRISPRs = crisprList
 

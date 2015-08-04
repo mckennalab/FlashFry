@@ -7,7 +7,10 @@ import scala.util.Random
  * Created by aaronmck on 6/18/15.
  */
 class OffTarget extends ScoreModel {
-  val offtargetCoeff = Array[Double](0.0, 0.0, 0.014, 0.0, 0.0, 0.395, 0.317, 0.0, 0.389, 0.079, 0.445, 0.508, 0.613, 0.851, 0.732, 0.828, 0.615, 0.804, 0.685, 0.583)
+  val offtargetCoeff = Array[Double](0.0, 0.0, 0.014, 0.0, 0.0,
+    0.395, 0.317, 0.0, 0.389, 0.079,
+    0.445, 0.508, 0.613, 0.851, 0.732,
+    0.828, 0.615, 0.804, 0.685, 0.583)
 
   override def scoreName(): String = "off-target"
 
@@ -66,12 +69,12 @@ class OffTarget extends ScoreModel {
     if (cRISPRHit.offBases.size > maxTargetsToSample) {
       val newSubset = Random.shuffle(cRISPRHit.offBases).slice(0,maxTargetsToSample)
       newSubset.combinations(2).foreach { case (strings) => {
-        distances :+= CRISPRGuide.editDistance(strings(0), strings(1)).toDouble
+        distances :+= CRISPRGuide.editDistance(strings(0), strings(1),strings(0).length).toDouble
       }}
     }
     else {
       cRISPRHit.offBases.combinations(2).foreach { case (strings) => {
-        distances :+= CRISPRGuide.editDistance(strings(0), strings(1)).toDouble
+        distances :+= CRISPRGuide.editDistance(strings(0), strings(1),strings(0).length).toDouble
       }}
     }
     return (distances)
