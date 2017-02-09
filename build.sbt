@@ -29,6 +29,4 @@ mainClass in (Compile, packageBin) := Some("main.scala.Main")
 // change Compile to Test to set it for 'test:run'
 mainClass in (Compile, run) := Some("main.scala.Main")
 
-//scalaHome := Some(file("/Users/aaronmck/scala-2.10.3/"))
-
 
