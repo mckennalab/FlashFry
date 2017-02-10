@@ -3,6 +3,7 @@ package bitcoding
 import java.lang.{Integer => JavaInteger}
 
 import org.scalatest._
+import standards.StandardScanParameters
 
 import scala.util.Random
 
@@ -11,12 +12,12 @@ import scala.util.Random
   */
 class BitEncodingTest extends FlatSpec with Matchers {
 
-  val encodingSize = 20
   val rando = new Random()
+  val parameterPack = StandardScanParameters.cas9ParameterPack
 
   "A Bit Encoder" should "correctly encode and decode a simple guide and count" in {
-    val strCount = StringCount("AAAAACCCCCGGGGGTTTTA",1000)
-    val encodeDevice = new BitEncoding(encodingSize)
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val decoding = encodeDevice.bitDecodeString(encoding)
@@ -26,19 +27,19 @@ class BitEncodingTest extends FlatSpec with Matchers {
   }
 
   "A Bit Encoder" should "should reject a mismatch" in {
-    val strCount = StringCount("AAAAACCCCCGGGGGTTTTT",1000)
-    val encodeDevice = new BitEncoding(encodingSize)
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val decoding = encodeDevice.bitDecodeString(encoding)
 
-    (strCount.str) should not be ("AAAAACCCCCGGGGGTTTTA")
+    (strCount.str) should not be ("AAAAA CCCCC GGGGG TTTTT GGG".filter{c => c != ' '}.mkString(""))
     (strCount.count) should be (decoding.count)
   }
 
   "A Bit Encoder" should "should reject a count difference" in {
-    val strCount = StringCount("AAAAACCCCCGGGGGTTTTT",1000)
-    val encodeDevice = new BitEncoding(encodingSize)
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val decoding = encodeDevice.bitDecodeString(encoding)
@@ -48,10 +49,10 @@ class BitEncodingTest extends FlatSpec with Matchers {
   }
 
   "A Bit Encoder" should "should successfully encode and decode a million random base strings and counts" in {
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     (0 until 100000).foreach{index => {
-      val strCount = randomStringCount(encodingSize)
+      val strCount = randomStringCount(parameterPack.totalScanLength)
 
       val encoding = encodeDevice.bitEncodeString(strCount)
       val decoding = encodeDevice.bitDecodeString(encoding)
@@ -74,8 +75,8 @@ class BitEncodingTest extends FlatSpec with Matchers {
   }
 
   "A Bit Encoder" should "should compare two identical strings as the same" in {
-    val strCount = StringCount("AAAAACCCCCGGGGGTTTTT",1000)
-    val encodeDevice = new BitEncoding(encodingSize)
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val difference = encodeDevice.mismatches(encoding, encoding)
@@ -84,10 +85,10 @@ class BitEncodingTest extends FlatSpec with Matchers {
 
   "A Bit Encoder" should "should compare two identical strings as the same, even when their counts are different" in {
 
-    val strCount = StringCount("AAAAACCCCCGGGGGTTTTT",1000)
-    val strCount2 = StringCount("AAAAACCCCCGGGGGTTTTT",1001)
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val strCount2 = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1001)
 
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val encoding2 = encodeDevice.bitEncodeString(strCount2)
@@ -97,10 +98,10 @@ class BitEncodingTest extends FlatSpec with Matchers {
 
   "A Bit Encoder" should "should compare two different strings as different by one base" in {
 
-    val strCount = StringCount("TAAAACCCCCGGGGGTTTTT",1000)
-    val strCount2 = StringCount("AAAAACCCCCGGGGGTTTTT",1001)
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val strCount2 = StringCount("TAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1001)
 
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val encoding2 = encodeDevice.bitEncodeString(strCount2)
@@ -108,12 +109,12 @@ class BitEncodingTest extends FlatSpec with Matchers {
     (difference) should be (1)
   }
 
-  "A Bit Encoder" should "should compare two different strings as different by all bases" in {
+  "A Bit Encoder" should "should compare two different strings as different by all bases that actually get compared with the set mask" in {
 
-    val strCount =  StringCount("TTTTTTTTTTTTTTTGGGGG",1000)
-    val strCount2 = StringCount("AAAAACCCCCGGGGGTTTTT",1001)
+    val strCount =  StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
+    val strCount2 = StringCount("TTTTT TTTTT AAAAA GGGGG GGG".filter{c => c != ' '}.mkString(""),1001)
 
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val encoding2 = encodeDevice.bitEncodeString(strCount2)
@@ -121,12 +122,12 @@ class BitEncodingTest extends FlatSpec with Matchers {
     (difference) should be (20)
   }
 
-  "A Bit Encoder" should "should compare two different strings as different by five bases" in {
+  "A Bit Encoder" should "should compare two different strings as different by five bases even when the pam degenerate base would add a 6th mismatch" in {
 
-    val strCount =  StringCount("TTTTTCCCCCGGGGGTTTTT",1000)
-    val strCount2 = StringCount("AAAAACCCCCGGGGGTTTTT",1001)
+    val strCount =  StringCount("AAAAA CCCCC GGGGG AAAAT AGG".filter{c => c != ' '}.mkString(""),1000)
+    val strCount2 = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1001)
 
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val encoding2 = encodeDevice.bitEncodeString(strCount2)
@@ -135,28 +136,28 @@ class BitEncodingTest extends FlatSpec with Matchers {
   }
 
   "A Bit Encoder" should "compare lots of differences correctly and quickly" in {
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     (0 until 10000).foreach{index => {
-      val strCount = randomStringCount(encodingSize)
-      val strCount2 = randomStringCount(encodingSize)
+      val strCount = randomStringCount(parameterPack.totalScanLength)
+      val strCount2 = randomStringCount(parameterPack.totalScanLength)
 
       val encoding = encodeDevice.bitEncodeString(strCount)
       val encoding2 = encodeDevice.bitEncodeString(strCount2)
 
-      val actualDifference = strCount.str.zip(strCount2.str).map{case(b1,b2) => if (b1 == b2) 0 else 1}.sum
+      val actualDifference = strCount.str.slice(0,20).zip(strCount2.str.slice(0,20)).map{case(b1,b2) => if (b1 == b2) 0 else 1}.sum
       val difference = encodeDevice.mismatches(encoding, encoding2)
       (actualDifference) should be (difference)
     }}
   }
 
   "A Bit Encoder" should "compare lots of differences quickly" in {
-    val encodeDevice = new BitEncoding(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
 
     val t0 = System.nanoTime()
     (0 until 100000).foreach{index => {
-      val strCount = randomStringCount(encodingSize)
-      val strCount2 = randomStringCount(encodingSize)
+      val strCount = randomStringCount(parameterPack.totalScanLength)
+      val strCount2 = randomStringCount(parameterPack.totalScanLength)
 
       val encoding = encodeDevice.bitEncodeString(strCount)
       val encoding2 = encodeDevice.bitEncodeString(strCount2)
@@ -168,9 +169,9 @@ class BitEncodingTest extends FlatSpec with Matchers {
   }
 
   "A Bit Encoder" should "compare 1 million of the same string quickly" in {
-    val encodeDevice = new BitEncoding(encodingSize)
-    val strCount = randomStringCount(encodingSize)
-    val strCount2 = randomStringCount(encodingSize)
+    val encodeDevice = new BitEncoding(parameterPack.totalScanLength, parameterPack.comparisonBitEncoding)
+    val strCount = randomStringCount(parameterPack.totalScanLength)
+    val strCount2 = randomStringCount(parameterPack.totalScanLength)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val encoding2 = encodeDevice.bitEncodeString(strCount2)

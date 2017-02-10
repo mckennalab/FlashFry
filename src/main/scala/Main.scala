@@ -1,7 +1,8 @@
 package main.scala
 
-import java.io.{PrintWriter, File}
-import modules.{JustScore, TallyScoringInformation, DiscoverCRISPRSites}
+import java.io.{File, PrintWriter}
+
+import modules.{DiscoverCRISPRSites, JustScore, DiscoverGenomeOffTargets, TallyScoringInformation}
 import org.slf4j._
 import scopt._
 
@@ -54,14 +55,14 @@ object Main extends App {
     config => {
 
       config.analysisType.get match {
-        case "discovery" => {
-          new DiscoverCRISPRSites(args)
+        case "discover" => {
+          new DiscoverGenomeOffTargets(args)
         }
         case "tally" => {
-          new TallyScoringInformation(args)
+          //new DiscoverGenomeOffTargets(args)
         }
         case "score" => {
-          new JustScore(args)
+          //new JustScore(args)
         }
       }
     }

@@ -2,7 +2,7 @@ package main.scala.util
 
 import java.io.File
 
-import main.scala.trie.CRISPRPrefixMap
+import prefix.CRISPRPrefixMap
 
 import scala.collection.mutable
 import scala.io.Source

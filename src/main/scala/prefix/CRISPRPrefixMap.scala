@@ -1,4 +1,4 @@
-package main.scala.trie
+package prefix
 
 /**
  * created by aaronmck on 12/10/14
@@ -28,18 +28,12 @@ package main.scala.trie
  *
  */
 
-
-// stolen from http://www.scala-lang.org/docu/files/collections-api/collections-impl_6.html
-
-import java.io.{File, BufferedInputStream, FileInputStream}
-import java.util.zip.GZIPInputStream
-
 import scala.collection._
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.{Builder, MapBuilder}
 import scala.io.Source
 import scala.pickling._
-import binary._
+import scala.pickling.binary._
 
 class CRISPRPrefixMap[T] extends mutable.Map[String, T ] with mutable.MapLike[String, T, CRISPRPrefixMap[T]] {
   var CRISPRLength: Option[Int] = None

@@ -1,9 +1,8 @@
 package test.scala
 
-import main.scala.CRISPROnTarget
-import main.scala.trie.CRISPRPrefixMap
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
+import prefix.CRISPRPrefixMap
 
 import scala.collection.Map
 import scala.io.Source

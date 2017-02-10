@@ -1,12 +1,10 @@
-package main.scala.trie
+package prefix
 
-import java.io.{File, FileInputStream, BufferedInputStream}
+import java.io.{BufferedInputStream, File, FileInputStream}
 import java.util.zip.GZIPInputStream
 
 import scala.collection.Iterator
 import scala.io.Source
-import scala.pickling._
-import binary._
 
 /**
  * created by aaronmck on 12/21/14

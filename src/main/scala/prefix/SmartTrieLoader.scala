@@ -1,9 +1,13 @@
-package main.scala
+package prefix
+
+import java.io.File
+
+import main.scala.util.BaseCombinationGenerator
 
 /**
- * created by aaronmck on 12/9/14
+ * created by aaronmck on 1/3/15
  *
- * Copyright (c) 2014, aaronmck
+ * Copyright (c) 2015, aaronmck
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,15 +31,17 @@ package main.scala
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  *
  */
+class SmartTrieLoader(inputDir: File, editDistance: Int) {
+  val ext =  ".bin"
 
-class RandoCRISPR(sz: Int) extends Iterator[String] {
-  def hasNext() = true
-  val seed = System.currentTimeMillis
-  val r = new scala.util.Random(seed)
-  println("Seed is " + seed)
-  def next(): String = (0.until(sz)).map{ct => numberToBase(r.nextInt(4))}.mkString("")
+  // check to see if the input directory contains bins for each edit distance
+  val allExist = (new BaseCombinationGenerator(editDistance)).map { case (bs) => (new File(inputDir.getAbsolutePath + File.separator + bs + ext)).exists()}.foldLeft(true)(_ & _)
 
-  def numberToBase(nt: Int): Char = if (nt == 0) 'A' else if (nt == 1) 'C' else if (nt == 2) 'G' else 'T'
-  def baseToNumber(nt: Char): Int = if (nt == 'A') 0 else if (nt == 'C') 1 else if (nt == 'G') 2 else 3
+
 
 }
+
+object SmartTrieLoader {
+  def intToBase(v: Int): String = if (v == 0) "A" else if (v == 1) "C" else if (v == 2) "G" else if (v == 3) "T" else "N"
+}
+

@@ -4,8 +4,6 @@ version := "1.0"
 
 scalaVersion := "2.11.4"
 
-seq(com.github.retronym.SbtOneJar.oneJarSettings: _*)
-
 unmanagedBase <<= baseDirectory { base => base / "project" }
 
 libraryDependencies += "org.apache.commons" % "commons-collections4" % "4.0"

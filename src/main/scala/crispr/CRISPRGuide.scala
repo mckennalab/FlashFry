@@ -1,6 +1,6 @@
 package crispr
 
-import main.scala.util.BaseCombinations
+import main.scala.util.BaseCombinationGenerator
 
 /**
  * our CRISPR hit

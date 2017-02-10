@@ -2,15 +2,13 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import crispr.models.{ScoreModel, OnTarget, OffTarget}
-import crispr.{CRISPRGuide, BinManager, CRISPRGuide$}
-import main.scala.bin.BinIterator
-import main.scala.trie.CRISPRPrefixMap
+import crispr.models.{OffTarget, OnTarget, ScoreModel}
+import crispr.{BinManager, CRISPRGuide}
 import main.scala.util.Utils
 import main.scala.util.Utils.fileToString
-
-import main.scala.{CRISPROnTarget, Config}
+import main.scala.Config
 import org.slf4j.LoggerFactory
+import prefix.CRISPRPrefixMap
 
 import scala.collection.mutable
 import scala.io.Source

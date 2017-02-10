@@ -1,6 +1,6 @@
 package test.scala.crispr
 
-import main.scala.util.BaseCombinations
+import main.scala.util.BaseCombinationGenerator
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers._
 import org.scalatest.matchers.ShouldMatchers
@@ -16,7 +16,7 @@ class BinManagerTest extends FlatSpec with ShouldMatchers {
     val sizeOfIter = 7
 
     val events = new mutable.HashMap[String, Boolean]()
-    val baseIterator = new BaseCombinations(sizeOfIter)
+    val baseIterator = new BaseCombinationGenerator(sizeOfIter)
 
     baseIterator.foreach { iter => {
       assert(!(events contains iter))

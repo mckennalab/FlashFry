@@ -1,10 +1,9 @@
 package crispr.models
 
-import main.scala.CRISPROnTarget
-import main.scala.trie.CRISPRPrefixMap
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers._
 import org.scalatest.matchers.ShouldMatchers
+import prefix.CRISPRPrefixMap
 
 /**
  * Created by aaronmck on 6/18/15.

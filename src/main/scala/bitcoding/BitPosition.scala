@@ -1,6 +1,9 @@
 package bitcoding
 
+import java.io.{IOException, PrintWriter}
+
 import scala.collection.mutable
+import scala.io.Source
 
 /**
   * the bit position mapping
@@ -29,4 +32,34 @@ class BitPosition {
     val contig = indexToContig((encoding >> 32).toInt)
     (contig,(encoding & mask).toInt)
   }
+
+}
+
+object BitPosition {
+
+  def toFile(bitPos: BitPosition, outputFile: String): Unit = {
+    val pr = new PrintWriter(outputFile)
+    (1 until bitPos.nextSeqId).foreach{index => {
+      pr.write(index + "\t" + bitPos.indexToContig(index) + "\n")
+    }}
+
+    pr.close()
+  }
+
+  def fromFile(inputFile: String): BitPosition = {
+    try {
+      val bitPos = new BitPosition()
+      Source.fromFile(inputFile).getLines().foreach { line => {
+        val sp = line.split("\t")
+        bitPos.addReference(sp(1))
+      }
+      }
+      bitPos
+    } catch {
+      case e: IOException => throw new IllegalStateException("Unable to load position mapping file: " + inputFile)
+    }
+
+  }
+
+  def positionExtension = ".bitPositionFile"
 }

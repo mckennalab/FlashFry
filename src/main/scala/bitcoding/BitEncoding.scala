@@ -23,10 +23,13 @@ object BitEncoding {
 
   val stringMaskHighBits = 0xAAAAAAAAAAAAl
   val stringMaskLowBits =  0x555555555555l
+
+
 }
 
-class BitEncoding(encodingSize: Int) {
+class BitEncoding(encodingSize: Int, encodingComparisonMask: Long) {
   val encodingLen = encodingSize
+  val compMask = encodingComparisonMask & BitEncoding.stringMask
 
   /**
     * encode our target string and count into a 64-bit Long
@@ -57,6 +60,8 @@ class BitEncoding(encodingSize: Int) {
     (encodedString & BitEncoding.stringMask) | ((count.toLong << 48))
   }
 
+  def getCount(encoding: Long): Short = (encoding >> 48).toShort
+
   /**
     * decode the string and count into an object
     * @param encoding the encoding as a long
@@ -78,7 +83,7 @@ class BitEncoding(encodingSize: Int) {
   }
 
   /**
-    * return the number of mismatches between two strings, encoded as long values --
+    * return the number of mismatches between two strings, encoded as long values, given our set comparison mask --
     * I wish we could use the underlying POPCNT of the system for speed but we need two bit bit tests
     *
     * @param encoding1 the first string encoded as a long
@@ -86,7 +91,7 @@ class BitEncoding(encodingSize: Int) {
     * @return their differences, as a number of bases
     */
   def mismatches(encoding1: Long, encoding2: Long): Int = {
-    val xORed = (encoding1 & BitEncoding.stringMask) ^ (encoding2 & BitEncoding.stringMask) // ^ is XOR
+    val xORed = (encoding1 & compMask) ^ (encoding2 & compMask) // ^ is XOR
     var diff = 0
     (0 until BitEncoding.stringLimit).foreach{index =>
       if (((xORed >> (index * 2)) & 0x3) > 0) diff += 1
