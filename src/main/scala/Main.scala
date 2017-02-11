@@ -2,7 +2,7 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
-import modules.{DiscoverCRISPRSites, JustScore, DiscoverGenomeOffTargets, TallyScoringInformation}
+import modules.{DiscoverCRISPROTSites, JustScore, DiscoverGenomeOffTargets, TallyScoringInformation}
 import org.slf4j._
 import scopt._
 
@@ -59,7 +59,7 @@ object Main extends App {
           new DiscoverGenomeOffTargets(args)
         }
         case "tally" => {
-          //new DiscoverGenomeOffTargets(args)
+          new DiscoverCRISPROTSites(args)
         }
         case "score" => {
           //new JustScore(args)

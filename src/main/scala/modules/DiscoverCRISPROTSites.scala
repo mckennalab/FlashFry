@@ -2,12 +2,13 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import bitcoding.BitPosition
+import bitcoding.{BitEncoding, BitPosition}
 import crispr.PAMBuffer
 import main.scala.util.BaseCombinationGenerator
 import org.slf4j.LoggerFactory
-import reference.CRISPRSite
+import reference.{CRISPRSite, ReferenceEncoder}
 import reference.binary.ScanAgainstBinary
+import reference.gprocess.GuideStorage
 import standards.StandardScanParameters
 
 import scala.collection.mutable
@@ -16,10 +17,10 @@ import scala.io.Source
 /**
  * Created by aaronmck on 6/16/15.
  */
-class DiscoverCRISPRSites(args: Array[String]) {
+class DiscoverCRISPROTSites(args: Array[String]) {
   // parse the command line arguments
-  val parser = new scopt.OptionParser[DiscoverConfig]("DiscoverSites") {
-    head("DiscoverSites", "1.0")
+  val parser = new scopt.OptionParser[DiscoverConfig]("DiscoverOTSites") {
+    head("DiscoverOTSites", "1.0")
 
     // *********************************** Inputs *******************************************************
     opt[String]("analysis") required() valueName ("<string>") action {
@@ -38,7 +39,7 @@ class DiscoverCRISPRSites(args: Array[String]) {
     help("help") text ("prints the usage information you see here")
   }
 
-  val logger = LoggerFactory.getLogger("Main")
+  val logger = LoggerFactory.getLogger("DiscoverCRISPRSites")
 
   parser.parse(args, DiscoverConfig()) map {
     config => {
@@ -47,20 +48,29 @@ class DiscoverCRISPRSites(args: Array[String]) {
       val params = StandardScanParameters.nameToParameterPack(config.enzyme)
 
       // first load up their input file, and scan for any potential targets
+      val guideHits = new GuideStorage()
+      val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params)
 
-      /**
-        * def scanAgainst(binaryFile: File,
-                  targets: Array[CRISPRSite],
-                  maxMismatch: Int,
-                  configuration: ParameterPack,
-                  bitCoder: BitEncoding,
-                  posCoder: BitPosition): Map[CRISPRSite,CRISPRSiteOT] = {
-        */
-
+      // get our position encoder and bit encoder setup
       val positionEncoder = BitPosition.fromFile(config.binaryOTFile + BitPosition.positionExtension)
+      val bitEcoding = new BitEncoding(params)
 
-      // take this target list and score against the known binary file
-      //ScanAgainstBinary.scanAgainst(new File(config.binaryOTFile),Array[CRISPRSite](),config.maxMismatch,params,)
+      // take this target list and tally against the known binary file
+      println("scanning..")
+      val mapping = ScanAgainstBinary.scanAgainst(new File(config.binaryOTFile),guideHits.guideHits.toArray,config.maxMismatch,params,bitEcoding,positionEncoder)
+
+      // now given the array of scoring critia, score those sites, and output each scoring schemes normalized score, plus the total score output
+      //val outputScoreArray =
+
+      // now output the scores per site
+      val outputToScore = new PrintWriter(config.outputFile)
+      mapping.foreach{case(tgt,otList) => {
+        outputToScore.write(tgt.to_output + "\t" + otList.offTargets.map{ot => {
+          bitEcoding.bitDecodeString(ot.sequence).str + "_" + bitEcoding.bitDecodeString(ot.sequence).count
+        }}.mkString(",")
+        + "\n"
+        )
+      }}
 
       }
   }

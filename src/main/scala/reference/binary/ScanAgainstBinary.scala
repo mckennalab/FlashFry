@@ -23,32 +23,50 @@ object ScanAgainstBinary {
                   bitCoder: BitEncoding,
                   posCoder: BitPosition): Map[CRISPRSite,CRISPRSiteOT] = {
 
-    val iStream = new DataInputStream(new FileInputStream(binaryFile))
+    val stream = new FileInputStream(binaryFile)
+    val inChannel = stream.getChannel()
+
+    // read the header of our file into a buffer
+    val buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size())
+    buffer.order( ByteOrder.BIG_ENDIAN )
+    val longBuffer = buffer.asLongBuffer( )
+
+    val headerResult = new Array[Long](3)
+
+
+    longBuffer.get(headerResult)
 
     // some header information
-    if (iStream.readLong() != BinaryConstants.magicNumber)
+    if (headerResult(0) != BinaryConstants.magicNumber)
       throw new IllegalStateException("Binary file " + binaryFile.getAbsolutePath + " doesn't have the magic number expected at the top of the file")
 
-    val version = iStream.readLong()
+    val version = headerResult(1)
     if (version != BinaryConstants.version)
       throw new IllegalStateException("Binary file " + binaryFile.getAbsolutePath + " doesn't have the correct version: " + version + " expecting " + BinaryConstants.version)
 
-    val binCount = iStream.readLong()
+    val binCount = headerResult(2)
     val binWidth = (math.log(binCount)/math.log(4)).toInt
     println("Number of characters used for binning " + binWidth)
 
     val binLookup = new mutable.LinkedHashMap[String,Long]()
     val binGenerator = BaseCombinationGenerator(binWidth)
+    val binResult = new Array[Long](binCount.toInt)
+    longBuffer.get(binResult)
+
     binGenerator.iterator.zipWithIndex.foreach{case(bin,index) => {
-      binLookup(bin) = iStream.readLong()
+      binLookup(bin) = binResult(index)
     }}
 
     if (binLookup.size != binCount)
       throw new IllegalStateException("Bin lookup container of size " + binLookup.size + " != expected size " + binCount)
-    iStream.close()
+
 
     // where we collect the off-target htis
     val siteSequenceToSite = targets.map{tgt => (bitCoder.bitEncodeString(StringCount(tgt.bases,1)),new CRISPRSiteOT(tgt))}.toMap
+    println("scoring " + targets.size + " targets")
+    var comparisons = 0l
+    val formatter = java.text.NumberFormat.getInstance()
+    var t0 = System.nanoTime()
 
     binGenerator.iterator.zipWithIndex.foreach{case(bin,index) => {
       // what targets do we want to score in this bin
@@ -60,39 +78,57 @@ object ScanAgainstBinary {
 
       // now seek to that bin, and read out the sequences there, and compare to our
       try {
-        val stream = new FileInputStream(binaryFile)
-        val inChannel = stream.getChannel()
 
-        val buffer = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
+        //println("Loading bin " + bin + " with count " + binLookup(bin))
+        val result = new Array[Long](binLookup(bin).toInt)
 
-        val longsToGet = binLookup(bin) / BinaryConstants.bytesPerTarget
-        val result = new Array[Long](longsToGet.toInt)
-
-        buffer.order( ByteOrder.BIG_ENDIAN )
-        val longBuffer = buffer.asLongBuffer( )
         longBuffer.get(result)
 
         var offset = 0
-        while (offset < longsToGet) {
+        var mismatchesAdded = 0
+        var targetsLookedAt = 0
+        var counts = 0
+
+
+        while (offset < binLookup(bin)) {
+
           val target = result(offset)
+          targetsLookedAt += 1
           val coordinatesSize = bitCoder.getCount(target)
+          counts += coordinatesSize
           val coordinatesArray = result.slice(offset + 1, offset + 1 + coordinatesSize)
+          //println(bitCoder.bitDecodeString(target).str + " = " + bitCoder.bitDecodeString(target).count)
 
           // now check each target we have -- what's their distance
-          targetsToScore.foreach{targetEncoding => {
-            if (bitCoder.mismatches(targetEncoding,target) <= maxMismatch) {
-              siteSequenceToSite(targetEncoding).addOT(CRISPRHit(target,coordinatesArray))
-            }
-          }}
 
+          var index = 0
+
+          while (index < targetsToScore.size) {
+            val mismatches = bitCoder.mismatches(targetsToScore(index), target)
+            comparisons += 1
+            if (mismatches <= maxMismatch) {
+              siteSequenceToSite(targetsToScore(index)).addOT(CRISPRHit(target, coordinatesArray))
+              mismatchesAdded += 1
+            }
+
+            index += 1
+          }
           offset += 1 + coordinatesSize
         }
-        var target = result(0)
+
+        //println("mismatchesAdded " + mismatchesAdded + " targets looked at " + targetsLookedAt + " counts " + counts + " size " + binLookup(bin).toInt)
+        //var target = result(0)
       } catch {
         case e: Exception => {
           e.printStackTrace()
-          throw new IllegalStateException("UNable to work with binary file")
+          throw new IllegalStateException("Exception generated from processing binary file")
         }
+      }
+      if (index % 1000 == 0 ) {
+
+        println("Scoring our " + formatter.format(index) + "th bin of " + formatter.format(binCount) + " total, off-targets with prefix " +
+          bin + ", ran " + formatter.format(comparisons) + " guide comparisons so far. taking " + ((System.nanoTime() - t0)/1000000000.0) + " seconds")
+        t0 = System.nanoTime()
       }
     }}
 

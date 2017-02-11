@@ -49,7 +49,7 @@ class DiscoverGenomeOffTargets(args: Array[String]) {
       val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params)
 
       // sort them into an output file
-      val totalOutput = File.createTempFile(config.tmp + File.separator + "totalFile",".txt")
+      val totalOutput = File.createTempFile("totalFile",".txt",new File(config.tmp))
       println("Creating output file " + totalOutput)
 
       //totalOutput.deleteOnExit()
@@ -59,7 +59,7 @@ class DiscoverGenomeOffTargets(args: Array[String]) {
       val searchBinGenerator = BaseCombinationGenerator(config.binSize)
 
       // then process this total file into a binary file
-      BinarySiteWriter.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params.pam, params.fivePrimePam)
+      BinarySiteWriter.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
 
       // now write the position encoder information to a companion file
       BitPosition.toFile(encoders._2, config.output + BitPosition.positionExtension)

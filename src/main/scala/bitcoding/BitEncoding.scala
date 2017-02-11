@@ -2,6 +2,8 @@ package bitcoding
 
 import java.lang.{Long => JavaLong}
 
+import standards.ParameterPack
+
 import scala.annotation.switch
 
 /**
@@ -27,9 +29,9 @@ object BitEncoding {
 
 }
 
-class BitEncoding(encodingSize: Int, encodingComparisonMask: Long) {
-  val encodingLen = encodingSize
-  val compMask = encodingComparisonMask & BitEncoding.stringMask
+class BitEncoding(parameterPack: ParameterPack) {
+  val encodingLen = parameterPack.totalScanLength
+  val compMask = parameterPack.comparisonBitEncoding & BitEncoding.stringMask
 
   /**
     * encode our target string and count into a 64-bit Long
@@ -93,8 +95,12 @@ class BitEncoding(encodingSize: Int, encodingComparisonMask: Long) {
   def mismatches(encoding1: Long, encoding2: Long): Int = {
     val xORed = (encoding1 & compMask) ^ (encoding2 & compMask) // ^ is XOR
     var diff = 0
-    (0 until BitEncoding.stringLimit).foreach{index =>
+
+    // this is 5X faster than a foreach lookp
+    var index = 0
+    while (index < BitEncoding.stringLimit) {
       if (((xORed >> (index * 2)) & 0x3) > 0) diff += 1
+      index += 1
     }
     diff
   }

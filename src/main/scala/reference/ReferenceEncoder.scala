@@ -15,44 +15,48 @@ import scala.io._
 object ReferenceEncoder {
   val logger = LoggerFactory.getLogger("ReferenceEncoder")
 
-  def findTargetSites(reference: File, binWriter: GuideWriter, params: ParameterPack): Tuple2[BitEncoding,BitPosition] = {
+  def findTargetSites(reference: File, binWriter: GuideWriter, params: ParameterPack): Tuple2[BitEncoding, BitPosition] = {
 
-    val bitEncoder = new BitEncoding(params.totalScanLength, params.comparisonBitEncoding)
+    val bitEncoder = new BitEncoding(params)
     val posEncoder = new BitPosition()
     val cls = CRISPRCircle(binWriter, params)
 
-    Source.fromFile(reference).getLines().foreach{line => {
+    Source.fromFile(reference).getLines().foreach { line => {
       if (line.startsWith(">")) {
-        logger.info("Switching to chromosome " + line)
+        println("Switching to chromosome " + line)
         posEncoder.addReference(line.stripPrefix(">").split(" ")(0))
-        cls.reset(line.split(" ")(0).slice(1,line.split(" ")(0).length))
+        cls.reset(line.split(" ")(0).slice(1, line.split(" ")(0).length))
       } else {
         cls.addLine(line.toUpperCase)
       }
-    }}
+    }
+    }
     logger.info("Done looking for targets")
-    (bitEncoder,posEncoder)
+    (bitEncoder, posEncoder)
   }
 }
 
 
-
-
-
-
 // --------------------------------------------------------------------------------------------
 // this class finds potential CRISPR cutsites in the genome -- we use a rolling (circular)
-// buffer to speed things up
+// buffer to speed things up. This class is really ugly in places, but it morphed from canonical
+// scala for speed reasons
 // --------------------------------------------------------------------------------------------
 case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
 
   val revCompPam = reverseCompString(params.pam)
+  val compPam = compString(params.pam)
   val cutSiteFromEnd = 6
   var stack = new Array[Char](params.totalScanLength)
   var currentPos = 0
   var contig = "UNKNOWN"
 
-  def addLine(line: String) {line.foreach{chr => {addBase(chr)}}}
+  def addLine(line: String) {
+    line.foreach { chr => {
+      addBase(chr)
+    }
+    }
+  }
 
   /**
     * add a base to our circular buffer
@@ -61,9 +65,10 @@ case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
     stack(currentPos % params.totalScanLength) = chr
     currentPos += 1
     if (currentPos >= params.totalScanLength)
-      checkCRISPR().foreach{ct => {
+      checkCRISPR().foreach { ct => {
         binWriter.addHit(ct)
-      }}
+      }
+      }
   }
 
   def reset(cntig: String) {
@@ -71,11 +76,45 @@ case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
     currentPos = 0
   }
 
+  /**
+    * check both ends of a string for the specified pam sequence
+    * @param pam the pam sequence
+    * @param compPam the complement of the pam
+    * @return true if we match on either strand
+    */
+  def checkForPAM(pam: String, compPam: String): Boolean = {
+    {
+      var hits = 0
+      var bases = 0
+      while (bases < pam.size) {
+        if (stack((currentPos - params.totalScanLength + bases) % params.totalScanLength) == pam(bases))
+          hits += 1
+        bases += 1
+      }
+      hits == params.pam.size
+    } || {
+      var rhits = 0
+      var rbases = 1
+      while (rbases <= compPam.size) {
+        if (stack((currentPos - rbases) % params.totalScanLength) == compPam(params.pam.size - rbases))
+          rhits += 1
+        rbases += 1
+      }
+      rhits == params.pam.size
+    }
+
+  }
+
+
   def checkCRISPR(): Array[CRISPRSite] = {
-    val str = toTarget()
-    if (str.map{base => if (base == 'A' || base == 'C' || base == 'G' || base == 'T') 0 else 1}.sum > 0)
+
+    val matched = if (params.fivePrimePam) checkForPAM(params.pam, compPam) else checkForPAM(compPam, params.pam)
+
+    if (!matched || stack.map { base => if (base == 'A' || base == 'C' || base == 'G' || base == 'T') 0 else 1 }.sum > 0)
       return Array[CRISPRSite]()
 
+
+    val str = toTarget()
     var ret = Array[CRISPRSite]()
 
     if (!params.fivePrimePam) {
@@ -94,11 +133,18 @@ case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
   }
 
   // utilities to reverse complement
-  def reverseComp(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'T') 'A' else c
-  def reverseCompString(str: String): String = str.map{reverseComp(_)}.reverse.mkString
+  def compBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'T') 'A' else c
+
+  def compString(str: String): String = str.map {
+    compBase(_)
+  }.mkString
+
+  def reverseCompString(str: String): String = str.map {
+    compBase(_)
+  }.reverse.mkString
 
   // create a target string from the buffer
-  def toTarget(): String = stack.slice(currentPos % params.totalScanLength,params.totalScanLength).mkString + stack.slice(0,currentPos % params.totalScanLength).mkString.toUpperCase()
+  def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString + stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
 
 }
 

@@ -4,6 +4,7 @@ import java.io.{DataOutputStream, FileOutputStream, RandomAccessFile}
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import main.scala.util.BaseCombinationGenerator
+import standards.ParameterPack
 
 import scala.collection.mutable
 import scala.io.Source
@@ -20,8 +21,8 @@ object BinarySiteWriter {
                         bitEncoder: BitEncoding,
                         positionEncoder: BitPosition,
                         binGenerator: BaseCombinationGenerator,
-                        pam: String,
-                        fivePrimePam: Boolean = false): Unit = {
+                        parameterPack: ParameterPack,
+                        maxGenomicLocationsPerTarget: Int = 500): Unit = {
 
     val oStream = new DataOutputStream(new FileOutputStream(output))
 
@@ -41,33 +42,49 @@ object BinarySiteWriter {
     val binIterator = binGenerator.iterator
     val inputFile = Source.fromFile(inputSortedBed).getLines()
     val guidesPerBin = new mutable.HashMap[String, Int]()
-    val bytesPerBin = new mutable.HashMap[String, Int]()
+    val longsPerBin = new mutable.HashMap[String, Int]()
 
     var currentBin = binIterator.next() // unprotected call, but we should have at least one bin
 
     var lastGuide = 0l
     var positions = mutable.ArrayBuilder.make[Long]()
-
+    var guideEncoding = 0l
+    var positionEncoding = 0l
 
     // iterate over every line in the input file, assigning it to the right bin
+    var totalGuides = 0
+
     inputFile.foreach{line => {
+      totalGuides += 1
       val sp = line.split("\t")
-      val justTargetNoPam = if (fivePrimePam) sp(3).slice(pam.size,sp(3).size) else sp(3).slice(0,sp(3).size - pam.size)
-      val binSeqInTarget = justTargetNoPam.slice(0,binGenerator.width)
+      //val justTargetNoPam = if (parameterPack.fivePrimePam) sp(3).slice(parameterPack.pam.size,sp(3).size) else sp(3).slice(0,sp(3).size - parameterPack.pam.size)
+      //val binSeqInTarget = justTargetNoPam.slice(0,binGenerator.width)
+      val justTarget = sp(3)
+      val binSeqInTarget = if (parameterPack.fivePrimePam) justTarget.slice(parameterPack.pam.size,parameterPack.pam.size + binGenerator.width) else justTarget.slice(0,binGenerator.width)
 
-      val guideEncoding = bitEncoder.bitEncodeString(StringCount(justTargetNoPam,1))
-      val positionEncoding = positionEncoder.encode(sp(0),sp(1).toInt)
+      guideEncoding = bitEncoder.bitEncodeString(StringCount(justTarget,1))
+      positionEncoding = positionEncoder.encode(sp(0),sp(1).toInt)
 
-      // are we a repeat?
+      // are we the first guide
+      if (lastGuide == 0l) {
+        lastGuide = guideEncoding
+
+      }
+
+      // are we a repeat? then add to the tally
       if (guideEncoding == lastGuide) {
         positions += positionEncoding
       }
       // we're not a repeated guide, so output the last guide and reset our counters. are we still in the bin?
       else {
-        val positionsRendered = positions.result()
-        val bytesUsed = BinaryConstants.bytesPerTarget + (BinaryConstants.bytesPerGenomeLocation * positionsRendered.size)
+        var positionsRendered = positions.result()
+        if (positionsRendered.size > maxGenomicLocationsPerTarget)
+          positionsRendered = positionsRendered.slice(0,maxGenomicLocationsPerTarget)
+        val longsUsed = 1 + positionsRendered.size
 
         // write to our binary file
+        lastGuide = bitEncoder.bitEncodeString(StringCount(bitEncoder.bitDecodeString(lastGuide).str,positionsRendered.size.toShort))
+
         oStream.writeLong(lastGuide)
         positionsRendered.foreach{pos => oStream.writeLong(pos)}
 
@@ -78,8 +95,7 @@ object BinarySiteWriter {
 
         // update the byte offsets
         guidesPerBin(currentBin) = guidesPerBin.getOrElse(currentBin,0) + 1
-        bytesPerBin(currentBin) = bytesPerBin.getOrElse(currentBin,0) + bytesUsed
-
+        longsPerBin(currentBin) = longsPerBin.getOrElse(currentBin,0) + longsUsed
       }
 
       // if our current bin not match our guide bin sequence anymore, move it to the next bin that matches, saving
@@ -91,15 +107,40 @@ object BinarySiteWriter {
           throw new IllegalStateException("We've iterated off the end of the iterator, this shouldn't happen")
 
         guidesPerBin(currentBin) = 0
-        bytesPerBin(currentBin) = 0
+        longsPerBin(currentBin) = 0
       }
     }}
+
+    // output the last guide too
+    if (lastGuide != 0l) {
+      var positionsRendered = positions.result()
+      if (positionsRendered.size > maxGenomicLocationsPerTarget)
+        positionsRendered = positionsRendered.slice(0,maxGenomicLocationsPerTarget)
+      val longsUsed = 1 + positionsRendered.size
+
+      // write to our binary file
+      lastGuide = bitEncoder.bitEncodeString(StringCount(bitEncoder.bitDecodeString(lastGuide).str,positionsRendered.size.toShort))
+
+      oStream.writeLong(lastGuide)
+      positionsRendered.foreach{pos => oStream.writeLong(pos)}
+
+      // clear our set our position storage and last guide
+      lastGuide = guideEncoding
+      positions.clear()
+      positions += positionEncoding
+
+      // update the byte offsets
+      guidesPerBin(currentBin) = guidesPerBin.getOrElse(currentBin,0) + 1
+      longsPerBin(currentBin) = longsPerBin.getOrElse(currentBin,0) + longsUsed
+    }
+
+    println("Total guides " + totalGuides)
 
     // if we finished before we ran out of bins, add those as zeros
     while(binIterator.hasNext) {
       val finalBin = binIterator.next()
       guidesPerBin(finalBin) = 0
-      bytesPerBin(finalBin) = 0
+      longsPerBin(finalBin) = 0
     }
 
 
@@ -113,11 +154,10 @@ object BinarySiteWriter {
 
     // now for each bin, write it out the binary offset
     val binIterator2 = binGenerator.iterator
-    var totalOffset = (24 + (binCount * 8)).toLong
     while (binIterator2.hasNext) {
-      reopenStream.writeLong(totalOffset)
       val bn = binIterator2.next()
-      totalOffset += bytesPerBin(bn)
+      reopenStream.writeLong(longsPerBin(bn))
+
     }
 
     // close the stream

@@ -11,7 +11,7 @@ import scala.collection.mutable
   */
 class GuideStorage extends GuideWriter {
   val guideHits = new mutable.ArrayBuffer[CRISPRSite]()
-  override def addHit(cRISPRSite: CRISPRSite): Unit = guideH
+  override def addHit(cRISPRSite: CRISPRSite): Unit = guideHits += cRISPRSite
 
-  override def close(outputFile: File): Unit = ???
+  override def close(outputFile: File): Unit = {/* haha do nothing */}
 }

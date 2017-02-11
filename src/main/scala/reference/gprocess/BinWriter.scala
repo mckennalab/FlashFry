@@ -22,7 +22,7 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
   val binSuffix = ".txt"
 
   binGenerator.iterator.foreach{bin => {
-    binToFile(bin) = File.createTempFile(tempLocation + File.separator + binPrefix + bin , binSuffix)
+    binToFile(bin) = File.createTempFile(binPrefix + bin , binSuffix, tempLocation)
     binToWriter(bin) = new PrintWriter(binToFile(bin).getAbsolutePath)
   }}
 
