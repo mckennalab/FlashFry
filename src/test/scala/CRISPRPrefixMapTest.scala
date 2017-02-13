@@ -2,7 +2,7 @@ package test.scala
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import prefix.CRISPRPrefixMap
+import tree.CRISPRPrefixMap
 
 import scala.collection.Map
 import scala.io.Source

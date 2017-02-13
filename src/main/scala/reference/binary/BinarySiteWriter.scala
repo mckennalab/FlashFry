@@ -3,6 +3,7 @@ package reference.binary
 import java.io.{DataOutputStream, FileOutputStream, RandomAccessFile}
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
+import com.typesafe.scalalogging.LazyLogging
 import main.scala.util.BaseCombinationGenerator
 import standards.ParameterPack
 
@@ -13,7 +14,7 @@ import scala.math._
 /**
   * write a somewhat compact (and indexed) storage for our genomic targets
   */
-object BinarySiteWriter {
+object BinarySiteWriter extends LazyLogging {
 
   // write the data out to a binned file
   def writeToBinnedFile(inputSortedBed: String,
@@ -134,7 +135,7 @@ object BinarySiteWriter {
       longsPerBin(currentBin) = longsPerBin.getOrElse(currentBin,0) + longsUsed
     }
 
-    println("Total guides " + totalGuides)
+    logger.info("Total guides " + totalGuides)
 
     // if we finished before we ran out of bins, add those as zeros
     while(binIterator.hasNext) {

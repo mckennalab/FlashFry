@@ -1,8 +1,9 @@
 package reference
 
-import crispr.models.OnTarget
+import models.OnTarget
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
+import reference.filter.HitFilter
 import reference.gprocess.GuideStorage
 import standards.StandardScanParameters
 
@@ -14,7 +15,7 @@ class CRISPRCircleTest extends FlatSpec with ShouldMatchers {
     val string = "TTTA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cpf1ParameterPack)
+    val circ = CRISPRCircle(guideStore,StandardScanParameters.cpf1ParameterPack, Array[HitFilter]())
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
@@ -25,7 +26,7 @@ class CRISPRCircleTest extends FlatSpec with ShouldMatchers {
     val string = "AAAAA CCCCC GGGGG TTTTA CAAA".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cpf1ParameterPack)
+    val circ = CRISPRCircle(guideStore,StandardScanParameters.cpf1ParameterPack, Array[HitFilter]())
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
@@ -36,7 +37,7 @@ class CRISPRCircleTest extends FlatSpec with ShouldMatchers {
     val string = "AAAAA CCCCC GGGGG TTTTA CGG".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cas9ParameterPack)
+    val circ = CRISPRCircle(guideStore,StandardScanParameters.cas9ParameterPack, Array[HitFilter]())
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
@@ -47,7 +48,7 @@ class CRISPRCircleTest extends FlatSpec with ShouldMatchers {
     val string = "CCA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cas9ParameterPack)
+    val circ = CRISPRCircle(guideStore,StandardScanParameters.cas9ParameterPack, Array[HitFilter]())
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)

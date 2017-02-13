@@ -2,21 +2,22 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import crispr.models.{OffTarget, OnTarget, ScoreModel}
+import com.typesafe.scalalogging.LazyLogging
+import models.{OffTarget, OnTarget, ScoreModel}
 import crispr.{BinManager, CRISPRGuide}
 import main.scala.util.Utils
 import main.scala.util.Utils.fileToString
 import main.scala.Config
 import org.slf4j.LoggerFactory
-import prefix.CRISPRPrefixMap
+import tree.CRISPRPrefixMap
 
 import scala.collection.mutable
 import scala.io.Source
 
 /**
- * Created by aaronmck on 6/16/15.
+ * Given a reference genome, tally up off-targets against a list of targets
  */
-class TallyScoringInformation(args: Array[String]) {
+class TallyScoringInformation(args: Array[String]) extends LazyLogging {
   // parse the command line arguments
   val parser = new scopt.OptionParser[ScoreConfig]("DeepFry") {
     head("DeepFry", "1.0")
@@ -59,18 +60,17 @@ class TallyScoringInformation(args: Array[String]) {
     note("Find CRISPR targets across the specified genome\n")
     help("help") text ("prints the usage information you see here")
   }
-  val logger = LoggerFactory.getLogger("ScoreSites")
 
   parser.parse(args, ScoreConfig()) map {
     config => {
       // read in each of the target CRISPRs
       // ---------------------------------------------------------------------------------------------------------------------------------------
-      println("Loading targets and precomputing hit bins for each (this takes some time) from " + config.targetBed.get.getAbsolutePath)
+      logger.info("Loading targets and precomputing hit bins for each (this takes some time) from " + config.targetBed.get.getAbsolutePath)
       var lineCount = 0
       var crisprs = Array[CRISPRGuide]()
       Utils.inputSource(config.targetBed.get.getAbsolutePath).getLines().foreach{ ln => {
         val sp = ln.split("\t")
-        if (lineCount % 1000 == 0) println("targets read in so far = " + lineCount)
+        if (lineCount % 1000 == 0) logger.info("targets read in so far = " + lineCount)
         lineCount += 1
 
         if (sp.length > 3 &&
@@ -79,15 +79,15 @@ class TallyScoringInformation(args: Array[String]) {
           val guide = sp(3).slice(0, 20)
           crisprs :+= CRISPRGuide(sp(0), sp(1).toInt, sp(2).toInt, guide)
         } else {
-          println("Dropped line " + ln)
+          logger.info("Dropped line " + ln)
         }
       }}
 
-      println("creating manager for " + crisprs.size + " guides (post GC filter)")
+      logger.info("creating manager for " + crisprs.size + " guides (post GC filter)")
       // Create a manager for our targets
       val targetManager = new BinManager(crisprs)
 
-      println("walking through genomic sites")
+      logger.info("walking through genomic sites")
       lineCount = 0
       // now process the input file line by line
       // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ class TallyScoringInformation(args: Array[String]) {
       Utils.inputSource(config.genomeBed.get).getLines().foreach { ln => {
         if (lineCount % lineCounter == 0 && lineCount != 0) {
           val curTime = System.nanoTime()
-          println("Processed " + lineCount / lineCounter + " million genomic target sites (" + ((curTime - oldTime) / 1000000000) + " seconds per million)")
+          logger.info("Processed " + lineCount / lineCounter + " million genomic target sites (" + ((curTime - oldTime) / 1000000000) + " seconds per million)")
           oldTime = curTime
         }
         lineCount += 1

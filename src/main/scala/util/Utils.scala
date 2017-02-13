@@ -1,14 +1,17 @@
 package main.scala.util
 
 import java.io._
-import java.util.zip.{GZIPOutputStream, GZIPInputStream}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+
+import com.typesafe.scalalogging.LazyLogging
+import reference.binary.ScanAgainstBinary._
 
 import scala.io.Source
 
 /**
  * just basic / general utilities that don't really have any other home
  */
-object Utils {
+object Utils extends LazyLogging {
 
   // get the GC content of the a string
   def gcContent(guide: String): Double = guide.toUpperCase.map{b => if (b == 'C' || b == 'G') 1 else 0}.sum.toDouble / guide.length.toDouble
@@ -20,7 +23,7 @@ object Utils {
     val t1 = System.currentTimeMillis
     val x = thunk
     val t2 = System.currentTimeMillis
-    println((t2 - t1) + " msecs")
+    logger.info((t2 - t1) + " msecs")
     x
   }
 

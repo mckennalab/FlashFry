@@ -1,4 +1,4 @@
-package prefix
+package tree
 
 import java.io.{BufferedInputStream, File, FileInputStream}
 import java.util.zip.GZIPInputStream

@@ -3,8 +3,9 @@ package reference
 import java.io._
 
 import bitcoding.{BitEncoding, BitPosition}
-import org.slf4j.LoggerFactory
-import reference.gprocess.{BinWriter, GuideWriter}
+import com.typesafe.scalalogging.LazyLogging
+import reference.filter.HitFilter
+import reference.gprocess.{GuideWriter}
 import standards.ParameterPack
 
 import scala.io._
@@ -12,18 +13,16 @@ import scala.io._
 /**
   * encode a reference file to a binary file
   */
-object ReferenceEncoder {
-  val logger = LoggerFactory.getLogger("ReferenceEncoder")
-
-  def findTargetSites(reference: File, binWriter: GuideWriter, params: ParameterPack): Tuple2[BitEncoding, BitPosition] = {
+object ReferenceEncoder extends LazyLogging {
+  def findTargetSites(reference: File, binWriter: GuideWriter, params: ParameterPack, filters: Array[HitFilter]): Tuple2[BitEncoding, BitPosition] = {
 
     val bitEncoder = new BitEncoding(params)
     val posEncoder = new BitPosition()
-    val cls = CRISPRCircle(binWriter, params)
+    val cls = CRISPRCircle(binWriter, params, filters)
 
     Source.fromFile(reference).getLines().foreach { line => {
       if (line.startsWith(">")) {
-        println("Switching to chromosome " + line)
+        logger.info("Switching to chromosome " + line)
         posEncoder.addReference(line.stripPrefix(">").split(" ")(0))
         cls.reset(line.split(" ")(0).slice(1, line.split(" ")(0).length))
       } else {
@@ -42,7 +41,7 @@ object ReferenceEncoder {
 // buffer to speed things up. This class is really ugly in places, but it morphed from canonical
 // scala for speed reasons
 // --------------------------------------------------------------------------------------------
-case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
+case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack, filters: Array[HitFilter]) extends LazyLogging {
 
   val revCompPam = reverseCompString(params.pam)
   val compPam = compString(params.pam)
@@ -66,7 +65,15 @@ case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
     currentPos += 1
     if (currentPos >= params.totalScanLength)
       checkCRISPR().foreach { ct => {
-        binWriter.addHit(ct)
+        if (filters.size == 0) {
+          binWriter.addHit(ct)
+        } else {
+          val keep = filters.map{ft => if (ft.filter(ct)) 0 else 1}.sum == 0
+          if (keep)
+            binWriter.addHit(ct)
+          else
+            logger.info("Rejecting guide " + ct.bases)
+        }
       }
       }
   }
@@ -119,15 +126,15 @@ case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
 
     if (!params.fivePrimePam) {
       if (str.endsWith(params.pam))
-        ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), (currentPos - cutSiteFromEnd))
+        ret :+= CRISPRSite(contig, str, true, currentPos - params.totalScanLength, currentPos)
       if (str.startsWith(revCompPam))
-        ret :+= CRISPRSite(contig, reverseCompString(str), false, (currentPos - params.totalScanLength), (currentPos - params.totalScanLength) + cutSiteFromEnd)
+        ret :+= CRISPRSite(contig, reverseCompString(str), false, currentPos - params.totalScanLength, currentPos)
       ret
     } else {
       if (str.startsWith(params.pam))
-        ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), (currentPos - cutSiteFromEnd))
+        ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), (currentPos))
       if (str.endsWith(revCompPam))
-        ret :+= CRISPRSite(contig, reverseCompString(str), false, (currentPos - params.totalScanLength), (currentPos - params.totalScanLength) + cutSiteFromEnd)
+        ret :+= CRISPRSite(contig, reverseCompString(str), false, currentPos - params.totalScanLength, currentPos)
       ret
     }
   }
@@ -139,9 +146,7 @@ case class CRISPRCircle(binWriter: GuideWriter, params: ParameterPack) {
     compBase(_)
   }.mkString
 
-  def reverseCompString(str: String): String = str.map {
-    compBase(_)
-  }.reverse.mkString
+  def reverseCompString(str: String): String = compString(str).reverse
 
   // create a target string from the buffer
   def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString + stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()

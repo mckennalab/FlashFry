@@ -2,7 +2,7 @@ package modules
 
 import java.io.{PrintWriter, File}
 
-import crispr.models.{OffTarget, OnTarget, ScoreModel}
+import models.{OffTarget, OnTarget, ScoreModel}
 import crispr.{BedReader, BinManager, CRISPRGuide}
 import org.slf4j.LoggerFactory
 
@@ -46,7 +46,7 @@ class JustScore(args: Array[String]) {
 
       val targetManager = new BedReader(config.inputBed.get)
 
-      println("scoring sites")
+      logger.info("scoring sites")
       // now score each site and output it to the right file
       oldTime = System.nanoTime()
       val output = new PrintWriter(config.outputBed.get)
@@ -60,7 +60,7 @@ class JustScore(args: Array[String]) {
         }
         val offTargetString = crispr.reconstituteOffTargets().mkString("$")
         val curTime = System.nanoTime()
-        println("scored " + crispr.name + " in " + ((curTime - oldTime) / 1000000000) + " seconds")
+        logger.info("scored " + crispr.name + " in " + ((curTime - oldTime) / 1000000000) + " seconds")
         oldTime = curTime
         output.write(crispr.toBed + "\t" + crispr.isAlive() + "\t" + scores.map { case (key, value) => key + "=" + value }.mkString(";") + ";offtarget-count=" + (crispr.reconstituteOffTargets().length) + ";" + offTargetString + "\n")
       }

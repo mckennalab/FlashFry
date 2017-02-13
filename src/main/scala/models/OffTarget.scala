@@ -1,4 +1,4 @@
-package crispr.models
+package models
 
 import crispr.CRISPRGuide
 import scala.util.Random

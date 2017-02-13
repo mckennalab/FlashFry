@@ -1,11 +1,11 @@
 package reference
 
 // a hit for a CRISPR site in the genome
-case class CRISPRSite(contig: String, bases: String, forwardStrand: Boolean, position: Int, cutSite: Int) extends Ordered[CRISPRSite] {
+case class CRISPRSite(contig: String, bases: String, forwardStrand: Boolean, position: Int, end: Int) extends Ordered[CRISPRSite] {
   val sep = "\t"
   val strandOutput = if (forwardStrand) CRISPRSite.forwardStrandEncoding else CRISPRSite.reverseStrandEncoding
 
-  def to_output = contig + sep + position + sep + cutSite + sep + bases + sep + strandOutput
+  def to_output = contig + sep + position + sep + end + sep + bases + sep + strandOutput
 
   def compare(that: CRISPRSite): Int = (this.bases) compare (that.bases)
 }

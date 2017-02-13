@@ -1,11 +1,12 @@
 package crispr
 
+import com.typesafe.scalalogging.LazyLogging
 import main.scala.util.BaseCombinationGenerator
 
 /**
  * our CRISPR hit
  */
-case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxMismatch: Int = 4, binSize: Int = 7) {
+case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxMismatch: Int = 4, binSize: Int = 7) extends LazyLogging {
   var offContigs = List[String]()
   var offStarts = List[Int]()
   var offStops = List[Int]()
@@ -22,7 +23,7 @@ case class CRISPRGuide(contig: String, start: Int, stop: Int, name: String, maxM
     offStops :+= stop
     offBases :+= bases
     if (offContigs.size == maxEntries) {
-      println("warning: target " + name + " is now dead to us since it has too many off-targets")
+      logger.warn("target " + name + " is now dead to us since it has too many off-targets")
     }
   }
 

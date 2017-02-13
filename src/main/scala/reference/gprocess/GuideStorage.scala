@@ -10,6 +10,7 @@ import scala.collection.mutable
   * Created by aaronmck on 2/9/17.
   */
 class GuideStorage extends GuideWriter {
+
   val guideHits = new mutable.ArrayBuffer[CRISPRSite]()
   override def addHit(cRISPRSite: CRISPRSite): Unit = guideHits += cRISPRSite
 
