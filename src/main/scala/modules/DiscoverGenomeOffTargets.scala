@@ -5,7 +5,7 @@ import java.io.File
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import main.scala.util.BaseCombinationGenerator
-import reference.binary.BinarySiteWriter
+import reference.binary.BinaryTargetStorage
 import reference.filter.HitFilter
 import reference.gprocess.BinWriter
 import reference.{ReferenceDictReader, ReferenceEncoder}
@@ -61,7 +61,7 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
       val searchBinGenerator = BaseCombinationGenerator(config.binSize)
 
       // then process this total file into a binary file
-      BinarySiteWriter.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
+      BinaryTargetStorage.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
 
       // now write the position encoder information to a companion file
       BitPosition.toFile(encoders._2, config.output + BitPosition.positionExtension)

@@ -2,7 +2,7 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
-import modules.{DiscoverCRISPROTSites, JustScore, DiscoverGenomeOffTargets, TallyScoringInformation}
+import modules.{DiscoverCRISPROTSites, JustScore, DiscoverGenomeOffTargets}
 import org.slf4j._
 import scopt._
 

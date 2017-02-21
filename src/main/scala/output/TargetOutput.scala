@@ -36,7 +36,7 @@ case class TargetOutput(outputFile: String,
     targetString.append(target.target.position + TargetOutput.sep)
     targetString.append(target.target.end + TargetOutput.sep)
     targetString.append(target.target.bases + TargetOutput.sep)
-    targetString.append(target.target.forwardStrand + TargetOutput.sep)
+    targetString.append((if (target.target.forwardStrand) "FWD" else "RVS") + TargetOutput.sep)
 
     val offTargets = target.offTargets.toArray
 
@@ -53,7 +53,7 @@ case class TargetOutput(outputFile: String,
       val offTargetsString = target.offTargets.toArray.map{ot => {
         val otDecoded = bitEncoder.bitDecodeString(ot.sequence)
         val positions = ot.coordinates.map{otPos => {
-          bitPosition.decode(otPos)._1 + "." + bitPosition.decode(otPos)._2
+          bitPosition.decode(otPos)._1 + ":" + bitPosition.decode(otPos)._2
         }}.mkString(",")
         otDecoded.str + "_" + otDecoded.count + bitEncoder.mismatches(target.longEncoding,ot.sequence) + "<" + positions + ">"
       }}.mkString(",")

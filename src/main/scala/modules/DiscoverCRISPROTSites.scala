@@ -2,14 +2,16 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import bitcoding.{BitEncoding, BitPosition}
+import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
+import crispr.CRISPRSiteOT
+import main.scala.util.BaseCombinationGenerator
 import output.TargetOutput
 import reference.{CRISPRSite, ReferenceEncoder}
-import reference.binary.ScanAgainstBinary
+import reference.binary.{BinaryGuideDatabase, OrderedBinTraversal}
 import reference.filter.{EntropyFilter, HitFilter, maxPolyNTrackFilter}
 import reference.gprocess.GuideStorage
-import standards.StandardScanParameters
+import standards.{ParameterPack, StandardScanParameters}
 
 import scala.collection.mutable
 import scala.io.Source
@@ -44,10 +46,10 @@ class DiscoverCRISPROTSites(args: Array[String]) extends LazyLogging {
   parser.parse(args, DiscoverConfig()) map {
     config => {
 
-      // get our enzyme (cas9, cpf1) settings
+      // get our enzyme's (cas9, cpf1) settings
       val params = StandardScanParameters.nameToParameterPack(config.enzyme)
 
-      // first load up their input file, and scan for any potential targets
+      // load up their input file, and scan for any potential targets
       val guideHits = new GuideStorage()
       val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, standardFilters())
 
@@ -55,25 +57,26 @@ class DiscoverCRISPROTSites(args: Array[String]) extends LazyLogging {
       val positionEncoder = BitPosition.fromFile(config.binaryOTFile + BitPosition.positionExtension)
       val bitEcoding = new BitEncoding(params)
 
-      // take this target list and tally against the known binary file
-      logger.info("scanning against the genome with " + guideHits.guideHits.toArray.size + " guides")
-      val mapping = ScanAgainstBinary.scanAgainst(new File(config.binaryOTFile),guideHits.guideHits.toArray,config.maxMismatch,params,bitEcoding,positionEncoder)
+      // transform our targets into a list for off-target collection
+      val guideOTStorage = guideHits.guideHits.map{guide => new CRISPRSiteOT(guide,bitEcoding.bitEncodeString(StringCount(guide.bases,1)))}.toArray
 
-      // now given the array of scoring critia, score those sites, and output each scoring schemes normalized score, plus the total score output
-      //val outputScoreArray =
+      // take this target list and tally against the known binary file
+      logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
+
+      val mapping = BinaryGuideDatabase.scanAgainst(new File(config.binaryOTFile),guideOTStorage, params,bitEcoding, config.maxMismatch, positionEncoder)
 
       // now output the scores per site
       val tgtOutput = TargetOutput(config.outputFile,
-        mapping.values.toArray,
+        guideOTStorage,
         config.includePositionOutputInformation,
         config.markTargetsWithExactGenomeHits,
-        standardFilters(),encoders._1,encoders._2)
+        standardFilters(),bitEcoding,positionEncoder)
       }
   }
 
   def standardFilters(): Array[HitFilter] = {
     var filters = Array[HitFilter]()
-    filters :+= EntropyFilter(0.1)
+    filters :+= EntropyFilter(1.0)
     filters :+= maxPolyNTrackFilter(6)
     filters
   }

@@ -8,14 +8,15 @@ object StandardScanParameters {
   val cas9ParameterPack = ParameterPack(
     "GG",
     23,
-    0x3FFFFFFFFFC0l, // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used) and doesn't care about the N of NGG (3 prime)
+    0x3FFFFFFFFFC0l, // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+                      // and doesn't care about the NGG of NGG (3 prime) -- it's assumed all OT have the NGG
     false
   )
 
   val cpf1ParameterPack = ParameterPack(
     "TTT",
     24,
-    0xFCFFFFFFFFFFl, // be super careful with this value!! the cpf1 mask doesn't consider the N of the TTTN
+    0x00FFFFFFFFFFl, // the Cpf1 check only considers the lower 20 bases, and not the PAM of TTTN
     true
   )
 

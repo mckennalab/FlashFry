@@ -2,6 +2,7 @@ package bitcoding
 
 import java.lang.{Integer => JavaInteger}
 
+import main.scala.util.Utils
 import org.scalatest._
 import standards.StandardScanParameters
 
@@ -61,8 +62,8 @@ class BitEncodingTest extends FlatSpec with Matchers {
     }}
   }
 
-  def randomStringCount(sz: Int): StringCount = {
-    StringCount(randomBaseString(sz),(rando.nextInt(Short.MaxValue - 1) + 1).toShort)
+  def randomStringCount(sz: Int, prefix: String = "", suffix: String = ""): StringCount = {
+    StringCount(prefix + randomBaseString(sz - (prefix.size + suffix.size)) + suffix,(rando.nextInt(Short.MaxValue - 1) + 1).toShort)
   }
 
   def randomBaseString(len: Int): String = {
@@ -151,6 +152,39 @@ class BitEncodingTest extends FlatSpec with Matchers {
     }}
   }
 
+  "A Bit Encoder" should "compare lots of differences correctly and quickly for Cpf1" in {
+    val encodeDevice = new BitEncoding(StandardScanParameters.cpf1ParameterPack)
+
+    (0 until 10000).foreach{index => {
+      val strCount = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength, "TTTT")
+      val strCount2 = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength, "TTTT")
+
+      val encoding = encodeDevice.bitEncodeString(strCount)
+      val encoding2 = encodeDevice.bitEncodeString(strCount2)
+
+      val actualDifference = strCount.str.slice(4,24).zip(strCount2.str.slice(4,24)).map{case(b1,b2) => if (b1 == b2) 0 else 1}.sum
+      val difference = encodeDevice.mismatches(encoding, encoding2)
+      (actualDifference) should be (difference)
+    }}
+  }
+
+
+  "A Bit Encoder" should "compare lots of differences correctly and quickly for Cpf1, regardless of their pam" in {
+    val encodeDevice = new BitEncoding(StandardScanParameters.cpf1ParameterPack)
+
+    (0 until 10000).foreach{index => {
+      val strCount = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength)
+      val strCount2 = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength)
+
+      val encoding = encodeDevice.bitEncodeString(strCount)
+      val encoding2 = encodeDevice.bitEncodeString(strCount2)
+
+      val actualDifference = strCount.str.slice(4,24).zip(strCount2.str.slice(4,24)).map{case(b1,b2) => if (b1 == b2) 0 else 1}.sum
+      val difference = encodeDevice.mismatches(encoding, encoding2)
+      (actualDifference) should be (difference)
+    }}
+  }
+
   "A Bit Encoder" should "compare lots of differences quickly" in {
     val encodeDevice = new BitEncoding(parameterPack)
 
@@ -183,5 +217,32 @@ class BitEncodingTest extends FlatSpec with Matchers {
     }}
     val t1 = System.nanoTime()
     println("Elapsed time for 1M comparisions: " + ((t1 - t0)/1000000000.0) + " seconds")
+  }
+
+  "A Bit Encoder" should "compare a bin correctly to a guide that's a perfect match" in {
+
+    val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1)
+    val bin = "AAAAA"
+
+    val encodeDevice = new BitEncoding(parameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    println(strCount + " " + Utils.longToBitString(encoding))
+    val differences = encodeDevice.mismatchBin(bin,encoding)
+
+    (differences) should be (0)
+  }
+
+  "A Bit Encoder" should "compare a bin correctly to a guide that's non-perfect match" in {
+
+    val strCount = StringCount("TTAAT CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1)
+    val bin = "TTTTT"
+
+    val encodeDevice = new BitEncoding(parameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val differences = encodeDevice.mismatchBin(bin,encoding)
+
+    (differences) should be (2)
   }
 }

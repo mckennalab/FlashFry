@@ -9,4 +9,5 @@ object BinaryConstants {
   val bytesPerTarget = 8
   val bytesPerGenomeLocation = 8
 
+  val headerSize = 24 // a long for the magic number, the version, and the number of bins
 }

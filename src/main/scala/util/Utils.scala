@@ -1,10 +1,11 @@
 package main.scala.util
 
 import java.io._
+import java.math.BigInteger
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 import com.typesafe.scalalogging.LazyLogging
-import reference.binary.ScanAgainstBinary._
+import reference.binary.BinaryGuideDatabase._
 
 import scala.io.Source
 
@@ -37,4 +38,9 @@ object Utils extends LazyLogging {
   }
 
   implicit def fileToString(fl: File): String = fl.getAbsolutePath
+
+  def longToBitString(long: Long): String = {
+    val str = String.format("%064d", new BigInteger(java.lang.Long.toBinaryString(long)))
+    str.grouped(4).mkString(" ")
+  }
 }

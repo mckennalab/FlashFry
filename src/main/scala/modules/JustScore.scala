@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.io.Source
 
 /**
- * Created by aaronmck on 6/29/15.
+ * Just score the targets
  */
 class JustScore(args: Array[String]) {
   // parse the command line arguments

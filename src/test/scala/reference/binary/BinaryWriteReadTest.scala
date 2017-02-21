@@ -6,8 +6,7 @@ import java.nio.channels.FileChannel
 
 import bitcoding.{BitEncoding, BitPosition}
 import main.scala.util.BaseCombinationGenerator
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FlatSpec, Matchers}
 import reference.CRISPRCircle
 import reference.gprocess.GuideStorage
 import reference.binary.BinaryConstants
@@ -16,7 +15,7 @@ import standards.StandardScanParameters
 /**
   * Created by aaronmck on 2/10/17.
   */
-class BinaryWriteReadTest extends FlatSpec with ShouldMatchers {
+class BinaryWriteReadTest extends FlatSpec with Matchers {
 
   val bitEncoder = new BitEncoding(StandardScanParameters.cpf1ParameterPack)
   val posEncoder = new BitPosition()
@@ -27,7 +26,7 @@ class BinaryWriteReadTest extends FlatSpec with ShouldMatchers {
     val inputFile = "test_data/6_target_with_various_counts.txt"
     val outputFile = "test_data/6_target_with_various_counts.binary"
 
-    BinarySiteWriter.writeToBinnedFile(inputFile,outputFile,bitEncoder,posEncoder,generator,StandardScanParameters.cpf1ParameterPack)
+    BinaryTargetStorage.writeToBinnedFile(inputFile,outputFile,bitEncoder,posEncoder,generator,StandardScanParameters.cpf1ParameterPack)
 
     val stream = new FileInputStream(outputFile)
     val inChannel = stream.getChannel()
@@ -48,12 +47,15 @@ class BinaryWriteReadTest extends FlatSpec with ShouldMatchers {
     (headerResult(2)) should be (math.pow(4,9).toLong)
 
     // now read in the count table
-    val lookuptable = new Array[Long](headerResult(2).toInt)
+    val lookuptable = new Array[Long](headerResult(2).toInt * 2)
     longBuffer.get(lookuptable)
 
     // TTTAAAAAAAAAAAAAAAAAAAAA
+
+    // number of targets
     (lookuptable(0)) should be(56)
-    (lookuptable(1)) should be(0)
+    // offset into the file for the first bin
+    (lookuptable(1)) should be(24)
 
     // now get our 56 entries, and make sure the guides match up
     val guideTable = new Array[Long](56)

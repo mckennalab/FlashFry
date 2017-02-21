@@ -13,7 +13,7 @@ trait HitFilter {
 }
 
 /**
-  * filter a crispr hit by the entropy level
+  * filter a crispr hit by the entropy level -- low is bad
   *
   * @param threshold the minimum entropy to keep this target
   */
@@ -37,7 +37,7 @@ case class EntropyFilter(threshold: Double) extends HitFilter {
 /**
   * keep a crispr hit if it has less than X identical bases in a row
   *
-  * @param threshold the maximum number of bases we allow in a row
+  * @param threshold the maximum number of bases we allow in a row --
   */
 case class maxPolyNTrackFilter(threshold: Int) extends HitFilter {
 

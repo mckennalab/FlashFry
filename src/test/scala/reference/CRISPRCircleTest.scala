@@ -1,8 +1,7 @@
 package reference
 
 import models.OnTarget
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FlatSpec, Matchers}
 import reference.filter.HitFilter
 import reference.gprocess.GuideStorage
 import standards.StandardScanParameters
@@ -10,7 +9,7 @@ import standards.StandardScanParameters
 /**
   * Created by aaronmck on 2/10/17.
   */
-class CRISPRCircleTest extends FlatSpec with ShouldMatchers {
+class CRISPRCircleTest extends FlatSpec with Matchers {
   "CRISPRCircleTest" should "find a cpf1 pam correctly" in {
     val string = "TTTA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
