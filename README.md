@@ -14,16 +14,16 @@ The tools uses a custom binary format that compresses the genome hits for a targ
 
 
 header:
-64 bit magic value (long)
-64 bit version number (long)
-64 bit number of bins (long)
+- 64 bit magic value (long)
+- 64 bit version number (long)
+- 64 bit number of bins (long)
 
 bin lookup table:
-number of bins below, for each:
-64 bit size of the this block in the file (in bytes, long)
-64 bit offset of this block in the file (in bytes, long)
+- for the number of bins in the header:
+  - 64 bit size of the this block in the file (in bytes, long)
+  - 64 bit offset of this block in the file (in bytes, long)
 
 within each block the following pattern repeats:
-1 64 bit long for the target sequence and count information (long)
-X 64 bit long for the positions within the target genome (long)
+- 1 64 bit long for the target sequence and count information (long)
+- X 64 bit long for the positions within the target genome (long)
 
