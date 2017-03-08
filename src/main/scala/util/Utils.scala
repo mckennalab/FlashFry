@@ -5,7 +5,6 @@ import java.math.BigInteger
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 import com.typesafe.scalalogging.LazyLogging
-import reference.binary.BinaryGuideDatabase._
 
 import scala.io.Source
 
@@ -43,4 +42,14 @@ object Utils extends LazyLogging {
     val str = String.format("%064d", new BigInteger(java.lang.Long.toBinaryString(long)))
     str.grouped(4).mkString(" ")
   }
+
+
+  // utilities to reverse complement
+  def compBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'T') 'A' else c
+
+  def compString(str: String): String = str.map {
+    compBase(_)
+  }.mkString
+
+  def reverseCompString(str: String): String = compString(str).reverse
 }

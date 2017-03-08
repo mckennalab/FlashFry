@@ -125,6 +125,37 @@ class BitEncoding(parameterPack: ParameterPack) {
     }
   }
 
+  /**
+    * given a bin -- a subsequence we've used for binning targets, find the number of mismatches
+    * between this bin and the guide of interest. Count values are not considered
+    *
+    * @param bin the bin sequence as a string
+    * @return a number of mismatches
+    */
+  def binToLongComparitor(bin: String): Long = {
+    val longBin = bitEncodeString(StringCount(bin,1))
+    val binSize = bin.size
+
+    if (parameterPack.fivePrimePam) {
+      // the bin starts after the pam -- make space for it
+      val shiftAmount = ((parameterPack.totalScanLength - (binSize - 1)) - parameterPack.pam.size) * 2
+      (longBin << shiftAmount) &  BitEncoding.stringMask
+    } else {
+      val shiftAmount = ((parameterPack.totalScanLength - (binSize)) * 2)
+      (longBin << shiftAmount) &  BitEncoding.stringMask
+    }
+  }
+
+  def compBitmaskForBin(binSize: Int): Long = {
+    if (parameterPack.fivePrimePam) {
+      val shiftAmount = ((parameterPack.totalScanLength - (binSize - 1)) - parameterPack.pam.size) * 2
+      (BitEncoding.stringMask << shiftAmount)
+    } else {
+      val shiftAmount = ((parameterPack.totalScanLength - (binSize)) * 2)
+      (BitEncoding.stringMask << shiftAmount)
+    }
+  }
+
 }
 
 /**
@@ -154,6 +185,6 @@ object BitEncoding {
   */
 case class StringCount(str: String, count: Short) {
   require (str.size <= BitEncoding.stringLimit, {throw new IllegalStateException("string size is too large for encoding (limit " + BitEncoding.stringLimit + "), size is: " + str.size)})
-  require (count >= 1, {throw new IllegalStateException("the count for a string should be greater than 0, not " + count)})
+  require (count >= 0, {throw new IllegalStateException("the count for a string should be greater than 0, not " + count)})
 }
 

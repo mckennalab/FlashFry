@@ -4,7 +4,8 @@ import java.lang.{Integer => JavaInteger}
 
 import main.scala.util.Utils
 import org.scalatest._
-import standards.StandardScanParameters
+import standards.{Cas9ParameterPack, Cpf1ParameterPack, ParameterPack}
+import standards.ParameterPack._
 
 import scala.util.Random
 
@@ -14,7 +15,7 @@ import scala.util.Random
 class BitEncodingTest extends FlatSpec with Matchers {
 
   val rando = new Random()
-  val parameterPack = StandardScanParameters.cas9ParameterPack
+  val parameterPack = Cas9ParameterPack
 
   "A Bit Encoder" should "correctly encode and decode a simple guide and count" in {
     val strCount = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1000)
@@ -153,11 +154,11 @@ class BitEncodingTest extends FlatSpec with Matchers {
   }
 
   "A Bit Encoder" should "compare lots of differences correctly and quickly for Cpf1" in {
-    val encodeDevice = new BitEncoding(StandardScanParameters.cpf1ParameterPack)
+    val encodeDevice = new BitEncoding(Cpf1ParameterPack)
 
     (0 until 10000).foreach{index => {
-      val strCount = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength, "TTTT")
-      val strCount2 = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength, "TTTT")
+      val strCount = randomStringCount(Cpf1ParameterPack.totalScanLength, "TTTT")
+      val strCount2 = randomStringCount(Cpf1ParameterPack.totalScanLength, "TTTT")
 
       val encoding = encodeDevice.bitEncodeString(strCount)
       val encoding2 = encodeDevice.bitEncodeString(strCount2)
@@ -170,11 +171,11 @@ class BitEncodingTest extends FlatSpec with Matchers {
 
 
   "A Bit Encoder" should "compare lots of differences correctly and quickly for Cpf1, regardless of their pam" in {
-    val encodeDevice = new BitEncoding(StandardScanParameters.cpf1ParameterPack)
+    val encodeDevice = new BitEncoding(Cpf1ParameterPack)
 
     (0 until 10000).foreach{index => {
-      val strCount = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength)
-      val strCount2 = randomStringCount(StandardScanParameters.cpf1ParameterPack.totalScanLength)
+      val strCount = randomStringCount(Cpf1ParameterPack.totalScanLength)
+      val strCount2 = randomStringCount(Cpf1ParameterPack.totalScanLength)
 
       val encoding = encodeDevice.bitEncodeString(strCount)
       val encoding2 = encodeDevice.bitEncodeString(strCount2)

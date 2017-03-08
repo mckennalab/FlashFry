@@ -9,7 +9,7 @@ import reference.binary.BinaryTargetStorage
 import reference.filter.HitFilter
 import reference.gprocess.BinWriter
 import reference.{ReferenceDictReader, ReferenceEncoder}
-import standards.StandardScanParameters
+import standards.{ParameterPack}
 
 /**
   * "give me a genome, and I'll give you all the potential off-targets, encoded into a binary representation" -this class
@@ -45,10 +45,10 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
       val outputBins = BinWriter(new File(config.tmp),binGenerator)
 
       // get our settings
-      val params = StandardScanParameters.nameToParameterPack(config.enzyme)
+      val params = ParameterPack.nameToParameterPack(config.enzyme)
 
       // first discover sites in the target genome -- writing out in bins
-      val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, Array[HitFilter]())
+      val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, Array[HitFilter](), 0)
 
       // sort them into an output file
       val totalOutput = File.createTempFile("totalFile",".txt",new File(config.tmp))

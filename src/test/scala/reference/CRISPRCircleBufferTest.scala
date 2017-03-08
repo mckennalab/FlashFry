@@ -1,20 +1,21 @@
 package reference
 
-import models.OnTarget
+import main.scala.util.Utils
+import models.Doench2014OnTarget
 import org.scalatest.{FlatSpec, Matchers}
 import reference.filter.HitFilter
 import reference.gprocess.GuideStorage
-import standards.StandardScanParameters
+import standards.{Cas9ParameterPack, Cpf1ParameterPack}
 
 /**
   * Created by aaronmck on 2/10/17.
   */
-class CRISPRCircleTest extends FlatSpec with Matchers {
+class CRISPRCircleBufferTest extends FlatSpec with Matchers {
   "CRISPRCircleTest" should "find a cpf1 pam correctly" in {
     val string = "TTTA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cpf1ParameterPack, Array[HitFilter]())
+    val circ = CRISPRCircleBuffer(guideStore,Cpf1ParameterPack)
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
@@ -25,18 +26,18 @@ class CRISPRCircleTest extends FlatSpec with Matchers {
     val string = "AAAAA CCCCC GGGGG TTTTA CAAA".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cpf1ParameterPack, Array[HitFilter]())
+    val circ = CRISPRCircleBuffer(guideStore,Cpf1ParameterPack)
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
-    (guideStore.guideHits(0).bases) should be (circ.reverseCompString(string))
+    (guideStore.guideHits(0).bases) should be (Utils.reverseCompString(string))
   }
 
   "CRISPRCircleTest" should "find a cas9 pam correctly" in {
     val string = "AAAAA CCCCC GGGGG TTTTA CGG".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cas9ParameterPack, Array[HitFilter]())
+    val circ = CRISPRCircleBuffer(guideStore,Cas9ParameterPack)
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
@@ -47,10 +48,10 @@ class CRISPRCircleTest extends FlatSpec with Matchers {
     val string = "CCA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideStorage()
-    val circ = CRISPRCircle(guideStore,StandardScanParameters.cas9ParameterPack, Array[HitFilter]())
+    val circ = CRISPRCircleBuffer(guideStore,Cas9ParameterPack)
 
     circ.addLine(string)
     (guideStore.guideHits.size) should be (1)
-    (guideStore.guideHits(0).bases) should be (circ.reverseCompString(string))
+    (guideStore.guideHits(0).bases) should be (Utils.reverseCompString(string))
   }
 }

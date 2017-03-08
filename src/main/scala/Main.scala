@@ -2,7 +2,7 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
-import modules.{DiscoverCRISPROTSites, JustScore, DiscoverGenomeOffTargets}
+import modules.{OffTargetScoring, DiscoverGenomeOffTargets}
 import org.slf4j._
 import scopt._
 
@@ -44,6 +44,11 @@ object Main extends App {
       (x, c) => c.copy(analysisType = Some(x))
     } text ("The run type: one of: discovery, score")
 
+    // store any scoring methods that they'd like to use -- this is at the global level
+    // since multiple modules might use this information
+    opt[Seq[File]]('j', "jars").valueName("<jar1>,<jar2>...").action( (x,c) =>
+      c.copy(scoringMetrics = x) ).text("jars to include")
+
     // some general command-line setup stuff
     note("Find CRISPR targets across the specified genome\n")
     help("help") text ("prints the usage information you see here")
@@ -59,7 +64,7 @@ object Main extends App {
           new DiscoverGenomeOffTargets(args)
         }
         case "tally" => {
-          new DiscoverCRISPROTSites(args)
+          new OffTargetScoring(args)
         }
         case "score" => {
           //new JustScore(args)
@@ -72,4 +77,4 @@ object Main extends App {
 /*
  * the configuration class, it stores the user's arguments from the command line, set defaults here
  */
-case class Config(analysisType: Option[String] = None)
+case class Config(analysisType: Option[String] = None, scoringMetrics: Seq[File] = Seq())

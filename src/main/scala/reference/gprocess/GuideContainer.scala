@@ -7,7 +7,7 @@ import reference.CRISPRSite
 /**
   * our interface for guide storage / writers
   */
-trait GuideWriter {
+trait GuideContainer {
   def addHit(cRISPRSite: CRISPRSite)
   def close(outputFile: File)
 }

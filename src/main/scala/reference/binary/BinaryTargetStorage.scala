@@ -49,7 +49,6 @@ object BinaryTargetStorage extends LazyLogging {
     // setup the header
     setupBinaryWriter(binGenerator, oStream)
 
-
     /**
       * write our binned file
       */
@@ -131,21 +130,13 @@ object BinaryTargetStorage extends LazyLogging {
 
       // now for each bin, write it out the binary offset
       val binIterator2 = binGenerator.iterator
-      var totalByteOffset = BinaryConstants.headerSize
+      var totalByteOffset = BinaryConstants.headerSize + (pow(4, binGenerator.width).toLong * 16)
 
-      var topTen = 10
       while (binIterator2.hasNext) {
-
         val bn = binIterator2.next()
-        /*if (topTen > 0) {
-          println("1 " + longsPerBin(bn))
-          println("2 " + totalByteOffset)
-        }*/
         reopenStream.writeLong(longsPerBin(bn))
         reopenStream.writeLong(totalByteOffset)
-        totalByteOffset += ((longsPerBin(bn) * 8) + (2 * 8))
-        topTen -= 1
-
+        totalByteOffset += ((longsPerBin(bn) * 8))
       }
 
       // close the stream
@@ -163,6 +154,8 @@ object BinaryTargetStorage extends LazyLogging {
 
       // write to our binary file
       lastGuide = bitEncoder.bitEncodeString(StringCount(bitEncoder.bitDecodeString(lastGuide).str, positionsRendered.size.toShort))
+
+      // logger.info("last guide = " + bitEncoder.bitDecodeString(lastGuide).str + " with count " + + bitEncoder.bitDecodeString(lastGuide).count)
 
       oStream.writeLong(lastGuide)
       positionsRendered.foreach { pos => oStream.writeLong(pos) }

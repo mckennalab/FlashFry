@@ -34,8 +34,9 @@ case class TargetOutput(outputFile: String,
     val targetString = new StringBuilder()
     targetString.append(target.target.contig + TargetOutput.sep)
     targetString.append(target.target.position + TargetOutput.sep)
-    targetString.append(target.target.end + TargetOutput.sep)
+    targetString.append((target.target.position + target.target.bases.size) + TargetOutput.sep)
     targetString.append(target.target.bases + TargetOutput.sep)
+    targetString.append((if (target.full) "OVERFLOW" else "OK") + TargetOutput.sep)
     targetString.append((if (target.target.forwardStrand) "FWD" else "RVS") + TargetOutput.sep)
 
     val offTargets = target.offTargets.toArray

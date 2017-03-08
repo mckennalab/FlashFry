@@ -14,7 +14,7 @@ import scala.io.Source
   * handle writing hits to sorted output files.  When we go to close, we merge them
   * all back into one master sorted file
   */
-case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator) extends GuideWriter {
+case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator) extends GuideContainer {
   val logger = LoggerFactory.getLogger("BinWriter")
   val binToFile = new mutable.HashMap[String, File]()
   val binToWriter = new mutable.HashMap[String, PrintWriter]()

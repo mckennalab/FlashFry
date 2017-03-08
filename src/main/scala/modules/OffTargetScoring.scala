@@ -8,10 +8,10 @@ import crispr.CRISPRSiteOT
 import main.scala.util.BaseCombinationGenerator
 import output.TargetOutput
 import reference.{CRISPRSite, ReferenceEncoder}
-import reference.binary.{BinaryGuideDatabase, OrderedBinTraversal}
+import reference.binary.{BinaryGuideReader, OrderedBinTraversal}
 import reference.filter.{EntropyFilter, HitFilter, maxPolyNTrackFilter}
 import reference.gprocess.GuideStorage
-import standards.{ParameterPack, StandardScanParameters}
+import standards.{ParameterPack}
 
 import scala.collection.mutable
 import scala.io.Source
@@ -19,7 +19,7 @@ import scala.io.Source
 /**
  * Scan a fasta file for targets and tally their off-targets against the genome
  */
-class DiscoverCRISPROTSites(args: Array[String]) extends LazyLogging {
+class OffTargetScoring(args: Array[String]) extends LazyLogging {
   // parse the command line arguments
   val parser = new scopt.OptionParser[DiscoverConfig]("DiscoverOTSites") {
     head("DiscoverOTSites", "1.0")
@@ -36,6 +36,7 @@ class DiscoverCRISPROTSites(args: Array[String]) extends LazyLogging {
     opt[Unit]("positionalOTOutput") valueName ("<string>") action { (x, c) => c.copy(includePositionOutputInformation = true) } text ("include the position information of off-target hits")
     opt[Unit]("markExactGenomeHits") valueName ("<string>") action { (x, c) => c.copy(markTargetsWithExactGenomeHits = true) } text ("should we add a column to indicate that a target has a exact genome hit")
     opt[Int]("maxMismatch")  valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("the maximum number of mismatches we allow")
+    opt[Int]("flankingSequence")  valueName ("<int>") action { (x, c) => c.copy(flankingSequence = x) } text ("number of bases we should save on each side of the target, used in some scoring schemes (default is 10 on each side)")
     opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
 
     // some general command-line setup stuff
@@ -47,11 +48,11 @@ class DiscoverCRISPROTSites(args: Array[String]) extends LazyLogging {
     config => {
 
       // get our enzyme's (cas9, cpf1) settings
-      val params = StandardScanParameters.nameToParameterPack(config.enzyme)
+      val params = ParameterPack.nameToParameterPack(config.enzyme)
 
       // load up their input file, and scan for any potential targets
       val guideHits = new GuideStorage()
-      val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, standardFilters())
+      val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, standardFilters(), config.flankingSequence)
 
       // get our position encoder and bit encoder setup
       val positionEncoder = BitPosition.fromFile(config.binaryOTFile + BitPosition.positionExtension)
@@ -63,7 +64,12 @@ class DiscoverCRISPROTSites(args: Array[String]) extends LazyLogging {
       // take this target list and tally against the known binary file
       logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
 
-      val mapping = BinaryGuideDatabase.scanAgainst(new File(config.binaryOTFile),guideOTStorage, params,bitEcoding, config.maxMismatch, positionEncoder)
+      val mapping = BinaryGuideReader.scanAgainstLinear(new File(config.binaryOTFile),guideOTStorage, config.maxMismatch,params,bitEcoding, positionEncoder)
+
+      logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
+
+      // given the scoring tools they want to run, score each of the guides with all of the information
+
 
       // now output the scores per site
       val tgtOutput = TargetOutput(config.outputFile,
@@ -92,4 +98,5 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           enzyme: String = "cas9",
                           maxMismatch: Int = 5,
                           includePositionOutputInformation: Boolean = false,
-                          markTargetsWithExactGenomeHits: Boolean = false)
+                          markTargetsWithExactGenomeHits: Boolean = false,
+                          flankingSequence: Int = 10)

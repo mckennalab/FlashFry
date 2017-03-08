@@ -12,95 +12,72 @@ import reference.CRISPRSite
 import standards.ParameterPack
 import java.io.RandomAccessFile
 
-import scala.collection.mutable.{LinkedHashMap, _}
-import scala.math._
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+//import reference.binary.BinaryGuideReader.ComparisonActor.{ComparisonActorReturnData, ComparisonActorSearchData}
+
+import scala.collection.mutable
+import scala.collection.mutable.{LinkedHashMap, Map, _}
 
 /**
-  * scan a binary encoded file for hits against a specific list of putative targets.  This code really needs
-  * to be cleaned up.
+  * scan a binary encoded file for putitive off-targets against a specific list of guide sequences.  This code really needs
+  * to be cleaned up a bit more...
   */
-object BinaryGuideDatabase extends LazyLogging {
+object BinaryGuideReader extends LazyLogging {
 
-  def scanAgainst(binaryFile: File,
-                  guides: Array[CRISPRSiteOT],
-                  configuration: ParameterPack,
-                  bitCoder: BitEncoding,
-                  maxMismatch: Int,
-                  posCoder: BitPosition) {
+  /**
+    * given a block of longs representing the targets and their positions, add any potential off-targets to
+    * the guide objects
+    *
+    * @param blockOfTargetsAndPositions an array of longs representing a block of encoded target and positions
+    * @param guides                     the guides
+    * @return an mapping from a potential guide to it's discovered off target sequences
+    */
+  def compareBlock(blockOfTargetsAndPositions: Array[Long],
+                   guides: Array[Long],
+                   bitEncoding: BitEncoding,
+                   maxMismatches: Int,
+                   bin: Long,
+                   binMask: Long): Map[Long, Array[CRISPRHit] ] = {
 
-    require(maxMismatch > 0)
+    val returnMap = new mutable.HashMap[Long, ArrayBuilder[CRISPRHit]]()
 
-    var comparisons = 0l
-    val formatter = java.text.NumberFormat.getInstance()
-    var t0 = System.nanoTime()
+    // filter down the guides we actually want to look at
+    val lookAtGuides = guides.filter(gd => bitEncoding.mismatches(gd,bin,binMask) <= maxMismatches)
 
-    // setup our input file
-    val raf = new RandomAccessFile(binaryFile, "rw")
+    // we aim to be as fast as possible here, so while loops over foreach's, etc
+    var offset = 0
+    var currentTarget = 0l
 
-    val binLookup = readHeader(raf, binaryFile)
+    while (offset < blockOfTargetsAndPositions.size) {
+      val currentTarget = blockOfTargetsAndPositions(offset)
+      val count = bitEncoding.getCount(currentTarget)
 
-    require(binLookup.longsPerBin.size == math.pow(4,binLookup.binWidth).toInt, "the count of bins needs to match up against the header value")
+      require(blockOfTargetsAndPositions.size > offset + count,
+        "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size)
 
-    val binGenerator = BaseCombinationGenerator(binLookup.binWidth)
-    val binaryTraversalIterator = new OrderedBinTraversal(binGenerator,maxMismatch, bitCoder, guides)
+      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
 
-    binaryTraversalIterator.iterator.zipWithIndex.foreach { case (binDescription,index) => {
+      var guideOffset = 0
 
-      // get the next bin
-      val sizeToFetch = binLookup.longsPerBin(binDescription.bin)
-      val offsetIntoFile = binLookup.offsetIntoFile(binDescription.bin)
-
-      if (sizeToFetch > 0) {
-
-        val input = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, offsetIntoFile, sizeToFetch * 8)
-
-        // read the header of our file into a buffer
-        var offset = 0
-        var mismatchesAdded = 0
-        var targetsLookedAt = 0
-
-        // while we still have targets to read
-        while (offset < sizeToFetch) {
-
-          val target = input.getLong
-          targetsLookedAt += 1
-
-          val coordinatesSize = bitCoder.getCount(target)
-          val coordinatesArray = new Array[Long](coordinatesSize)
-          var ind = 0
-          while (ind < coordinatesSize) {
-            coordinatesArray(ind) = input.getLong
-            ind += 1
-          }
-
-          var pos_index = 0
-
-          // for each target that matches
-          while (pos_index < binDescription.guides.size) {
-            val mismatches = bitCoder.mismatches(binDescription.guides(pos_index), target)
-            comparisons += 1
-            if (mismatches <= maxMismatch) {
-              binDescription.guides(index) //.addOT(CRISPRHit(target, coordinatesArray))
-              mismatchesAdded += 1
-            }
-            pos_index += 1
-          }
-          offset += 1 + coordinatesSize
+      while (guideOffset < lookAtGuides.size) {
+        val mismatches = bitEncoding.mismatches(lookAtGuides(guideOffset), currentTarget)
+        if (mismatches <= maxMismatches) {
+          returnMap(lookAtGuides(guideOffset)) = returnMap.getOrElse(lookAtGuides(guideOffset), mutable.ArrayBuilder.make[CRISPRHit]) +=
+            CRISPRHit(blockOfTargetsAndPositions(offset),blockOfTargetsAndPositions.slice(offset, offset + count + 1))
         }
+        guideOffset += 1
       }
-      if (index % 1000 == 0) {
-        logger.info("Comparing the " + formatter.format(index) + "th bin of " + formatter.format(binLookup.longsPerBin.size) + " total, off-targets with prefix " +
-          binDescription.bin + ", ran " + formatter.format(comparisons) + " guide comparisons so far. " + ((System.nanoTime() - t0) / 1000000000.0) + " seconds/1K bins")
-        t0 = System.nanoTime()
-      }
-    }}
+      offset += count + 1
+    }
+    returnMap.map { case (guide, ots) => (guide, ots.result()) }
   }
 
 
   /**
     * read the header from the top of the file
+    *
     * @param raf the data input stream
-    * @param bf the file
+    * @param bf  the file
     * @return a bin-lookup object
     */
   private def readHeader(raf: RandomAccessFile, bf: File): BinLookup = {
@@ -121,15 +98,141 @@ object BinaryGuideDatabase extends LazyLogging {
     val binOffsets = new LinkedHashMap[String, Long]()
     val binGenerator = BaseCombinationGenerator(binWidth)
 
+    // read in the bins and their sizes
     binGenerator.iterator.zipWithIndex.foreach { case (bin, index) => {
       longCounts(bin) = raf.readLong()
       binOffsets(bin) = raf.readLong()
-    }}
+    }
+    }
 
     BinLookup(binWidth, longCounts, binOffsets)
   }
 
   def mismatches(str1: String, str2: String): Int = str1.zip(str2).map { case (a, b) => if (a == b) 0 else 1 }.sum
+
+
+  /**
+    * scan against the binary database of off-target sites
+    *
+    * @param binaryFile    the file we're scanning from
+    * @param targets       the array of candidate guides we have
+    * @param maxMismatch   how many mismatches we support
+    * @param configuration our enzyme configuration
+    * @param bitCoder      our bit encoder
+    * @param posCoder      the position encoder
+    * @return a guide to OT hit array
+    */
+  def scanAgainstLinear(binaryFile: File,
+                        targets: Array[CRISPRSiteOT],
+                        maxMismatch: Int,
+                        configuration: ParameterPack,
+                        bitCoder: BitEncoding,
+                        posCoder: BitPosition): Array[CRISPRSiteOT] = {
+
+    var comparisons = 0l
+    val formatter = java.text.NumberFormat.getInstance()
+
+    // setup our input file
+    val fos = new FileInputStream(binaryFile)
+    val bos = new BufferedInputStream(fos)
+    val dos = new DataInputStream(bos)
+
+    // make sure the header is intact
+    require(dos.readLong() == BinaryConstants.magicNumber, "Binary file " + binaryFile.getAbsolutePath + " doesn't have the magic number expected at the top of the file")
+    require(dos.readLong() == BinaryConstants.version, "Binary file " + binaryFile.getAbsolutePath + " doesn't have the correct version, we were expecting " + BinaryConstants.version)
+
+    val binCount = dos.readLong()
+    require(binCount > 0, "Invalid number of bins: " + binCount)
+
+    val binWidth = (math.log(binCount) / math.log(4)).toInt
+    val binMask = bitCoder.compBitmaskForBin(binWidth)
+    logger.info("Number of characters used for binning " + binWidth)
+
+    val binSizeLookup = new mutable.LinkedHashMap[String, Long]()
+    val binOffsetLookup = new mutable.LinkedHashMap[String, Long]()
+    val binGenerator = BaseCombinationGenerator(binWidth)
+
+    binGenerator.iterator.zipWithIndex.foreach { case (bin, index) => {
+      binSizeLookup(bin) = dos.readLong()
+      binOffsetLookup(bin) = dos.readLong()
+    }}
+
+    // where we collect the off-target hits
+    val siteSequenceToSite = new mutable.LinkedHashMap[Long, CRISPRSiteOT]()
+    val guideList = new Array[Long](targets.size)
+
+    targets.zipWithIndex.foreach { case(tgt,index) => {
+      guideList(index) = tgt.longEncoding
+      siteSequenceToSite(tgt.longEncoding) = tgt
+    } }
+
+    // do the look analysis here
+    var t0 = System.nanoTime()
+
+    logger.info("Beginning search against off-targets")
+    val binIterator = binGenerator.iterator
+    var binIndex = 0
+
+    while(binIterator.hasNext) {
+      val bin = binIterator.next()
+      binIndex += 1
+      // make a buffer that will hold the bin's longs
+      var index = 0
+      //logger.info("Loading block of size " + binSizeLookup(bin).toInt)
+      var longBuffer = new Array[Long](binSizeLookup(bin).toInt)
+      while (index < binSizeLookup(bin).toInt) {
+        longBuffer(index) = dos.readLong()
+        index += 1
+      }
+
+      //logger.info("Comparing to our guides")
+      compareBlock(longBuffer,guideList,bitCoder,maxMismatch,bitCoder.binToLongComparitor(bin),binMask).foreach{case(guide,ots) => {
+        siteSequenceToSite(guide).addOTs(ots)
+      }}
+
+      if (binIndex % 1000 == 0) {
+        logger.info("Comparing the " + formatter.format(binIndex) + "th bin of " + formatter.format(binSizeLookup.size) + " total, off-targets with prefix " +
+          bin + ". " + ((System.nanoTime() - t0) / 1000000000.0) + " seconds/1K bins")
+        t0 = System.nanoTime()
+      }
+    }
+
+
+    siteSequenceToSite.values.toArray
+  }
+
+/*
+  // simple actor -- get message to process a list of off-target, and then... do that
+  class ComparisonActor(master: ActorRef) extends Actor with LazyLogging {
+    def receive = {
+      case searchData: ComparisonActorSearchData => {
+        val results = compareBlock(searchData.targetBlock,searchData.guides, searchData.bitEncoding, searchData.numMismatches)
+        master ! ComparisonActorReturnData(results)
+      }
+      case _ => logger.info("received unknown message")
+    }
+  }
+  object ComparisonActor {
+    case class ComparisonActorSearchData(guides: Array[Long], targetBlock: Array[Long], bitEncoding: BitEncoding, numMismatches: Int)
+    case class ComparisonActorReturnData(guidesToOTs: Map[Long, Array[Long]])
+  }
+
+  // simple actor -- get message to process off-target, and then do that
+  class MasterActor extends Actor with LazyLogging {
+    def receive = {
+      case searchData: ComparisonActorSearchData => {
+        val results = compareBlock(searchData.targetBlock,searchData.guides, searchData.bitEncoding, searchData.numMismatches)
+        sender() ! ComparisonActorReturnData(results)
+      }
+      case _ => logger.info("received unknown message")
+    }
+  }
+  object MasterActor {
+  }
+*/
 }
+
+
+
 
 case class BinLookup(binWidth: Int, longsPerBin: LinkedHashMap[String, Long], offsetIntoFile: LinkedHashMap[String, Long])

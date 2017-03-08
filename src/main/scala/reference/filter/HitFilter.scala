@@ -8,6 +8,12 @@ import scala.collection.mutable
   * do we want to keep this target hit?
   */
 trait HitFilter {
+
+  /**
+    * indicate if we want to keep this guide (true) or not (false)
+    * @param cRISPRSite the site to filter
+    * @return true to keep, false to drop
+    */
   def filter(cRISPRSite: CRISPRSite): Boolean
   def toStringSummary(): String
 }
