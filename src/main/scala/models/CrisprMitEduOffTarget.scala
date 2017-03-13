@@ -2,7 +2,8 @@ package models
 
 import bitcoding.BitEncoding
 import crispr.{CRISPRGuide, CRISPRSiteOT}
-import standards.{CAS9, ParameterPack}
+import standards.{Cas9Type, ParameterPack}
+import standards.ParameterPack._
 
 import scala.util.Random
 
@@ -12,7 +13,7 @@ import scala.util.Random
   * http://crispr.mit.edu/about
   *
   * This website has the reputation for missing some proportion of the off-targets in the genome,
-  * so our unit test rely on only verified lists where all discovered off-target sequences are the same
+  * so our unit tests rely on only verified lists where all discovered off-target sequences are the same
   *
   */
 class CrisprMitEduOffTarget() extends ScoreModel {
@@ -119,11 +120,11 @@ class CrisprMitEduOffTarget() extends ScoreModel {
   /**
     * are we valid over the enzyme of interest?
     *
-    * @param enzyme the enzyme
+    * @param params the enzyme
     * @return
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = {
-    enzyme.name == CAS9
+  override def validOverScoreModel(params: ParameterPack): Boolean = {
+    params.enzyme.enzymeParent == Cas9Type
   }
 
   /**

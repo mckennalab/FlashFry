@@ -176,6 +176,7 @@ object BitEncoding {
 
   val stringMaskHighBits = 0xAAAAAAAAAAAAl
   val stringMaskLowBits =  0x555555555555l
+
 }
 
 /**

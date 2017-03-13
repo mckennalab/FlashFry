@@ -1,10 +1,10 @@
 package reference
 
+import crispr.GuideStorage
 import main.scala.util.Utils
 import models.Doench2014OnTarget
 import org.scalatest.{FlatSpec, Matchers}
-import reference.filter.HitFilter
-import reference.gprocess.GuideStorage
+import crispr.filter.SequencePreFilter
 import standards.{Cas9ParameterPack, Cpf1ParameterPack}
 
 /**

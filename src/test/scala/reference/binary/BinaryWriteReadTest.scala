@@ -7,12 +7,10 @@ import java.nio.channels.FileChannel
 import bitcoding.{BitEncoding, BitPosition}
 import main.scala.util.BaseCombinationGenerator
 import org.scalatest.{FlatSpec, Matchers}
-import reference.CRISPRCircleBuffer
-import reference.gprocess.GuideStorage
 import standards.Cpf1ParameterPack
 
 /**
-  * Created by aaronmck on 2/10/17.
+  * test that we can get the expected fields from a binary representation of target sequences
   */
 class BinaryWriteReadTest extends FlatSpec with Matchers {
 
@@ -25,7 +23,7 @@ class BinaryWriteReadTest extends FlatSpec with Matchers {
     val inputFile = "test_data/6_target_with_various_counts.txt"
     val outputFile = "test_data/6_target_with_various_counts.binary"
 
-    BinaryTargetStorage.writeToBinnedFile(inputFile,outputFile,bitEncoder,posEncoder,generator,Cpf1ParameterPack)
+    DatabaseWriter.writeToBinnedFile(inputFile,outputFile,bitEncoder,posEncoder,generator,Cpf1ParameterPack)
 
     val stream = new FileInputStream(outputFile)
     val inChannel = stream.getChannel()

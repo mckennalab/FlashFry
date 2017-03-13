@@ -17,10 +17,9 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int = 1000) extend
   def full = currentTotal >= overflow
 
   def addOT(offTarget: CRISPRHit) = {
-    if (currentTotal < overflow) {
-      offTargets += offTarget
-      currentTotal += 1
-    }
+    assert(currentTotal < overflow,"We should not add off-targets to an overflowed guide")
+    offTargets += offTarget
+    currentTotal += 1
   }
   def addOTs(offTargetList: Array[CRISPRHit]) = {
     // so the double ifs are a little weird -- but we'd prefer to both:

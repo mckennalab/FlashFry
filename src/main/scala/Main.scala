@@ -2,7 +2,7 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
-import modules.{OffTargetScoring, DiscoverGenomeOffTargets}
+import modules.{DiscoverGenomeOffTargets, GenerateRandomFasta, OffTargetScoring}
 import org.slf4j._
 import scopt._
 
@@ -42,7 +42,7 @@ object Main extends App {
     // *********************************** Inputs *******************************************************
     opt[String]("analysis") required() valueName ("<string>") action {
       (x, c) => c.copy(analysisType = Some(x))
-    } text ("The run type: one of: discovery, score")
+    } text ("The run type: one of: discovery, score, or random")
 
     // store any scoring methods that they'd like to use -- this is at the global level
     // since multiple modules might use this information
@@ -63,11 +63,11 @@ object Main extends App {
         case "discover" => {
           new DiscoverGenomeOffTargets(args)
         }
-        case "tally" => {
+        case "score" => {
           new OffTargetScoring(args)
         }
-        case "score" => {
-          //new JustScore(args)
+        case "random" => {
+          new GenerateRandomFasta(args)
         }
       }
     }

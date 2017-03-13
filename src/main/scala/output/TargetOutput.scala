@@ -4,7 +4,7 @@ import java.io.PrintWriter
 
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.CRISPRSiteOT
-import reference.filter.HitFilter
+import crispr.filter.SequencePreFilter
 
 /**
   * handle outputing the target list, in a style the user requests
@@ -13,7 +13,7 @@ case class TargetOutput(outputFile: String,
                         targets: Array[CRISPRSiteOT],
                         includePositionInformation: Boolean,
                         indicateIfTargetHasPefectMatch: Boolean,
-                        filters: Array[HitFilter],
+                        filters: Array[SequencePreFilter],
                         bitEncoder: BitEncoding,
                         bitPosition: BitPosition
                        ) {

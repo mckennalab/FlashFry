@@ -28,12 +28,17 @@ package util
  *
  */
 
-class RandoCRISPR(sz: Int) extends Iterator[String] {
+class RandoCRISPR(sz: Int, pam: String, pamFivePrime: Boolean) extends Iterator[String] {
   def hasNext() = true
   val seed = System.currentTimeMillis
   val r = new scala.util.Random(seed)
-  println("Seed is " + seed)
-  def next(): String = (0.until(sz)).map{ct => numberToBase(r.nextInt(4))}.mkString("")
+
+  def next(): String = {
+    if (pamFivePrime)
+      pam + (0.until(sz)).map{ct => numberToBase(r.nextInt(4))}.mkString("")
+    else
+      (0.until(sz)).map{ct => numberToBase(r.nextInt(4))}.mkString("") + pam
+  }
 
   def numberToBase(nt: Int): Char = if (nt == 0) 'A' else if (nt == 1) 'C' else if (nt == 2) 'G' else 'T'
   def baseToNumber(nt: Char): Int = if (nt == 'A') 0 else if (nt == 'C') 1 else if (nt == 'G') 2 else 3

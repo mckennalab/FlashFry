@@ -4,9 +4,9 @@ import java.io._
 
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
+import crispr.GuideContainer
 import main.scala.util.Utils
-import reference.filter.HitFilter
-import reference.gprocess.GuideContainer
+import crispr.filter.SequencePreFilter
 import standards.ParameterPack
 
 import scala.collection.mutable
@@ -26,15 +26,15 @@ object ReferenceEncoder extends LazyLogging {
     * @param filters
     * @return
     */
-  def findTargetSites(reference: File, binWriter: GuideContainer, params: ParameterPack, filters: Array[HitFilter], flankingSequence: Int): Tuple2[BitEncoding, BitPosition] = {
+  def findTargetSites(reference: File, binWriter: GuideContainer, params: ParameterPack, filters: Array[SequencePreFilter], flankingSequence: Int): Tuple2[BitEncoding, BitPosition] = {
 
     val bitEncoder = new BitEncoding(params)
     val posEncoder = new BitPosition()
     val cls: CRISPRDiscovery = if (flankingSequence == 0) {
-      logger.info("Running with fast circle-buffer site-finder due to no flanking sequence request")
+      logger.info("Running with fast circle-buffer site finder due to no flanking sequence request")
       CRISPRCircleBuffer(binWriter, params)
     } else {
-      logger.info("Running with simple site-finder due to flanking sequence request")
+      logger.info("Running with simple site finder due to flanking sequence request")
       SimpleSiteFinder(binWriter, params, filters, flankingSequence)
     }
 
@@ -49,6 +49,7 @@ object ReferenceEncoder extends LazyLogging {
     }
     }
     logger.info("Done looking for targets")
+    cls.close()
 
     (bitEncoder, posEncoder)
   }
@@ -73,7 +74,7 @@ trait CRISPRDiscovery {
   * @param filters          what filters should we apply to sites we've found
   * @param flankingSequence pull out X bases on either side of the putitive target
   */
-case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, filters: Array[HitFilter], flankingSequence: Int)
+case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, filters: Array[SequencePreFilter], flankingSequence: Int)
   extends LazyLogging with CRISPRDiscovery {
 
   val currentBuffer = mutable.ArrayBuilder.make[String]()
@@ -93,8 +94,8 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fi
 
         var site = CRISPRSite(currentContig.get, subStr, true, fwdMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
 
-        if (!site.sequenceContext.isDefined)
-          logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
+        //if (!site.sequenceContext.isDefined)
+        //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
 
         val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
 
@@ -110,8 +111,8 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fi
 
         var site = CRISPRSite(currentContig.get, subStr, false, revMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
 
-        if (!site.sequenceContext.isDefined)
-          logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
+        //if (!site.sequenceContext.isDefined)
+        //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
 
         val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
 
@@ -122,7 +123,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fi
 
 
     }
-    // now handle the reset part -- change the contig to the
+    // now handle the reset part -- change the contig to the the new sequence name and clear the buffer
     currentContig = Some(contig)
     currentBuffer.clear()
   }
@@ -130,6 +131,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fi
   override def close(): Unit = {
     reset("")
   }
+
 }
 
 

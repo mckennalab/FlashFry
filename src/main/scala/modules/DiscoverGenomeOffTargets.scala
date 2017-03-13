@@ -4,12 +4,12 @@ import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
+import crispr.BinWriter
 import main.scala.util.BaseCombinationGenerator
-import reference.binary.BinaryTargetStorage
-import reference.filter.HitFilter
-import reference.gprocess.BinWriter
+import reference.binary.DatabaseWriter
+import crispr.filter.SequencePreFilter
 import reference.{ReferenceDictReader, ReferenceEncoder}
-import standards.{ParameterPack}
+import standards.ParameterPack
 
 /**
   * "give me a genome, and I'll give you all the potential off-targets, encoded into a binary representation" -this class
@@ -48,10 +48,11 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
       val params = ParameterPack.nameToParameterPack(config.enzyme)
 
       // first discover sites in the target genome -- writing out in bins
-      val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, Array[HitFilter](), 0)
+      val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, Array[SequencePreFilter](), 0)
 
-      // sort them into an output file
+      // sort them into an output file, and remove it when we're done
       val totalOutput = File.createTempFile("totalFile",".txt",new File(config.tmp))
+      totalOutput.deleteOnExit()
       logger.info("Creating output file " + totalOutput)
 
       //totalOutput.deleteOnExit()
@@ -61,7 +62,7 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
       val searchBinGenerator = BaseCombinationGenerator(config.binSize)
 
       // then process this total file into a binary file
-      BinaryTargetStorage.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
+      DatabaseWriter.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
 
       // now write the position encoder information to a companion file
       BitPosition.toFile(encoders._2, config.output + BitPosition.positionExtension)

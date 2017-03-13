@@ -22,7 +22,10 @@ class Doench2014OnTargetTest extends FlatSpec with Matchers {
 
   val offTargetToScore = new mutable.HashMap[CRISPRSiteOT, Double]()
 
-  // load up the supplemental table 7 for Doench 2014, which contains on-target scores for a thousand+ guides
+  // load up the supplemental table 7 for Doench 2014, which contains on-target scores for a thousand+ guides. Unforuntely the code
+  // and the scores there don't currently line up -- we'll follow-up with the authors.  So weve' currently chosen to go with
+  // the code version, and validate against that.
+
   /*
   Source.fromFile("test_data/doench_2014_on_target_scores.csv").getLines().foreach { line => {
     val sp = line.split(",")
