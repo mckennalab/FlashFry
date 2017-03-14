@@ -12,7 +12,7 @@ import reference.{ReferenceDictReader, ReferenceEncoder}
 import standards.ParameterPack
 
 /**
-  * "give me a genome, and I'll give you all the potential off-targets, encoded into a binary representation" -this class
+  * "give me a genome, and I'll give you ALL the potential off-targets, encoded into a binary representation" -this class
   *
   * Febuary 9th, 2017
   */
@@ -62,7 +62,7 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
       val searchBinGenerator = BaseCombinationGenerator(config.binSize)
 
       // then process this total file into a binary file
-      DatabaseWriter.writeToBinnedFile(totalOutput.getAbsolutePath, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
+      DatabaseWriter.writeToBinnedFileSet(totalOutput, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
 
       // now write the position encoder information to a companion file
       BitPosition.toFile(encoders._2, config.output + BitPosition.positionExtension)

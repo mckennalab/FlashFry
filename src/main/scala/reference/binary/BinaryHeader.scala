@@ -22,9 +22,7 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
                         inputParameterPack: ParameterPack,
                         bitCoder: BitEncoding,
                         bitPosition: BitPosition,
-                        compressedBlockSize: Array[Long],
-                        compressedBlockPosition: Array[Long],
-                        uncompressedBlockSize: Array[Long]) {
+                        blockOffsets: mutable.HashMap[String,BlockOffset]) {
 
   def binWidth = inputBinGenerator.width
 
@@ -34,6 +32,13 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
 
   def binGenerator: BaseCombinationGenerator = inputBinGenerator
 }
+
+case class BlockOffset(blockPosition: Long, compressedblockSize: Int, uncompressedSize: Int) {
+  def uncompressedArraySize: Int = uncompressedSize / 8
+}
+
+
+
 
 object BinaryHeader extends LazyLogging {
   val headerExtension = ".header"
@@ -57,10 +62,13 @@ object BinaryHeader extends LazyLogging {
 
     // write a number of longs equal to the block lookup table size -- we'll come back and fill these in later
     header.binGenerator.iterator.zipWithIndex.foreach { case(bin,index) => {
-      writer.write(bin + "=" + header.compressedBlockSize(index) + "," + header.compressedBlockPosition(index) + "," + header.uncompressedBlockSize(index) + "\n")
+      if (header.blockOffsets contains bin)
+        writer.write(bin + "=" + header.blockOffsets(bin).blockPosition + "," + header.blockOffsets(bin).compressedblockSize + "," + header.blockOffsets(bin).uncompressedSize + "\n")
+      else
+        writer.write(bin + "=0,0,0\n")
     }}
 
-    (0 until header.bitPosition.nextSeqId).foreach{ index => {
+    (1 until header.bitPosition.nextSeqId).foreach{ index => {
       writer.write(header.bitPosition.indexToContig(index) + "=" + index + "\n")
     }}
   }
@@ -84,44 +92,44 @@ object BinaryHeader extends LazyLogging {
   def readHeader(filename: String, bitCoder: BitEncoding): BinaryHeader = {
 
     // setup our input file
-    val dos = Source.fromFile(filename).getLines()
+    val inputText = Source.fromFile(filename).getLines()
 
     // some header checks
-    assert(dos.next.toLong != BinaryConstants.magicNumber, "Binary file " + filename + " doesn't have the magic number expected at the top of the file")
-    assert(dos.next.toLong != BinaryConstants.version, "Binary file " + filename + " doesn't have the correct version, expecting " + BinaryConstants.version)
+    assert(inputText.next.toLong == BinaryConstants.magicNumber, "Binary file " + filename + " doesn't have the magic number expected at the top of the file")
+    assert(inputText.next.toLong == BinaryConstants.version, "Binary file " + filename + " doesn't have the correct version, expecting " + BinaryConstants.version)
 
     // get the enzyme type
-    val enzymeType = Enzyme.indexToParameterPack(dos.next.toLong)
+    val enzymeType = Enzyme.indexToParameterPack(inputText.next.toLong)
 
     // now process the bins
-    val binCount = dos.next.toLong
+    val binCount = inputText.next.toLong
     val binWidth = (math.log(binCount) / math.log(4)).toInt
     logger.debug("Number of characters used to generate this lookup file: " + binWidth)
 
     val binGenerator = BaseCombinationGenerator(binWidth)
-    val compressedBlockSize     = mutable.ArrayBuilder.make[Long]()
-    val compressedBlockPosition = mutable.ArrayBuilder.make[Long]()
-    val uncompressedBlockSize   = mutable.ArrayBuilder.make[Long]()
+    val blockInformation     = new mutable.HashMap[String, BlockOffset]()
 
     // read in the bins and their sizes
     val binRegex = """(\w+)=(\d+),(\d+),(\d+)""".r
     binGenerator.iterator.zipWithIndex.foreach { case (bin, index) => {
-      val inputStr = binRegex.findAllIn(dos.next).matchData.next()
+      val binLine = inputText.next
+      val inputStrMatch = binRegex.findAllIn(binLine)
 
-      assert(bin == inputStr.group(0))
-      compressedBlockSize += inputStr.group(1).toLong
-      compressedBlockPosition += inputStr.group(2).toLong
-      uncompressedBlockSize += inputStr.group(3).toLong
+      assert(inputStrMatch.hasNext,"Missing line for bin " + bin + " from line: " + binLine)
+      val inputStr = inputStrMatch.matchData.next()
+
+      assert(bin == inputStr.group(1), "Failed to verify bin name, expected: " + bin + " isn't what we got " + inputStr.group(1))
+      blockInformation(bin) = BlockOffset(inputStr.group(2).toLong, inputStr.group(3).toInt, inputStr.group(4).toInt)
     }}
 
     val positionEncoder = new BitPosition()
-    dos.foreach(remainingLine => {
+    inputText.foreach(remainingLine => {
       val line = remainingLine.split("=")
       positionEncoder.addReference(line(1))
     })
 
     val binMask = bitCoder.compBitmaskForBin(binWidth)
 
-    BinaryHeader(binGenerator, enzymeType, bitCoder, positionEncoder, compressedBlockSize.result(), compressedBlockPosition.result(), uncompressedBlockSize.result() )
+    BinaryHeader(binGenerator, enzymeType, bitCoder, positionEncoder, blockInformation)
   }
 }

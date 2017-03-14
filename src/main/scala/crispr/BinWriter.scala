@@ -34,7 +34,7 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
   def close(outputFile: File): Unit = {
     val totalOutput = new PrintWriter(outputFile)
     binGenerator.iterator.foreach{bin => {
-      logger.info("Merging back bin " + bin)
+      //logger.info("Merging back bin " + bin)
       binToWriter(bin).close()
 
       val toSort = new ArrayBuffer[CRISPRSite]()

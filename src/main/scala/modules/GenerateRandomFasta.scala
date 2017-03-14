@@ -7,10 +7,9 @@ import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideStorage}
 import main.scala.util.BaseCombinationGenerator
 import output.TargetOutput
-import reference.traverser.{LinearTraverser, SeekTraverser}
+import reference.traverser.SeekTraverser
 import reference.{CRISPRSite, ReferenceEncoder}
 import crispr.filter.{EntropyFilter, SequencePreFilter, MaxPolyNTrackFilter}
-import reference.traversal.OrderedBinTraversal
 import standards.ParameterPack
 import util.RandoCRISPR
 

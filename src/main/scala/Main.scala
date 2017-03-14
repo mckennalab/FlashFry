@@ -69,6 +69,9 @@ object Main extends App {
         case "random" => {
           new GenerateRandomFasta(args)
         }
+        case _ => {
+          throw new IllegalStateException("")
+        }
       }
     }
   }

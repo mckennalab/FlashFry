@@ -9,7 +9,7 @@ import scala.collection.mutable.{ArrayBuilder, Map}
 /**
   * Created by aaronmck on 3/9/17.
   */
-trait BinTraversal extends Iterator[BinToGuides] {
+trait BinTraversal extends Iterator[BinToGuidesLookup] {
   /**
     * @return how many traversal calls we'll need to traverse the whole off-target space; just a loosely bounded value here
     */

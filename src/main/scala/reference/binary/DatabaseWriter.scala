@@ -4,19 +4,24 @@ import java.io._
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
-import htsjdk.samtools.util.BlockCompressedOutputStream
+import htsjdk.samtools.util.{BlockCompressedFilePointerUtil, BlockCompressedOutputStream}
 import main.scala.util.BaseCombinationGenerator
 import standards.ParameterPack
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import scala.math._
 
 /**
-  * write a somewhat compact (and indexed) storage for our genomic targets
+  * write a somewhat compact (and indexed) storage for our genomic off-targets
   *
   */
 object DatabaseWriter extends LazyLogging {
+
+  // the number of bytes in a long
+  val bytesInLong = 8
+
 
   /**
     * write a binary representation of our off-target file
@@ -39,26 +44,24 @@ object DatabaseWriter extends LazyLogging {
 
 
     val blockStream = new BlockCompressedOutputStream(output)
-    val oStream = new DataOutputStream(blockStream)
 
     val blockIterator = new BlockOutputIterator(inputSortedBed, binGenerator.iterator, bitEncoder, positionEncoder)
 
     // record the number of targets in each bin, so we can set the table later
     val binIterator = binGenerator.iterator
 
-    val compressedBlockSize     = mutable.ArrayBuilder.make[Long]()
-    val compressedBlockPosition = mutable.ArrayBuilder.make[Long]()
-    val uncompressedBlockSize   = mutable.ArrayBuilder.make[Long]()
+    val compressedBlockInfo     = new mutable.HashMap[String,BlockOffset]()
 
-    blockIterator.foreach{block => {
-      val oldPos = blockStream.getPosition
+    blockIterator.zipWithIndex.foreach{case(blockContainer,index) => {
 
-      uncompressedBlockSize   += block.size
-      compressedBlockPosition += oldPos
+      val oldPos = BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
+      blockStream.write(blockContainer.block)
+      blockStream.flush()
+      val newBlockPos = BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
+      assert(newBlockPos - oldPos < Int.MaxValue,"A compressed block will be too large, please raise the block size")
 
-      blockStream.write(block)
-
-      compressedBlockSize     +=  blockStream.getPosition - oldPos
+      if (index % 10000 == 0) logger.info("Writing bin " + blockContainer.bin + " with size " + blockContainer.block.size + " oldPos " + oldPos + " new pos " + newBlockPos)
+      compressedBlockInfo(blockContainer.bin) = BlockOffset(oldPos,(newBlockPos - oldPos).toInt,blockContainer.block.size * bytesInLong)
     }}
 
 
@@ -68,11 +71,11 @@ object DatabaseWriter extends LazyLogging {
       parameterPack,
       bitEncoder,
       positionEncoder,
-      compressedBlockSize.result(),
-      compressedBlockPosition.result(),
-      uncompressedBlockSize.result())
+      compressedBlockInfo)
 
-    BinaryHeader.writeHeader(header, new PrintWriter(new FileOutputStream(output + ".header")))
+    val headerOutputFile = new PrintWriter(new FileOutputStream(output + ".header"))
+    BinaryHeader.writeHeader(header, headerOutputFile)
+    headerOutputFile.close()
 
   }
 

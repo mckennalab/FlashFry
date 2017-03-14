@@ -7,11 +7,11 @@ import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideStorage}
 import main.scala.util.BaseCombinationGenerator
 import output.TargetOutput
-import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
+import reference.traverser.{SeekTraverser, Traverser}
 import reference.{CRISPRSite, ReferenceEncoder}
 import crispr.filter.{EntropyFilter, MaxPolyNTrackFilter, SequencePreFilter}
 import reference.binary.BinaryHeader
-import reference.traversal.OrderedBinTraversal
+import reference.traversal.OrderedBinTraversalFactory
 import reference.traverser.SeekTraverser._
 import standards.ParameterPack
 
@@ -22,6 +22,7 @@ import scala.io.Source
   * Scan a fasta file for targets and tally their off-targets against the genome
   */
 class OffTargetScoring(args: Array[String]) extends LazyLogging {
+
   // parse the command line arguments
   val parser = new scopt.OptionParser[DiscoverConfig]("DiscoverOTSites") {
     head("DiscoverOTSites", "1.0")
@@ -70,17 +71,17 @@ class OffTargetScoring(args: Array[String]) extends LazyLogging {
       }.toArray
 
       logger.info("Determine how many bins we'll traverse....")
-      val header = BinaryHeader.readHeader(new File(config.binaryOTFile + ), bitEcoding)
-      val traversal = new OrderedBinTraversal(header.binGenerator, config.maxMismatch, bitEcoding, 0.90, guideOTStorage)
+      val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension, bitEcoding)
+      val traversal = new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, bitEcoding, 0.90, guideOTStorage)
 
       logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
       if (!traversal.saturated) {
         logger.info("Performing seekable bin traversal...")
-        SeekTraverser.scan(new File(config.binaryOTFile), header, traversal, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
+        SeekTraverser.scan(new File(config.binaryOTFile), header, traversal.iterator, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
         //LinearTraverser.scan(new File(config.binaryOTFile), header, traversal, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
       } else {
         logger.info("Performing linear bin traversal...")
-        LinearTraverser.scan(new File(config.binaryOTFile), header, traversal, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
+        SeekTraverser.scan(new File(config.binaryOTFile), header, traversal.iterator, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
       }
 
       logger.info("Performed a total of " + formatter.format(Traverser.allComparisions) + " guide to target comparisons")

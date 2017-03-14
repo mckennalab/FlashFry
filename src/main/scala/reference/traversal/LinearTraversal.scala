@@ -44,8 +44,8 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
   override def hasNext: Boolean = binIterator.hasNext
 
 
-  override def next(): BinToGuides = {
-    BinToGuides(binIterator.next(),guides.filter(cr => guidesToExclude contains cr.longEncoding).map(cr => cr.longEncoding))
+  override def next(): BinToGuidesLookup = {
+    BinToGuidesLookup(binIterator.next(),guides.filter(cr => guidesToExclude contains cr.longEncoding).map(cr => cr.longEncoding))
   }
 
 }

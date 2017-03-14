@@ -10,17 +10,17 @@ import scala.collection.mutable
 /**
   * this class stores information for each of the bins we will use in an off-target search
   */
-class OrderedBinTraversal(binGenerator: BaseCombinationGenerator,
-                          maxMismatch: Int,
-                          binaryEncoder: BitEncoding,
-                          upperBinProportionToJustSearchAll: Double,
-                          guides: Array[CRISPRSiteOT],
-                          filtering: Boolean = true) extends BinTraversal with LazyLogging {
+class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
+                                 maxMismatch: Int,
+                                 binaryEncoder: BitEncoding,
+                                 upperBinProportionToJustSearchAll: Double,
+                                 guides: Array[CRISPRSiteOT],
+                                 filtering: Boolean = true) extends LazyLogging {
 
   val bGenerator = binGenerator
   val mMismatch = maxMismatch
   val mBinaryEncoder = binaryEncoder
-  var guidesToExclude = Array[Long]()
+
 
   // provide a mapping from each bin to targets we need to score in that bin
   val binToTargets = new mutable.TreeMap[String, Array[Long]]()
@@ -29,10 +29,7 @@ class OrderedBinTraversal(binGenerator: BaseCombinationGenerator,
   // take a bin iterator, and make an array of longs
   val binArray = binGenerator.iterator.map { bin => (binaryEncoder.binToLongComparitor(bin), bin) }.toArray
 
-  /**
-    * @param guide a guide that no longer should be considered for off-target sequences
-    */
-  override def overflowGuide(guide: Long): Unit = guidesToExclude :+= guide
+
 
   /**
     * @return will we end up traversing all the bins?
@@ -44,8 +41,8 @@ class OrderedBinTraversal(binGenerator: BaseCombinationGenerator,
     *
     * @return an iterator over bins
     */
-  override def iterator: Iterator[BinToGuides] = {
-    PrivateBinIterator(binGenerator.iterator, binToTargets.clone())
+  def iterator: BinTraversal = {
+    PrivateBinIterator(binGenerator.iterator, binToTargets.clone(), saturated)
   }
 
 
@@ -55,16 +52,25 @@ class OrderedBinTraversal(binGenerator: BaseCombinationGenerator,
     * @param binIterator the full iterator over bin sequences
     * @param binToTarget a mapping of bins with at least one target to those targets
     */
-  private case class PrivateBinIterator(binIterator: Iterator[String], binToTarget: mutable.TreeMap[String, Array[Long]]) extends Iterator[BinToGuides] {
-    var cachedNextBin: Option[BinToGuides] = None
+  private case class PrivateBinIterator(binIterator: Iterator[String], binToTarget: mutable.TreeMap[String, Array[Long]], isSaturated: Boolean) extends BinTraversal {
+
+    var guidesToExclude = Array[Long]()
+
+    var cachedNextBin: Option[BinToGuidesLookup] = None
+
     // find the first entry
     while (binIterator.hasNext && !cachedNextBin.isDefined) {
       val nextBin = binIterator.next()
 
       if (binToTargets contains nextBin) {
-        cachedNextBin = Some(BinToGuides(nextBin, binToTarget(nextBin)))
+        cachedNextBin = Some(BinToGuidesLookup(nextBin, binToTarget(nextBin)))
       }
     }
+
+    /**
+      * @param guide a guide that no longer should be considered for off-target sequences
+      */
+    override def overflowGuide(guide: Long): Unit = guidesToExclude :+= guide
 
     /**
       * @return do we have a next value
@@ -74,7 +80,7 @@ class OrderedBinTraversal(binGenerator: BaseCombinationGenerator,
     /**
       * @return the next bin we need to lookup
       */
-    override def next(): BinToGuides = {
+    override def next(): BinToGuidesLookup = {
       val ret = cachedNextBin.get
 
       cachedNextBin = None
@@ -85,16 +91,29 @@ class OrderedBinTraversal(binGenerator: BaseCombinationGenerator,
 
         if (binToTargets contains nextBin) {
           if (filtering) {
-            cachedNextBin = Some(BinToGuides(nextBin, binToTarget(nextBin).filter { case (target) => !(guidesToExclude contains target) }))
+            cachedNextBin = Some(BinToGuidesLookup(nextBin, binToTarget(nextBin).filter { case (target) => !(guidesToExclude contains target) }))
             //if (binToTarget(nextBin).size > cachedNextBin.get.guides.size)
             //  logger.info(binToTarget(nextBin).size + " to " + cachedNextBin.get.guides.size + " --" + cachedNextBin.isDefined + " ==== " + binIterator.hasNext)
           } else {
-            cachedNextBin = Some(BinToGuides(nextBin, binToTarget(nextBin)))
+            cachedNextBin = Some(BinToGuidesLookup(nextBin, binToTarget(nextBin)))
           }
         }
       }
       ret
     }
+
+    /**
+      * @return how many traversal calls we'll need to traverse the whole off-target space; just a loosely bounded value here
+      */
+    override def traversalSize: Int = binToTarget.size
+
+    /**
+      * have we saturated: when we'd traverse the total number of bins, and any enhanced search strategy
+      * would be useless
+      *
+      * @return
+      */
+    override def saturated: Boolean = isSaturated
   }
 
 

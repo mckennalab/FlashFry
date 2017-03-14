@@ -14,7 +14,7 @@ import scala.io.Source
 class BlockOutputIterator(inputFile: File,
                           binIterator: Iterator[String],
                           bitEnc: BitEncoding,
-                          posEnc: BitPosition) extends Iterator[Array[Long]] {
+                          posEnc: BitPosition) extends Iterator[BlockDescriptor] {
 
   // for each line in the sorted file, split and rerecord
   val input = Source.fromFile(inputFile).getLines()
@@ -28,6 +28,12 @@ class BlockOutputIterator(inputFile: File,
   // where we get bins from
   val binIter = binIterator
 
+  // the current bin we're in
+  var currentBin : Option[String] = None
+
+  // setup the first block (VERY IMPORTANT)
+  loadNextBlock()
+
   /**
     * @return do we have
     */
@@ -36,8 +42,8 @@ class BlockOutputIterator(inputFile: File,
   /**
     * @return the next block of the iterator -- can be a size 0 array
     */
-  override def next(): Array[Long] = {
-    val ret = currentBlock.getOrElse(Array[Long]())
+  override def next(): BlockDescriptor = {
+    val ret = BlockDescriptor(currentBin.get,currentBlock.getOrElse(Array[Long]()))
     loadNextBlock()
     ret
   }
@@ -49,14 +55,14 @@ class BlockOutputIterator(inputFile: File,
       currentBlock = None
       return
     }
-    val currentBin = binIter.next
+    currentBin = Some(binIter.next)
 
     val nextBinBuilder = mutable.ArrayBuilder.make[Long]
 
     if (!nextGuide.isDefined && input.hasNext)
       nextGuide = Some(BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc))
 
-    while (nextGuide.isDefined && bitEnc.mismatchBin(currentBin, nextGuide.get.target) == 0) {
+    while (input.hasNext && nextGuide.isDefined && bitEnc.mismatchBin(currentBin.get, nextGuide.get.target) == 0) {
       val guide = BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc)
 
       if (bitEnc.mismatches(nextGuide.get.target, guide.target) == 0) {
@@ -71,6 +77,8 @@ class BlockOutputIterator(inputFile: File,
   }
 
 }
+
+
 
 object BlockOutputIterator {
   /**
@@ -88,6 +96,8 @@ object BlockOutputIterator {
   }
 }
 
+
+
 case class TargetPos(target: Long, positions: Array[Long]) {
 
   def combine(other: TargetPos, bitEnc: BitEncoding) = {
@@ -95,3 +105,5 @@ case class TargetPos(target: Long, positions: Array[Long]) {
     TargetPos(target, positions ++ other.positions)
   }
 }
+
+case class BlockDescriptor(bin: String, block: Array[Long])

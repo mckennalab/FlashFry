@@ -8,8 +8,10 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
+import htsjdk.samtools.util.{BlockCompressedInputStream, BlockGunzipper}
 import main.scala.util.BaseCombinationGenerator
-import reference.traversal.{BinToGuides, BinTraversal, OrderedBinTraversal}
+import reference.binary.{BinaryHeader, BlockOffset}
+import reference.traversal.{BinToGuidesLookup, BinTraversal}
 import standards.ParameterPack
 
 import scala.collection.mutable
@@ -33,7 +35,7 @@ object SeekTraverser extends Traverser with LazyLogging {
     * @return a guide to OT hit array
     */
   def scan(binaryFile: File,
-           header: BinLookup,
+           header: BinaryHeader,
            traversal: BinTraversal,
            targets: Array[CRISPRSiteOT],
            maxMismatch: Int,
@@ -48,30 +50,36 @@ object SeekTraverser extends Traverser with LazyLogging {
     val channel = FileChannel.open(filePath, StandardOpenOption.READ)
     val inputStream = Channels.newInputStream(channel)
 
-    Traverser.readHeader(inputStream,binaryFile.getAbsolutePath, bitCoder)
-
     // where we collect the off-target hits
     val siteSequenceToSite = new mutable.LinkedHashMap[Long, CRISPRSiteOT]()
     val guideList = new Array[Long](targets.size)
 
-    targets.zipWithIndex.foreach { case(tgt,index) => {
+    targets.zipWithIndex.foreach { case (tgt, index) => {
       guideList(index) = tgt.longEncoding
       siteSequenceToSite(tgt.longEncoding) = tgt
-    } }
+    }
+    }
 
     // do the look analysis here
     var t0 = System.nanoTime()
     var binIndex = 0
 
     logger.info("Beginning search against off-targets with " + traversal.traversalSize)
-    val traveralIterator = traversal.iterator
-
     // ------------------------------------------ traversal ------------------------------------------
-    while(traveralIterator.hasNext) {
-      val binDescription = traveralIterator.next()
-      val longBuffer = fillBlock(header, filePath, binDescription)
+    traversal.foreach { guidesToSeekForBin => {
+      assert(header.blockOffsets contains guidesToSeekForBin.bin)
 
-      Traverser.compareBlock(longBuffer,binDescription.guides,bitCoder,maxMismatch,bitCoder.binToLongComparitor(binDescription.bin),header.binMask).foreach{case(guide,ots) => {
+      val binPositionInformation = header.blockOffsets(guidesToSeekForBin.bin)
+
+      val longBuffer = fillBlock(binPositionInformation, filePath)
+
+      Traverser.compareBlock(longBuffer,
+        guidesToSeekForBin.guides,
+        bitCoder,
+        maxMismatch,
+        bitCoder.binToLongComparitor(guidesToSeekForBin.bin),
+        header.binMask).foreach { case (guide, ots) => {
+
         siteSequenceToSite(guide).addOTs(ots)
 
         // if we're done with a guide, tell our traverser to remove it
@@ -79,7 +87,8 @@ object SeekTraverser extends Traverser with LazyLogging {
           traversal.overflowGuide(guide)
           logger.info("Guide " + bitCoder.bitDecodeString(guide).str + " has overflowed, and will no longer collect off-targets (total " + siteSequenceToSite(guide).offTargets.result().size + " and other " + siteSequenceToSite(guide).currentTotal)
         }
-      }}
+      }
+      }
 
       if (binIndex % 10000 == 0) {
         //val totalGuidesScoring = traveralIterator.size
@@ -88,35 +97,49 @@ object SeekTraverser extends Traverser with LazyLogging {
       }
       binIndex += 1
     }
+    }
+
     siteSequenceToSite.values.toArray
   }
 
   /**
     * fill a block of off-targets from the database
-    * @param header the header object
-    * @param filePath our file path
-    * @param binDescription the size of the bin
+    *
+    * @param blockInformation information about the block we'd like to fetch
+    * @param filePath         our file path
     * @return
     */
-  private def fillBlock(header: BinLookup, filePath: Path, binDescription: BinToGuides): (Array[Long]) = {
+  private def fillBlock(blockInformation: BlockOffset, filePath: Path): (Array[Long]) = {
+    assert(blockInformation.uncompressedSize > 0, "Bin sizes must be positive")
+    val blockCompressedInput = new BlockCompressedInputStream(filePath)
 
-    val binSize = (header.longsPerBin(binDescription.bin) * 8).toInt
-    assert(binSize > 0,"We hit a bin that's larger than the maximum integer")
-
-    val bf = ByteBuffer.allocate(binSize)
+    // read in the compressed block into an internal buffer
+    val bf = ByteBuffer.allocate(blockInformation.compressedblockSize.toInt) // Dangerous downcast, but we're probably ok
     val sbc = Files.newByteChannel(filePath, StandardOpenOption.READ)
-    sbc.position(header.offsetIntoFile(binDescription.bin))
+    sbc.position(blockInformation.blockPosition)
     sbc.read(bf)
     bf.flip()
-    bf.asLongBuffer()
+    sbc.close()
 
-    val longBuffer = new Array[Long](header.longsPerBin(binDescription.bin).toInt)
+    // uncompress into a buffer
+    val uncompressedOutput = new Array[Byte](blockInformation.uncompressedSize)
+    try {
+      blockDecompressor.unzipBlock(bf.array(), uncompressedOutput, blockInformation.compressedblockSize)
+    } catch {
+      case e: htsjdk.samtools.SAMFormatException => {
+        logger.error("Failed to fetch block starting at " + blockInformation.blockPosition + " with compressed size " + blockInformation.compressedblockSize)
+        throw e
+      }
+    }
+
+    // now copy the data into a final Long array
+    val longArray = new Array[Long](blockInformation.uncompressedArraySize)
     var index = 0
-    while (index < header.longsPerBin(binDescription.bin)) {
-      longBuffer(index) = bf.getLong()
+    while (index < longArray.size) {
+      longArray(index) = bf.getLong()
       index += 1
     }
-    sbc.close()
-    (longBuffer)
+
+    (longArray)
   }
 }
