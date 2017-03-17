@@ -1,7 +1,7 @@
 package models
 import bitcoding.BitEncoding
 import crispr.CRISPRSiteOT
-import main.scala.util.Utils
+import utils.Utils
 import standards.{Cas9Type, ParameterPack}
 
 /**

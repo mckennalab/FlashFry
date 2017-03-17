@@ -1,9 +1,10 @@
-package util
+package utils
+
 
 /**
- * created by aaronmck on 12/9/14
+ * created by aaronmck on 1/3/15
  *
- * Copyright (c) 2014, aaronmck
+ * Copyright (c) 2015, aaronmck
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,20 +28,40 @@ package util
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  *
  */
+// makes iterators of Bases; from AAAA to TTTT for example
+case class BaseCombinationGenerator(width: Int) extends Iterable[String] {
+  override def iterator: Iterator[String] = new BaseCombinationIterator(width)
+}
 
-class RandoCRISPR(sz: Int, pam: String, pamFivePrime: Boolean) extends Iterator[String] {
-  def hasNext() = true
-  val seed = System.currentTimeMillis
-  val r = new scala.util.Random(seed)
+class BaseCombinationIterator(count: Int) extends Iterator[String] {
+  import utils.Base._
 
-  def next(): String = {
-    if (pamFivePrime)
-      pam + (0.until(sz)).map{ct => numberToBase(r.nextInt(4))}.mkString("")
+    var lst = new Array[Base](count)
+    var isLast = false
+    (0 until count).foreach { case (e) => lst(e) = Base.A }
+
+    val terminalStr = (0 until count).map { _ => Base.T }.mkString
+  override def hasNext: Boolean =
+    if (terminalStr == lst.mkString) {
+      isLast = true
+      return true
+    }
+    else return !isLast
+
+  def incr(pos: Int): Unit = {
+    if (lst(pos) == Base.T) {
+      lst(pos) = Base.A
+      if (pos - 1 >= 0)
+        incr(pos-1)
+    }
     else
-      (0.until(sz)).map{ct => numberToBase(r.nextInt(4))}.mkString("") + pam
+      lst(pos) = Base(Base.baseToInt(lst(pos)) + 1)
   }
 
-  def numberToBase(nt: Int): Char = if (nt == 0) 'A' else if (nt == 1) 'C' else if (nt == 2) 'G' else 'T'
-  def baseToNumber(nt: Char): Int = if (nt == 'A') 0 else if (nt == 'C') 1 else if (nt == 'G') 2 else 3
+  override def next(): String = {
+    val ret = lst.mkString
+    incr(count - 1)
+    return ret
 
+  }
 }

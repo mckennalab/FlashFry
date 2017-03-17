@@ -2,7 +2,7 @@ package crispr
 
 import java.io.{File, PrintWriter}
 
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 import org.slf4j.LoggerFactory
 import reference.CRISPRSite
 

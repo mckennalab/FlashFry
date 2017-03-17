@@ -5,13 +5,13 @@ import java.io.{File, PrintWriter}
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideStorage}
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 import output.TargetOutput
 import reference.traverser.SeekTraverser
 import reference.{CRISPRSite, ReferenceEncoder}
 import crispr.filter.{EntropyFilter, SequencePreFilter, MaxPolyNTrackFilter}
 import standards.ParameterPack
-import util.RandoCRISPR
+import utils.RandoCRISPR
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

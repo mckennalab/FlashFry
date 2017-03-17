@@ -20,10 +20,10 @@ class BlockOutputIterator(inputFile: File,
   val input = Source.fromFile(inputFile).getLines()
 
   // store the growing block before returning it to the user
-  var currentBlock: Option[Array[Long]] = None
+  var currentBlock: Option[Tuple2[Array[Long],Int]] = None
 
   // we have to look-ahead to see if the next guide is outside our current bin
-  var nextGuide: Option[TargetPos] = if (input.hasNext) Some(BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc)) else None
+  var nextGuide: Option[TargetPos] = None
 
   // where we get bins from
   val binIter = binIterator
@@ -43,12 +43,14 @@ class BlockOutputIterator(inputFile: File,
     * @return the next block of the iterator -- can be a size 0 array
     */
   override def next(): BlockDescriptor = {
-    val ret = BlockDescriptor(currentBin.get,currentBlock.getOrElse(Array[Long]()))
+    val ret = BlockDescriptor(currentBin.get, currentBlock.getOrElse( (Array[Long](),0) )._1, currentBlock.getOrElse( (Array[Long](),0) )._2)
     loadNextBlock()
     ret
   }
 
-  // performs the actual fetching of blocks
+  /**
+    * performs the actual fetching of blocks
+    */
   private def loadNextBlock() {
 
     if (!binIter.hasNext) {
@@ -58,9 +60,12 @@ class BlockOutputIterator(inputFile: File,
     currentBin = Some(binIter.next)
 
     val nextBinBuilder = mutable.ArrayBuilder.make[Long]
+    var numberOfTargets = 0
 
-    if (!nextGuide.isDefined && input.hasNext)
+    if (!(nextGuide.isDefined) && input.hasNext) {
       nextGuide = Some(BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc))
+      numberOfTargets += 1
+    }
 
     while (input.hasNext && nextGuide.isDefined && bitEnc.mismatchBin(currentBin.get, nextGuide.get.target) == 0) {
       val guide = BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc)
@@ -68,12 +73,23 @@ class BlockOutputIterator(inputFile: File,
       if (bitEnc.mismatches(nextGuide.get.target, guide.target) == 0) {
         nextGuide = Some(guide.combine(nextGuide.get, bitEnc)) // combine off-targets
       } else {
+
         nextBinBuilder += nextGuide.get.target
         nextBinBuilder ++= nextGuide.get.positions
         nextGuide = Some(guide)
+        numberOfTargets += 1
       }
     }
-    currentBlock = Some(nextBinBuilder.result())
+
+    // rare situation -- in the last block we need to write the guide
+    if (nextGuide.isDefined && !(input.hasNext)) {
+      nextBinBuilder += nextGuide.get.target
+      nextBinBuilder ++= nextGuide.get.positions
+      numberOfTargets += 1
+      nextGuide = None
+    }
+
+    currentBlock = Some((nextBinBuilder.result(),numberOfTargets))
   }
 
 }
@@ -106,4 +122,4 @@ case class TargetPos(target: Long, positions: Array[Long]) {
   }
 }
 
-case class BlockDescriptor(bin: String, block: Array[Long])
+case class BlockDescriptor(bin: String, block: Array[Long], numberOfTargets: Int)

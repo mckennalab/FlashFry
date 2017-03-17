@@ -3,7 +3,7 @@ package bitcoding
 import java.lang.{Long => JavaLong}
 import java.math.BigInteger
 
-import main.scala.util.Utils
+import utils.Utils
 import standards.ParameterPack
 
 import scala.annotation.switch
@@ -79,10 +79,8 @@ class BitEncoding(parameterPack: ParameterPack) {
 
   /**
     * return the number of mismatches between two strings (encoded in longs), given both our set comparison mask
-    * as well as an additional mask (optional)
-    *
-    * TODO: I wish we could use the underlying POPCNT of the system for speed but we need two bit bit tests,
-    * probably a popcnt (original & original >> 1) could be faster
+    * as well as an additional mask (optional). Uses Java bitCount, which on any modern platform should call out
+    * to the underlying POPCNT instruction, which with bitshifting is about 20X faster than any loop you'll implement
     *
     * @param encoding1 the first string encoded as a long
     * @param encoding2 the second string
@@ -90,16 +88,10 @@ class BitEncoding(parameterPack: ParameterPack) {
     * @return their differences, as a number of bases
     */
   def mismatches(encoding1: Long, encoding2: Long, additionalMask: Long = BitEncoding.stringMask): Int = {
-    val xORed = ((encoding1 & mParameterPack.comparisonBitEncoding) ^ (encoding2 & mParameterPack.comparisonBitEncoding)) & additionalMask
-    var diff = 0
+    BitEncoding.allComparisons += 1
+    val firstComp = ((encoding1 ^ encoding2) & additionalMask & mParameterPack.comparisonBitEncoding)
+    java.lang.Long.bitCount((firstComp & BitEncoding.upperBits) | ((firstComp << 1) & BitEncoding.upperBits))
 
-    // this is 5X faster than a foreach lookup
-    var index = 0
-    while (index < BitEncoding.stringLimit) {
-      if (((xORed >> (index * 2)) & 0x3) > 0) diff += 1
-      index += 1
-    }
-    diff
   }
 
   /**
@@ -162,6 +154,7 @@ class BitEncoding(parameterPack: ParameterPack) {
   * handle encoding and decoding strings into packed bit vectors (currently a long -- 64 bits)
   */
 object BitEncoding {
+  var allComparisons = 0l
 
   val encodeA = 0x0
   val encodeC = 0x1
@@ -172,8 +165,8 @@ object BitEncoding {
 
   val stringLimit = 24
 
-  val stringMask =         0xFFFFFFFFFFFFl
-
+  val stringMask         = 0xFFFFFFFFFFFFl
+  val upperBits          = 0xAAAAAAAAAAAAl
   val stringMaskHighBits = 0xAAAAAAAAAAAAl
   val stringMaskLowBits =  0x555555555555l
 
@@ -185,7 +178,7 @@ object BitEncoding {
   * @param count it's count
   */
 case class StringCount(str: String, count: Short) {
-  require (str.size <= BitEncoding.stringLimit, {throw new IllegalStateException("string size is too large for encoding (limit " + BitEncoding.stringLimit + "), size is: " + str.size)})
-  require (count >= 0, {throw new IllegalStateException("the count for a string should be greater than 0, not " + count)})
+  require (str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " + BitEncoding.stringLimit + "), size is: " + str.size)
+  require (count >= 0, "the count for a string should be greater than 0, not " + count + " for string " + str)
 }
 

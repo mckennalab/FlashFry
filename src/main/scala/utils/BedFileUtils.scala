@@ -1,6 +1,4 @@
-package util
-
-package main.scala.util
+package utils
 
 import java.io.File
 

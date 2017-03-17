@@ -5,7 +5,8 @@ import java.io._
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import htsjdk.samtools.util.{BlockCompressedFilePointerUtil, BlockCompressedOutputStream}
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
+import utils.Utils
 import standards.ParameterPack
 
 import scala.collection.mutable
@@ -50,21 +51,29 @@ object DatabaseWriter extends LazyLogging {
     // record the number of targets in each bin, so we can set the table later
     val binIterator = binGenerator.iterator
 
-    val compressedBlockInfo     = new mutable.HashMap[String,BlockOffset]()
+    val compressedBlockInfo = new mutable.HashMap[String,BlockOffset]()
 
     blockIterator.zipWithIndex.foreach{case(blockContainer,index) => {
 
-      val oldPos = BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
-      blockStream.write(blockContainer.block)
-      blockStream.flush()
-      val newBlockPos = BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
-      assert(newBlockPos - oldPos < Int.MaxValue,"A compressed block will be too large, please raise the block size")
+      val oldPos = blockStream.getPosition // BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
+      blockStream.write(Utils.longArrayToByteArray(blockContainer.block))
+      //blockStream.flush()
+      val newBlockPos = blockStream.getPosition // BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
 
-      if (index % 10000 == 0) logger.info("Writing bin " + blockContainer.bin + " with size " + blockContainer.block.size + " oldPos " + oldPos + " new pos " + newBlockPos)
-      compressedBlockInfo(blockContainer.bin) = BlockOffset(oldPos,(newBlockPos - oldPos).toInt,blockContainer.block.size * bytesInLong)
+
+      if (index % 10000 == 0) {
+        val nextBlock = if (blockContainer.block.size > 0) bitEncoder.bitDecodeString(blockContainer.block(0)) + " --> " + Utils.longToBitString(blockContainer.block(0)) else "none"
+        logger.info("Writing bin " + blockContainer.bin + " with size " + blockContainer.block.size + " oldPos " + oldPos + " new pos " + newBlockPos  + " encoding " + nextBlock)
+      }
+
+      // save the start of the block, the block size in bytes (compressed), the block size uncompressed, and the number of targets
+      val comppressedSize = (BlockCompressedFilePointerUtil.getBlockAddress(newBlockPos) - BlockCompressedFilePointerUtil.getBlockAddress(oldPos)).toInt
+      assert(comppressedSize < Int.MaxValue,"A compressed block will be too large, please raise the block size")
+
+      compressedBlockInfo(blockContainer.bin) = BlockOffset(oldPos,comppressedSize,blockContainer.block.size * bytesInLong, blockContainer.numberOfTargets)
     }}
 
-
+    blockStream.flush()
     blockStream.close()
 
     val header = BinaryHeader(binGenerator,
@@ -79,18 +88,5 @@ object DatabaseWriter extends LazyLogging {
 
   }
 
-  /**
-    * add an implicit to convert a byte array to a long array - just to hide the uglyness of block compression
-    * streams only taking byte arrays
-    * @param larray the array of longs
-    * @return an array of bytes
-    */
-  implicit def longArrayToByteArray(larray: Array[Long]): Array[Byte] = {
-    val bbuf = java.nio.ByteBuffer.allocate(8*larray.length)
-    bbuf.order(java.nio.ByteOrder.nativeOrder)
-    bbuf.asLongBuffer.put(larray)
-    bbuf.flip()
-    bbuf.array()
-  }
 }
 

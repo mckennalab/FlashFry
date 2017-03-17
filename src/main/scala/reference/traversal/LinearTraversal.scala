@@ -3,7 +3,7 @@ package reference.traversal
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 
 /**
   * linear traversal over the collection of bins in the file
@@ -45,7 +45,13 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
 
 
   override def next(): BinToGuidesLookup = {
-    BinToGuidesLookup(binIterator.next(),guides.filter(cr => guidesToExclude contains cr.longEncoding).map(cr => cr.longEncoding))
+    val bin     = binIterator.next()
+
+    BinToGuidesLookup(bin,guides.filter(
+      cr => {
+        !(guidesToExclude contains cr.longEncoding) && binaryEncoder.mismatchBin(bin,cr.longEncoding) <= maxMismatch
+      }
+    ).map(cr => cr.longEncoding))
   }
 
 }

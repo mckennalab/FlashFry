@@ -1,4 +1,4 @@
-package main.scala.util
+package utils
 
 import java.io._
 import java.math.BigInteger
@@ -52,4 +52,46 @@ object Utils extends LazyLogging {
   }.mkString
 
   def reverseCompString(str: String): String = compString(str).reverse
+
+
+
+  /**
+    * convert a long array to a byte array - just to hide the uglyness of block conversion
+    * @param larray the array of longs
+    * @return an array of bytes
+    */
+  def longArrayToByteArray(larray: Array[Long]): Array[Byte] = {
+    val bbuf = java.nio.ByteBuffer.allocate(8*larray.length)
+    bbuf.order(java.nio.ByteOrder.nativeOrder)
+    bbuf.asLongBuffer.put(larray)
+    bbuf.flip()
+    bbuf.array()
+  }
+
+  /**
+    * convert a byte array to a long array - just to hide the uglyness of block conversion
+    * @param larray the array of longs
+    * @return an array of bytes
+    */
+  def byteArrayToLong(larray: Array[Byte]): Array[Long] = {
+    assert(larray.size % 8 == 0,"You byte array is not a multiple of 8")
+    val bbuf = java.nio.ByteBuffer.allocate(larray.length)
+    bbuf.order(java.nio.ByteOrder.nativeOrder)
+    bbuf.put(larray)
+    bbuf.flip()
+    bbuf.asLongBuffer()
+
+    // we should have a long return that's (byte size / 8) longs
+    val ret = new Array[Long](larray.size / 8)
+
+    var index = 0
+    while (index < ret.size) { // for speed
+      ret(index) = bbuf.getLong()
+      index += 1
+    }
+
+    ret
+  }
+
+
 }

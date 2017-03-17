@@ -5,7 +5,7 @@ import java.io._
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.GuideContainer
-import main.scala.util.Utils
+import utils.Utils
 import crispr.filter.SequencePreFilter
 import standards.ParameterPack
 

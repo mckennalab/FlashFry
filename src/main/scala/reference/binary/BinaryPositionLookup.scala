@@ -1,6 +1,6 @@
 package reference.binary
 
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 
 import scala.collection.mutable
 

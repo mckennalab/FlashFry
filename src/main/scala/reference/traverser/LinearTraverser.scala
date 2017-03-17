@@ -8,7 +8,6 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
-import htsjdk.samtools.seekablestream.SeekableFileStream
 import htsjdk.samtools.util.{BlockCompressedFilePointerUtil, BlockCompressedInputStream, BlockGunzipper}
 import utils.{BaseCombinationGenerator, Utils}
 import reference.binary.{BinaryHeader, BlockOffset}
@@ -20,11 +19,10 @@ import scala.collection.mutable
 /**
   * traverse a binary database file, seeking to the correct bins
   */
-object SeekTraverser extends Traverser with LazyLogging {
+object LinearTraverser extends Traverser with LazyLogging {
 
   /**
-    * scan against the binary database of off-target sites seeking to
-    * each bin by it's virtual file pointer from the block compressed file
+    * scan against the binary database of off-target sites in an implmenetation specific way
     *
     * @param binaryFile    the file we're scanning from
     * @param header        we have to parse the header ahead of time so that we know
@@ -47,6 +45,8 @@ object SeekTraverser extends Traverser with LazyLogging {
 
     val formatter = java.text.NumberFormat.getInstance()
 
+    val blockCompressedInput = new BlockCompressedInputStream(binaryFile)
+
     // setup our input file
     val filePath = Paths.get(binaryFile.getAbsolutePath)
     val channel = FileChannel.open(filePath, StandardOpenOption.READ)
@@ -62,8 +62,7 @@ object SeekTraverser extends Traverser with LazyLogging {
     }
     }
 
-
-    // keep a timer and bin counter for output
+    // do the look analysis here
     var t0 = System.nanoTime()
     var binIndex = 0
 
@@ -74,7 +73,7 @@ object SeekTraverser extends Traverser with LazyLogging {
 
       val binPositionInformation = header.blockOffsets(guidesToSeekForBin.bin)
 
-      val longBuffer = fillBlock(binPositionInformation, new File(binaryFile.getAbsolutePath))
+      val longBuffer = fillBlock(blockCompressedInput, binPositionInformation, new File(binaryFile.getAbsolutePath))
 
       Traverser.compareBlock(longBuffer,
         binPositionInformation.numberOfTargets,
@@ -83,7 +82,6 @@ object SeekTraverser extends Traverser with LazyLogging {
         maxMismatch,
         bitCoder.binToLongComparitor(guidesToSeekForBin.bin),
         header.binMask).zip(guidesToSeekForBin.guides).foreach { case (ots,guide) => {
-
 
         siteSequenceToSite(guide).addOTs(ots)
 
@@ -116,12 +114,9 @@ object SeekTraverser extends Traverser with LazyLogging {
     * @param file             file name
     * @return
     */
-  private def fillBlock(blockInformation: BlockOffset, file: File): (Array[Long]) = {
+  private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File): (Array[Long]) = {
     assert(blockInformation.uncompressedSize >= 0, "Bin sizes must be positive (or zero)")
 
-    val blockCompressedInput = new BlockCompressedInputStream(file)
-
-    blockCompressedInput.seek(blockInformation.blockPosition)
     val readToBlock = new Array[Byte](blockInformation.uncompressedArraySize * 8)
     val read = blockCompressedInput.read(readToBlock)
     blockCompressedInput.close()

@@ -5,7 +5,7 @@ import java.io.File
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.BinWriter
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 import reference.binary.DatabaseWriter
 import crispr.filter.SequencePreFilter
 import reference.{ReferenceDictReader, ReferenceEncoder}
@@ -52,7 +52,7 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
 
       // sort them into an output file, and remove it when we're done
       val totalOutput = File.createTempFile("totalFile",".txt",new File(config.tmp))
-      totalOutput.deleteOnExit()
+      //totalOutput.deleteOnExit()
       logger.info("Creating output file " + totalOutput)
 
       //totalOutput.deleteOnExit()

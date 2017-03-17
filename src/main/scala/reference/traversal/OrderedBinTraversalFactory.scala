@@ -3,7 +3,7 @@ package reference.traversal
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, CRISPRSiteOT}
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 
 import scala.collection.mutable
 
@@ -21,6 +21,8 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   val mMismatch = maxMismatch
   val mBinaryEncoder = binaryEncoder
 
+  var isSaturated = false
+  def saturated = isSaturated
 
   // provide a mapping from each bin to targets we need to score in that bin
   val binToTargets = new mutable.TreeMap[String, Array[Long]]()
@@ -28,13 +30,6 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
 
   // take a bin iterator, and make an array of longs
   val binArray = binGenerator.iterator.map { bin => (binaryEncoder.binToLongComparitor(bin), bin) }.toArray
-
-
-
-  /**
-    * @return will we end up traversing all the bins?
-    */
-  def saturated = binProp >= upperBinProportionToJustSearchAll
 
   /**
     * provide an iterator over our bin to target assigments
@@ -142,9 +137,10 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
       val currentBinSaturation = binToTargets.size.toDouble / totalPossibleBins.toDouble
       val binPropSeen = index.toDouble / totalPossibleBins.toDouble
       logger.info("Comparing guides against bin prefix " + binArray(index)._2 + " the " + index + "th bin prefix we've looked at, total bin saturation = " + currentBinSaturation + ", proportion of bins seen = " + binPropSeen)
-      if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.95 && index > 20000)) {
-        logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal (" + currentBinSaturation + ")")
+      if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.5 && index > 20000)) {
+        logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal ( saturation = " + currentBinSaturation + ", proportion = " + (currentBinSaturation / binPropSeen) + " )")
         index = binArray.size
+        isSaturated = true
       }
     }
 
@@ -152,6 +148,8 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   }
 
   val binProp = binToTargets.size.toDouble / totalPossibleBins.toDouble
+  if (binProp >= upperBinProportionToJustSearchAll)
+    isSaturated = true
   logger.info("With " + guides.size + " guides, and allowing " +
     mMismatch + " mismatch(es), we're going to scan " + binToTargets.size +
     " target bins out of a total of " + totalPossibleBins)

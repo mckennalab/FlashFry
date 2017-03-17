@@ -1,6 +1,4 @@
-package main.scala.util
-
-import scala.util.Random
+package utils
 
 /**
  * created by aaronmck on 1/3/15
@@ -31,8 +29,10 @@ import scala.util.Random
  */
 // the Base object, with our enumerated bases
 object Base extends Enumeration {
+  import scala.util.Random
+
   type Base = Value
-  //val A, C, G, T, N = Value
+
   val A, C, G, T = Value
 
   def baseToInt(d: Base): Int = d.id

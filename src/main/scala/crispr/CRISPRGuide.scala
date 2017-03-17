@@ -1,7 +1,7 @@
 package crispr
 
 import com.typesafe.scalalogging.LazyLogging
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 
 /**
  * our CRISPR hit

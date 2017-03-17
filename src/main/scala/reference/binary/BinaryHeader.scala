@@ -4,7 +4,7 @@ import java.io._
 
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 import reference.traverser.Traverser._
 import spray.json.{DefaultJsonProtocol, JsArray, JsNumber, JsValue, RootJsonFormat}
 import standards.{Enzyme, ParameterPack}
@@ -33,11 +33,9 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
   def binGenerator: BaseCombinationGenerator = inputBinGenerator
 }
 
-case class BlockOffset(blockPosition: Long, compressedblockSize: Int, uncompressedSize: Int) {
+case class BlockOffset(blockPosition: Long, compressedblockSize: Int, uncompressedSize: Int, numberOfTargets: Int) {
   def uncompressedArraySize: Int = uncompressedSize / 8
 }
-
-
 
 
 object BinaryHeader extends LazyLogging {
@@ -63,9 +61,14 @@ object BinaryHeader extends LazyLogging {
     // write a number of longs equal to the block lookup table size -- we'll come back and fill these in later
     header.binGenerator.iterator.zipWithIndex.foreach { case(bin,index) => {
       if (header.blockOffsets contains bin)
-        writer.write(bin + "=" + header.blockOffsets(bin).blockPosition + "," + header.blockOffsets(bin).compressedblockSize + "," + header.blockOffsets(bin).uncompressedSize + "\n")
+        writer.write(bin + "=" +
+          header.blockOffsets(bin).blockPosition + "," +
+          header.blockOffsets(bin).compressedblockSize + "," +
+          header.blockOffsets(bin).uncompressedSize + "," +
+          header.blockOffsets(bin).numberOfTargets + "\n"
+        )
       else
-        writer.write(bin + "=0,0,0\n")
+        writer.write(bin + "=0,0,0,0\n")
     }}
 
     (1 until header.bitPosition.nextSeqId).foreach{ index => {
@@ -110,7 +113,7 @@ object BinaryHeader extends LazyLogging {
     val blockInformation     = new mutable.HashMap[String, BlockOffset]()
 
     // read in the bins and their sizes
-    val binRegex = """(\w+)=(\d+),(\d+),(\d+)""".r
+    val binRegex = """(\w+)=(\d+),(\d+),(\d+),(\d+)""".r
     binGenerator.iterator.zipWithIndex.foreach { case (bin, index) => {
       val binLine = inputText.next
       val inputStrMatch = binRegex.findAllIn(binLine)
@@ -119,7 +122,7 @@ object BinaryHeader extends LazyLogging {
       val inputStr = inputStrMatch.matchData.next()
 
       assert(bin == inputStr.group(1), "Failed to verify bin name, expected: " + bin + " isn't what we got " + inputStr.group(1))
-      blockInformation(bin) = BlockOffset(inputStr.group(2).toLong, inputStr.group(3).toInt, inputStr.group(4).toInt)
+      blockInformation(bin) = BlockOffset(inputStr.group(2).toLong, inputStr.group(3).toInt, inputStr.group(4).toInt, inputStr.group(5).toInt)
     }}
 
     val positionEncoder = new BitPosition()

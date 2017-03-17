@@ -5,13 +5,13 @@ import java.io.{File, PrintWriter}
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideStorage}
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 import output.TargetOutput
-import reference.traverser.{SeekTraverser, Traverser}
+import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
 import reference.{CRISPRSite, ReferenceEncoder}
 import crispr.filter.{EntropyFilter, MaxPolyNTrackFilter, SequencePreFilter}
 import reference.binary.BinaryHeader
-import reference.traversal.OrderedBinTraversalFactory
+import reference.traversal.{LinearTraversal, OrderedBinTraversalFactory}
 import reference.traverser.SeekTraverser._
 import standards.ParameterPack
 
@@ -37,6 +37,7 @@ class OffTargetScoring(args: Array[String]) extends LazyLogging {
     opt[String]("binaryOTFile") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
     opt[String]("outputFile") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
     opt[Unit]("positionalOTOutput") valueName ("<string>") action { (x, c) => c.copy(includePositionOutputInformation = true) } text ("include the position information of off-target hits")
+    opt[Unit]("forceLinear") valueName ("<string>") action { (x, c) => c.copy(forceLinear = true) } text ("force the run to use a linear traversal of the bins; really only good for testing")
     opt[Unit]("markExactGenomeHits") valueName ("<string>") action { (x, c) => c.copy(markTargetsWithExactGenomeHits = true) } text ("should we add a column to indicate that a target has a exact genome hit")
     opt[Int]("maxMismatch") valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("the maximum number of mismatches we allow")
     opt[Int]("flankingSequence") valueName ("<int>") action { (x, c) => c.copy(flankingSequence = x) } text ("number of bases we should save on each side of the target, used in some scoring schemes (default is 10 on each side)")
@@ -72,16 +73,15 @@ class OffTargetScoring(args: Array[String]) extends LazyLogging {
 
       logger.info("Determine how many bins we'll traverse....")
       val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension, bitEcoding)
-      val traversal = new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, bitEcoding, 0.90, guideOTStorage)
+      val traversalFactory = new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, bitEcoding, 0.90, guideOTStorage)
 
       logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
-      if (!traversal.saturated) {
-        logger.info("Performing seekable bin traversal...")
-        SeekTraverser.scan(new File(config.binaryOTFile), header, traversal.iterator, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
-        //LinearTraverser.scan(new File(config.binaryOTFile), header, traversal, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
-      } else {
-        logger.info("Performing linear bin traversal...")
-        SeekTraverser.scan(new File(config.binaryOTFile), header, traversal.iterator, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
+      if (traversalFactory.saturated || config.forceLinear) {
+        val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, bitEcoding, 0.90, guideOTStorage)
+        LinearTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
+      }
+      else {
+        SeekTraverser.scan(new File(config.binaryOTFile), header, traversalFactory.iterator, guideOTStorage, config.maxMismatch, params, bitEcoding, positionEncoder)
       }
 
       logger.info("Performed a total of " + formatter.format(Traverser.allComparisions) + " guide to target comparisons")
@@ -111,4 +111,5 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           includePositionOutputInformation: Boolean = false,
                           markTargetsWithExactGenomeHits: Boolean = false,
                           flankingSequence: Int = 10,
-                          maximumOffTargets: Int = 10000)
+                          maximumOffTargets: Int = 10000,
+                          forceLinear: Boolean = false)
