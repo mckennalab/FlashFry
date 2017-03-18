@@ -1,6 +1,6 @@
 package reference
 
-import crispr.GuideStorage
+import crispr.GuideMemoryStorage
 import org.scalatest.{FlatSpec, Matchers}
 import crispr.filter.SequencePreFilter
 import standards.{Cas9ParameterPack, Cpf1ParameterPack}
@@ -12,7 +12,7 @@ class SimpleSiteFinderTest extends FlatSpec with Matchers {
   "SimpleSiteFinder" should "find a Cas9 pam correctly" in {
     val string = "ATTTA AAAAA CCCCC AAAAA GGG".filter{c => c != ' '}.mkString("")
 
-    val guideStore = new GuideStorage()
+    val guideStore = new GuideMemoryStorage()
     val circ = SimpleSiteFinder(guideStore,Cas9ParameterPack,Array[SequencePreFilter](),0)
     circ.reset("testContig")
 

@@ -73,7 +73,7 @@ object LinearTraverser extends Traverser with LazyLogging {
 
       val binPositionInformation = header.blockOffsets(guidesToSeekForBin.bin)
 
-      val longBuffer = fillBlock(blockCompressedInput, binPositionInformation, new File(binaryFile.getAbsolutePath))
+      val longBuffer = fillBlock(blockCompressedInput, binPositionInformation, new File(binaryFile.getAbsolutePath), guidesToSeekForBin.bin, bitCoder)
 
       Traverser.compareBlock(longBuffer,
         binPositionInformation.numberOfTargets,
@@ -114,12 +114,11 @@ object LinearTraverser extends Traverser with LazyLogging {
     * @param file             file name
     * @return
     */
-  private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File): (Array[Long]) = {
+  private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File, bin: String, bitCoder: BitEncoding): (Array[Long]) = {
     assert(blockInformation.uncompressedSize >= 0, "Bin sizes must be positive (or zero)")
 
     val readToBlock = new Array[Byte](blockInformation.uncompressedArraySize * 8)
     val read = blockCompressedInput.read(readToBlock)
-    blockCompressedInput.close()
 
     Utils.byteArrayToLong(readToBlock)
   }

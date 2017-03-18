@@ -133,11 +133,11 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
     if (guideResult.size > 0)
       binToTargets(binArray(index)._2) = guideResult
 
-    if (index % 10000 == 0) {
+    if (index % 50000 == 0) {
       val currentBinSaturation = binToTargets.size.toDouble / totalPossibleBins.toDouble
       val binPropSeen = index.toDouble / totalPossibleBins.toDouble
       logger.info("Comparing guides against bin prefix " + binArray(index)._2 + " the " + index + "th bin prefix we've looked at, total bin saturation = " + currentBinSaturation + ", proportion of bins seen = " + binPropSeen)
-      if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.5 && index > 20000)) {
+      if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.4 && index > 20000)) {
         logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal ( saturation = " + currentBinSaturation + ", proportion = " + (currentBinSaturation / binPropSeen) + " )")
         index = binArray.size
         isSaturated = true

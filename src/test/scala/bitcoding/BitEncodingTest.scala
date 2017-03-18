@@ -2,7 +2,7 @@ package bitcoding
 
 import java.lang.{Integer => JavaInteger}
 
-import main.scala.util.Utils
+import utils.Utils
 import org.scalatest._
 import standards.{Cas9ParameterPack, Cpf1ParameterPack, ParameterPack}
 import standards.ParameterPack._

@@ -35,6 +35,7 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
 
 case class BlockOffset(blockPosition: Long, compressedblockSize: Int, uncompressedSize: Int, numberOfTargets: Int) {
   def uncompressedArraySize: Int = uncompressedSize / 8
+  def prettyString = "BLOCKPOS:" + blockPosition + ",COMPSIZE:" + compressedblockSize + ",UNCOMPSIZE:" + uncompressedSize + ",NUMTARGET:" + numberOfTargets
 }
 
 

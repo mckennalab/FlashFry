@@ -45,7 +45,7 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
 
 
   override def next(): BinToGuidesLookup = {
-    val bin     = binIterator.next()
+    val bin = binIterator.next()
 
     BinToGuidesLookup(bin,guides.filter(
       cr => {

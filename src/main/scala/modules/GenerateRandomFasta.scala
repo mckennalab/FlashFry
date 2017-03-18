@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSiteOT, GuideStorage}
+import crispr.{CRISPRSiteOT, GuideMemoryStorage}
 import utils.BaseCombinationGenerator
 import output.TargetOutput
 import reference.traverser.SeekTraverser

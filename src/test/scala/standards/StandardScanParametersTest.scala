@@ -1,10 +1,9 @@
 package standards
 
-import crispr.GuideStorage
+import crispr.GuideMemoryStorage
 import org.scalatest.{FlatSpec, Matchers}
 import reference.SimpleSiteFinder
 import crispr.filter.SequencePreFilter
-import standards.{Cas9ParameterPack, Cpf1ParameterPack}
 
 /**
   * Created by aaronmck on 3/9/17.

@@ -1,7 +1,7 @@
 package reference
 
-import crispr.GuideStorage
-import main.scala.util.Utils
+import crispr.GuideMemoryStorage
+import utils.Utils
 import models.Doench2014OnTarget
 import org.scalatest.{FlatSpec, Matchers}
 import crispr.filter.SequencePreFilter
@@ -14,7 +14,7 @@ class CRISPRCircleBufferTest extends FlatSpec with Matchers {
   "CRISPRCircleTest" should "find a cpf1 pam correctly" in {
     val string = "TTTA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
-    val guideStore = new GuideStorage()
+    val guideStore = new GuideMemoryStorage()
     val circ = CRISPRCircleBuffer(guideStore,Cpf1ParameterPack)
 
     circ.addLine(string)
@@ -25,7 +25,7 @@ class CRISPRCircleBufferTest extends FlatSpec with Matchers {
   "CRISPRCircleTest" should "find a reverse COMP cpf1 pam correctly" in {
     val string = "AAAAA CCCCC GGGGG TTTTA CAAA".filter{c => c != ' '}.mkString("")
 
-    val guideStore = new GuideStorage()
+    val guideStore = new GuideMemoryStorage()
     val circ = CRISPRCircleBuffer(guideStore,Cpf1ParameterPack)
 
     circ.addLine(string)
@@ -36,7 +36,7 @@ class CRISPRCircleBufferTest extends FlatSpec with Matchers {
   "CRISPRCircleTest" should "find a cas9 pam correctly" in {
     val string = "AAAAA CCCCC GGGGG TTTTA CGG".filter{c => c != ' '}.mkString("")
 
-    val guideStore = new GuideStorage()
+    val guideStore = new GuideMemoryStorage()
     val circ = CRISPRCircleBuffer(guideStore,Cas9ParameterPack)
 
     circ.addLine(string)
@@ -47,7 +47,7 @@ class CRISPRCircleBufferTest extends FlatSpec with Matchers {
   "CRISPRCircleTest" should "find a reverse COMP cas9 pam correctly" in {
     val string = "CCA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
-    val guideStore = new GuideStorage()
+    val guideStore = new GuideMemoryStorage()
     val circ = CRISPRCircleBuffer(guideStore,Cas9ParameterPack)
 
     circ.addLine(string)

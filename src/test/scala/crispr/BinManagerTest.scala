@@ -1,6 +1,6 @@
 package test.scala.crispr
 
-import main.scala.util.BaseCombinationGenerator
+import utils.BaseCombinationGenerator
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.Matchers._
 

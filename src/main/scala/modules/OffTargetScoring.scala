@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSiteOT, GuideStorage}
+import crispr.{CRISPRSiteOT, GuideMemoryStorage}
 import utils.BaseCombinationGenerator
 import output.TargetOutput
 import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
@@ -59,7 +59,7 @@ class OffTargetScoring(args: Array[String]) extends LazyLogging {
       val params = ParameterPack.nameToParameterPack(config.enzyme)
 
       // load up their input file, and scan for any potential targets
-      val guideHits = new GuideStorage()
+      val guideHits = new GuideMemoryStorage()
       val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, SequencePreFilter.standardFilters(), config.flankingSequence)
 
       // get our position encoder and bit encoder setup
