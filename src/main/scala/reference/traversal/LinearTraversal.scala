@@ -45,9 +45,10 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
 
 
   override def next(): BinToGuidesLookup = {
-    val bin = binIterator.next()
+    val bin = binaryEncoder.binToLongComparitor(binIterator.next())
 
-    BinToGuidesLookup(bin,guides.filter(
+
+    BinToGuidesLookup(bin.bin,guides.filter(
       cr => {
         !(guidesToExclude contains cr.longEncoding) && binaryEncoder.mismatchBin(bin,cr.longEncoding) <= maxMismatch
       }

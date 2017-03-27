@@ -2,6 +2,6 @@ package reference.traversal
 
 /**
   * A bin lookup object -- the bin name and long-encoded guides to search against.
-  * This is translated into searches by the
+  * This is translated into searches by a traverser
   */
 case class BinToGuidesLookup(bin: String, guides: Array[Long])

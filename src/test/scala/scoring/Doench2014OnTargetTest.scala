@@ -1,4 +1,4 @@
-package models
+package scoring
 
 import bitcoding.{BitEncoding, StringCount}
 import crispr.CRISPRSiteOT
@@ -16,7 +16,7 @@ class Doench2014OnTargetTest extends FlatSpec with Matchers {
 
   val bitEncoder = new BitEncoding(Cas9ParameterPack)
   val target = new CRISPRSite("1", "GACTTGCATCCGAAGCCGGTGGG", true, 1, None)
-  val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 0)))
+  val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 1)),1000)
   val dScore = new Doench2014OnTarget()
   dScore.bitEncoder(bitEncoder)
 
@@ -47,7 +47,7 @@ class Doench2014OnTargetTest extends FlatSpec with Matchers {
 
   "Doench2014OnTarget" should "correctly a simple guide right according to the python code" in {
     val crispr = CRISPRSite("test", "GTCAGCTGCCCCCACCTCCCTGG", true, 0, Some("GGTTGTCAGCTGCCCCCACCTCCCTGGGCCC"))
-    val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("GTCAGCTGCCCCCACCTCCCTGG", 1)))
+    val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("GTCAGCTGCCCCCACCTCCCTGG", 1)),1000)
     (dScore.scoreGuide(otHit).toDouble) should be(0.011271132331539457 +- 0.001)
 
   }

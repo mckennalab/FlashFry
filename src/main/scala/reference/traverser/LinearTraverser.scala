@@ -66,7 +66,6 @@ object LinearTraverser extends Traverser with LazyLogging {
     var t0 = System.nanoTime()
     var binIndex = 0
 
-    logger.info("Beginning search against off-targets with " + traversal.traversalSize)
     // ------------------------------------------ traversal ------------------------------------------
     traversal.foreach { guidesToSeekForBin => {
       assert(header.blockOffsets contains guidesToSeekForBin.bin)
@@ -75,32 +74,33 @@ object LinearTraverser extends Traverser with LazyLogging {
 
       val longBuffer = fillBlock(blockCompressedInput, binPositionInformation, new File(binaryFile.getAbsolutePath), guidesToSeekForBin.bin, bitCoder)
 
+      //Traverser.validateBlock(longBuffer,binPositionInformation.numberOfTargets,binPositionInformation.uncompressedSize / 8,bitCoder,guidesToSeekForBin.bin)
+
       Traverser.compareBlock(longBuffer,
         binPositionInformation.numberOfTargets,
         guidesToSeekForBin.guides,
         bitCoder,
         maxMismatch,
-        bitCoder.binToLongComparitor(guidesToSeekForBin.bin),
-        header.binMask).zip(guidesToSeekForBin.guides).foreach { case (ots,guide) => {
+        bitCoder.binToLongComparitor(guidesToSeekForBin.bin)).zip(guidesToSeekForBin.guides).foreach { case (ots,guide) => {
 
         siteSequenceToSite(guide).addOTs(ots)
 
         // if we're done with a guide, tell our traverser to remove it
         if (siteSequenceToSite(guide).full) {
           traversal.overflowGuide(guide)
-          logger.info("Guide " + bitCoder.bitDecodeString(guide).str + " has overflowed, and will no longer collect off-targets (total " + siteSequenceToSite(guide).offTargets.result().size + " and other " + siteSequenceToSite(guide).currentTotal)
+          logger.debug("Guide " + bitCoder.bitDecodeString(guide).str + " has overflowed, and will no longer collect off-targets (set limit of " + siteSequenceToSite(guide).offTargets.result().size + ")")
         }
       }
       }
 
-      if (binIndex % 10000 == 0) {
-        //val totalGuidesScoring = traveralIterator.size
+      binIndex += 1
+      if (binIndex % 1000 == 0) {
         logger.info("Comparing the " + formatter.format(binIndex) +
-          "th bin of " + formatter.format(traversal.traversalSize) + ". " + ((System.nanoTime() - t0) / 1000000000.0) +
-          " seconds/10K bins, comparing " + guidesToSeekForBin.guides.size + " guides, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
+          "th bin (" + guidesToSeekForBin.bin + ") with " + guidesToSeekForBin.guides.size + " guides, of a total bin count " + formatter.format(traversal.traversalSize) + ". " + ((System.nanoTime() - t0) / 1000000000.0) +
+          " seconds/1K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
         t0 = System.nanoTime()
       }
-      binIndex += 1
+
     }
     }
 
@@ -110,8 +110,9 @@ object LinearTraverser extends Traverser with LazyLogging {
   /**
     * fill a block of off-targets from the database
     *
+    * @param blockCompressedInput the block compressed stream to pull from
     * @param blockInformation information about the block we'd like to fetch
-    * @param file             file name
+    * @param file             file name to use
     * @return
     */
   private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File, bin: String, bitCoder: BitEncoding): (Array[Long]) = {

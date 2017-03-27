@@ -229,7 +229,9 @@ class BitEncodingTest extends FlatSpec with Matchers {
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     println(strCount + " " + Utils.longToBitString(encoding))
-    val differences = encodeDevice.mismatchBin(bin,encoding)
+
+    val binMask = encodeDevice.binToLongComparitor(bin)
+    val differences = encodeDevice.mismatchBin(binMask,encoding)
 
     (differences) should be (0)
   }
@@ -242,8 +244,23 @@ class BitEncodingTest extends FlatSpec with Matchers {
     val encodeDevice = new BitEncoding(parameterPack)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
-    val differences = encodeDevice.mismatchBin(bin,encoding)
+    val binMask = encodeDevice.binToLongComparitor(bin)
+    val differences = encodeDevice.mismatchBin(binMask,encoding)
 
     (differences) should be (2)
+  }
+
+  "A Bit Encoder" should "find a perfect bin match" in {
+
+    val strCount = StringCount("AAAAA AAAAC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1)
+    val bin = "AAAAAAAAA"
+
+    val encodeDevice = new BitEncoding(parameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val binMask = encodeDevice.binToLongComparitor(bin)
+    val differences = encodeDevice.mismatchBin(binMask,encoding)
+
+    (differences) should be (0)
   }
 }

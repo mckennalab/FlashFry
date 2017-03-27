@@ -2,7 +2,7 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
-import modules.{DiscoverGenomeOffTargets, GenerateRandomFasta, OffTargetScoring}
+import modules.{BuildOffTargetDatabase, GenerateRandomFasta, OffTargetDiscovery}
 import org.slf4j._
 import scopt._
 
@@ -61,10 +61,10 @@ object Main extends App {
 
       config.analysisType.get match {
         case "discover" => {
-          new DiscoverGenomeOffTargets(args)
+          new BuildOffTargetDatabase(args)
         }
         case "score" => {
-          new OffTargetScoring(args)
+          new OffTargetDiscovery(args)
         }
         case "random" => {
           new GenerateRandomFasta(args)

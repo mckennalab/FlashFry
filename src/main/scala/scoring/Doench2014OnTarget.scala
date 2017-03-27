@@ -1,8 +1,8 @@
-package models
+package scoring
 
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRGuide, CRISPRSiteOT}
+import crispr.{CRISPRSiteOT}
 import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
 
 /**
@@ -16,7 +16,7 @@ import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
   * THE SCORES IN SUPPLEMENTAL TABLE 7. The reason is unclear.
   *
   */
-class Doench2014OnTarget extends ScoreModel with LazyLogging {
+class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
 
   private var bitEncoder: Option[BitEncoding] = None
 
@@ -33,7 +33,7 @@ class Doench2014OnTarget extends ScoreModel with LazyLogging {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  override def scoreGuide(guide: CRISPRSiteOT): String = {
+  def scoreGuide(guide: CRISPRSiteOT): String = {
     require(validOverGuideSequence(Cas9ParameterPack,guide), "We're not a valid score over this guide")
 
     val guidePos = guide.target.sequenceContext.get.indexOf(guide.target.bases)
@@ -128,6 +128,7 @@ class Doench2014OnTarget extends ScoreModel with LazyLogging {
     val final_score = 1.0 / (1.0 + partial_score)
     return final_score
   }
+
 
 }
 

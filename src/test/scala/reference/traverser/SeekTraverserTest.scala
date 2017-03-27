@@ -26,7 +26,7 @@ class SeekTraverserTest extends FlatSpec with Matchers {
   "SeekTraverser" should "successfully write and read a block to and from disk" in {
     DatabaseWriter.writeToBinnedFileSet(inputSortedBed,output,encoder,posEnc,binGen,Cas9ParameterPack)
 
-    val header = BinaryHeader.readHeader(output + BinaryHeader.headerExtension,encoder)
+    val header = BinaryHeader.readHeader(output + BinaryHeader.headerExtension)
     val blockOffsets = header.blockOffsets("GTGTTAACC")
     (blockOffsets.blockPosition) should be (0)
     (blockOffsets.uncompressedSize) should be (96)

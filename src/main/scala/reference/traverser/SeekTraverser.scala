@@ -47,42 +47,34 @@ object SeekTraverser extends Traverser with LazyLogging {
 
     val formatter = java.text.NumberFormat.getInstance()
 
-    // setup our input file
-    val filePath = Paths.get(binaryFile.getAbsolutePath)
-    val channel = FileChannel.open(filePath, StandardOpenOption.READ)
-    val inputStream = Channels.newInputStream(channel)
-
     // where we collect the off-target hits
     val siteSequenceToSite = new mutable.LinkedHashMap[Long, CRISPRSiteOT]()
-    val guideList = new Array[Long](targets.size)
 
     targets.zipWithIndex.foreach { case (tgt, index) => {
-      guideList(index) = tgt.longEncoding
       siteSequenceToSite(tgt.longEncoding) = tgt
     }
     }
 
+    val blockCompressedInput = new BlockCompressedInputStream(new File(binaryFile.getAbsolutePath))
 
     // keep a timer and bin counter for output
     var t0 = System.nanoTime()
     var binIndex = 0
 
-    logger.info("Beginning search against off-targets with " + traversal.traversalSize)
     // ------------------------------------------ traversal ------------------------------------------
     traversal.foreach { guidesToSeekForBin => {
       assert(header.blockOffsets contains guidesToSeekForBin.bin)
 
       val binPositionInformation = header.blockOffsets(guidesToSeekForBin.bin)
 
-      val longBuffer = fillBlock(binPositionInformation, new File(binaryFile.getAbsolutePath))
+      val longBuffer = fillBlock(binPositionInformation,blockCompressedInput)
 
       Traverser.compareBlock(longBuffer,
         binPositionInformation.numberOfTargets,
         guidesToSeekForBin.guides,
         bitCoder,
         maxMismatch,
-        bitCoder.binToLongComparitor(guidesToSeekForBin.bin),
-        header.binMask).zip(guidesToSeekForBin.guides).foreach { case (ots,guide) => {
+        bitCoder.binToLongComparitor(guidesToSeekForBin.bin)).zip(guidesToSeekForBin.guides).foreach { case (ots,guide) => {
 
 
         siteSequenceToSite(guide).addOTs(ots)
@@ -90,7 +82,7 @@ object SeekTraverser extends Traverser with LazyLogging {
         // if we're done with a guide, tell our traverser to remove it
         if (siteSequenceToSite(guide).full) {
           traversal.overflowGuide(guide)
-          logger.info("Guide " + bitCoder.bitDecodeString(guide).str + " has overflowed, and will no longer collect off-targets (total " + siteSequenceToSite(guide).offTargets.result().size + " and other " + siteSequenceToSite(guide).currentTotal)
+          logger.debug("Guide " + bitCoder.bitDecodeString(guide).str + " has overflowed, and will no longer collect off-targets (set limit of " + siteSequenceToSite(guide).offTargets.result().size + ")")
         }
       }
       }
@@ -98,13 +90,14 @@ object SeekTraverser extends Traverser with LazyLogging {
       if (binIndex % 10000 == 0) {
         //val totalGuidesScoring = traveralIterator.size
         logger.info("Comparing the " + formatter.format(binIndex) +
-          "th bin of " + formatter.format(traversal.traversalSize) + ". " + ((System.nanoTime() - t0) / 1000000000.0) +
-          " seconds/10K bins, comparing " + guidesToSeekForBin.guides.size + " guides, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
+          "th bin (" + guidesToSeekForBin.bin + ") with " + binPositionInformation.numberOfTargets + " guides, of a total bin count " + formatter.format(traversal.traversalSize) + ". " + ((System.nanoTime() - t0) / 1000000000.0) +
+          " seconds/10K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
         t0 = System.nanoTime()
       }
       binIndex += 1
     }
     }
+    blockCompressedInput.close()
 
     siteSequenceToSite.values.toArray
   }
@@ -113,18 +106,15 @@ object SeekTraverser extends Traverser with LazyLogging {
     * fill a block of off-targets from the database
     *
     * @param blockInformation information about the block we'd like to fetch
-    * @param file             file name
+    * @param blockCompressedInput the compressed seekable stream
     * @return
     */
-  private def fillBlock(blockInformation: BlockOffset, file: File): (Array[Long]) = {
+  private def fillBlock(blockInformation: BlockOffset, blockCompressedInput: BlockCompressedInputStream): (Array[Long]) = {
     assert(blockInformation.uncompressedSize >= 0, "Bin sizes must be positive (or zero)")
-
-    val blockCompressedInput = new BlockCompressedInputStream(file)
 
     blockCompressedInput.seek(blockInformation.blockPosition)
     val readToBlock = new Array[Byte](blockInformation.uncompressedArraySize * 8)
     val read = blockCompressedInput.read(readToBlock)
-    blockCompressedInput.close()
 
     Utils.byteArrayToLong(readToBlock)
   }

@@ -23,7 +23,6 @@ object DatabaseWriter extends LazyLogging {
   // the number of bytes in a long
   val bytesInLong = 8
 
-
   /**
     * write a binary representation of our off-target file
     *
@@ -57,9 +56,8 @@ object DatabaseWriter extends LazyLogging {
 
       val oldPos = blockStream.getPosition // BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
       blockStream.write(Utils.longArrayToByteArray(blockContainer.block))
-      //blockStream.flush()
-      val newBlockPos = blockStream.getPosition // BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
 
+      val newBlockPos = blockStream.getPosition // BlockCompressedFilePointerUtil.getBlockAddress(blockStream.getPosition)
 
       if (index % 10000 == 0) {
         val nextBlock = if (blockContainer.block.size > 0) bitEncoder.bitDecodeString(blockContainer.block(0)) + " --> " + Utils.longToBitString(blockContainer.block(0)) else "none"
@@ -68,7 +66,7 @@ object DatabaseWriter extends LazyLogging {
 
       // save the start of the block, the block size in bytes (compressed), the block size uncompressed, and the number of targets
       val comppressedSize = (BlockCompressedFilePointerUtil.getBlockAddress(newBlockPos) - BlockCompressedFilePointerUtil.getBlockAddress(oldPos)).toInt
-      assert(comppressedSize < Int.MaxValue,"A compressed block will be too large, please raise the block size")
+      assert(comppressedSize < Int.MaxValue, "A compressed block will be too large, please raise the block size")
 
       compressedBlockInfo(blockContainer.bin) = BlockOffset(oldPos,comppressedSize,blockContainer.block.size * bytesInLong, blockContainer.numberOfTargets)
     }}

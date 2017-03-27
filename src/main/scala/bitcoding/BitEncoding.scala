@@ -3,13 +3,14 @@ package bitcoding
 import java.lang.{Long => JavaLong}
 import java.math.BigInteger
 
+import bitcoding.BitEncoding.TargetLong
 import utils.Utils
 import standards.ParameterPack
 
 import scala.annotation.switch
 
 /**
-  * given a type of CRISPR target search, setup a bit mask long to store sequences
+  * perform high-speed encoding and decoding of strings to longs, supporting comparison functions
   * @param parameterPack the parameter pack
   */
 class BitEncoding(parameterPack: ParameterPack) {
@@ -22,7 +23,8 @@ class BitEncoding(parameterPack: ParameterPack) {
     * @return the Long encoding of this string
     */
   def bitEncodeString(strEncoding: StringCount): Long = {
-    require(strEncoding.str.size <= 24)
+    require(strEncoding.str.size <= 24, "String " + strEncoding.str + " is too long to be encoded (" + strEncoding.str.size  + " > 24)")
+    require(strEncoding.count >= 1, "String count " + strEncoding.toStr + " has a count <= 0")
 
     var encoding: Long = 0l
 
@@ -47,7 +49,7 @@ class BitEncoding(parameterPack: ParameterPack) {
     * @param encoding the encoding as a long
     * @return an object representation
     */
-  def bitDecodeString(encoding: Long, actualSize: Int = mParameterPack.totalScanLength): StringCount = {
+  def bitDecodeString(encoding: TargetLong, actualSize: Int = mParameterPack.totalScanLength): StringCount = {
     val stringEncoding = new Array[Char](actualSize)
     val count: Short = (encoding >> 48).toShort
 
@@ -68,26 +70,26 @@ class BitEncoding(parameterPack: ParameterPack) {
     * @param count the count to add
     * @return
     */
-  def updateCount(encodedTarget: Long, count: Short): Long = {
+  def updateCount(encodedTarget: TargetLong, count: Short): Long = {
     // now shift the counts to the top of the 64 bit encoding
     (encodedTarget & BitEncoding.stringMask) | ((count.toLong << 48))
   }
 
   // return the current count of a long-encoded string
-  def getCount(encoding: Long): Short = (encoding >> 48).toShort
+  def getCount(encoding: TargetLong): Short = (encoding >> 48).toShort
 
 
   /**
     * return the number of mismatches between two strings (encoded in longs), given both our set comparison mask
-    * as well as an additional mask (optional). Uses Java bitCount, which on any modern platform should call out
-    * to the underlying POPCNT instruction, which with bitshifting is about 20X faster than any loop you'll implement
+    * as well as an additional mask (optional). This uses the Java bitCount, which on any modern platform should call out
+    * to the underlying POPCNT instructios. With bitshifting it's about 20X faster than any loop you'll come up with
     *
     * @param encoding1 the first string encoded as a long
     * @param encoding2 the second string
     * @param additionalMask consider only the specified bases
     * @return their differences, as a number of bases
     */
-  def mismatches(encoding1: Long, encoding2: Long, additionalMask: Long = BitEncoding.stringMask): Int = {
+  def mismatches(encoding1: TargetLong, encoding2: TargetLong, additionalMask: Long = BitEncoding.stringMask): Int = {
     BitEncoding.allComparisons += 1
     val firstComp = ((encoding1 ^ encoding2) & additionalMask & mParameterPack.comparisonBitEncoding)
     java.lang.Long.bitCount((firstComp & BitEncoding.upperBits) | ((firstComp << 1) & BitEncoding.upperBits))
@@ -95,26 +97,15 @@ class BitEncoding(parameterPack: ParameterPack) {
   }
 
   /**
-    * given a bin -- a subsequence we've used for binning targets, find the number of mismatches
+    * given a bin sequence -- a short sequence we've used for binning targets, find the number of mismatches
     * between this bin and the guide of interest. Count values are not considered
     *
     * @param bin the bin sequence as a string
     * @param guide the guide sequences
     * @return a number of mismatches
     */
-  def mismatchBin(bin: String, guide: Long): Int = {
-    // bit shift the bin to the correct location and return the mismatch count
-    val longBin = bitEncodeString(StringCount(bin,1))
-
-    if (parameterPack.fivePrimePam) {
-      // the bin starts after the pam -- make space for it
-      val shiftAmount = ((parameterPack.totalScanLength - (bin.size - 1)) - parameterPack.pam.size) * 2
-
-      mismatches(longBin << shiftAmount, (guide & BitEncoding.stringMask) & (BitEncoding.stringMask << shiftAmount))
-    } else {
-      val shiftAmount = ((parameterPack.totalScanLength - (bin.size)) * 2)
-      mismatches(longBin << shiftAmount, (guide & BitEncoding.stringMask) & (BitEncoding.stringMask << shiftAmount) )
-    }
+  def mismatchBin(bin: BinAndMask, guide: TargetLong): Int = {
+    mismatches(bin.binLong, (guide & bin.guideMask))
   }
 
   /**
@@ -124,19 +115,21 @@ class BitEncoding(parameterPack: ParameterPack) {
     * @param bin the bin sequence as a string
     * @return a number of mismatches
     */
-  def binToLongComparitor(bin: String): Long = {
+  def binToLongComparitor(bin: String): BinAndMask = {
     val longBin = bitEncodeString(StringCount(bin,1))
     val binSize = bin.size
 
     if (parameterPack.fivePrimePam) {
       // the bin starts after the pam -- make space for it
       val shiftAmount = ((parameterPack.totalScanLength - (binSize - 1)) - parameterPack.pam.size) * 2
-      (longBin << shiftAmount) &  BitEncoding.stringMask
+      BinAndMask(bin, (longBin << shiftAmount) &  BitEncoding.stringMask,(BitEncoding.stringMask << shiftAmount))
     } else {
       val shiftAmount = ((parameterPack.totalScanLength - (binSize)) * 2)
-      (longBin << shiftAmount) &  BitEncoding.stringMask
+      BinAndMask(bin, (longBin << shiftAmount) &  BitEncoding.stringMask,(BitEncoding.stringMask << shiftAmount))
     }
   }
+
+
 
   def compBitmaskForBin(binSize: Int): Long = {
     if (parameterPack.fivePrimePam) {
@@ -170,6 +163,7 @@ object BitEncoding {
   val stringMaskHighBits = 0xAAAAAAAAAAAAl
   val stringMaskLowBits =  0x555555555555l
 
+  type TargetLong = Long
 }
 
 /**
@@ -178,7 +172,10 @@ object BitEncoding {
   * @param count it's count
   */
 case class StringCount(str: String, count: Short) {
-  require (str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " + BitEncoding.stringLimit + "), size is: " + str.size)
-  require (count >= 0, "the count for a string should be greater than 0, not " + count + " for string " + str)
+  require (str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " + BitEncoding.stringLimit + ", size is: " + str.size + " for string " + str + ")")
+  require (count >= 1, "the count for a string should be greater than 0, not " + count + " for string " + str)
+  def toStr: String = str + " - " + count
 }
 
+
+case class BinAndMask(bin: String, binLong: Long, guideMask: Long)

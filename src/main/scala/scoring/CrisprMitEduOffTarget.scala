@@ -1,7 +1,7 @@
-package models
+package scoring
 
 import bitcoding.BitEncoding
-import crispr.{CRISPRGuide, CRISPRSiteOT}
+import crispr.{CRISPRSiteOT}
 import standards.{Cas9Type, ParameterPack}
 import standards.ParameterPack._
 
@@ -16,7 +16,7 @@ import scala.util.Random
   * so our unit tests rely on only verified lists where all discovered off-target sequences are the same
   *
   */
-class CrisprMitEduOffTarget() extends ScoreModel {
+class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
 
   // the coefficients for each position in the guide
   val offtargetCoeff = Array[Double](
@@ -30,7 +30,7 @@ class CrisprMitEduOffTarget() extends ScoreModel {
 
   override def scoreName(): String = "MITOffTarget"
 
-  override def scoreGuide(cRISPRHit: CRISPRSiteOT): String = score_crispr(cRISPRHit).toString
+  def scoreGuide(cRISPRHit: CRISPRSiteOT): String = score_crispr(cRISPRHit).toString
 
   /**
     * @return the description of method for the header of the output file
@@ -121,7 +121,7 @@ class CrisprMitEduOffTarget() extends ScoreModel {
     * are we valid over the enzyme of interest?
     *
     * @param params the enzyme
-    * @return
+    * @return truth about our ability to score this enzyme
     */
   override def validOverScoreModel(params: ParameterPack): Boolean = {
     params.enzyme.enzymeParent == Cas9Type

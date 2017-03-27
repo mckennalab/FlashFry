@@ -1,8 +1,8 @@
 package crispr
 
-import java.io.{File, PrintWriter}
+import java.io.{File, PrintStream, PrintWriter}
 
-import utils.BaseCombinationGenerator
+import utils.{BaseCombinationGenerator, Utils}
 import org.slf4j.LoggerFactory
 import reference.CRISPRSite
 
@@ -11,8 +11,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 /**
-  * handle writing hits to sorted output files.  When we go to close, we merge them
-  * all back into one master sorted file
+  * handle writing off-target hits to sorted output files. When the BinWriter is closed, we merge all the off-targets
+  * back into one master sorted file
   */
 case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator) extends GuideContainer {
   val logger = LoggerFactory.getLogger("BinWriter")
@@ -32,9 +32,8 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
   }
 
   def close(outputFile: File): Unit = {
-    val totalOutput = new PrintWriter(outputFile)
+    val totalOutput = new PrintStream(Utils.gos(outputFile.getAbsolutePath)) // PrintWriter(outputFile)
     binGenerator.iterator.foreach{bin => {
-      //logger.info("Merging back bin " + bin)
       binToWriter(bin).close()
 
       val toSort = new ArrayBuffer[CRISPRSite]()
@@ -45,7 +44,7 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
       val toSortResults = toSort.toArray
       scala.util.Sorting.quickSort(toSortResults)
       toSortResults.foreach{hit => {
-        totalOutput.write(hit.to_output + "\n")
+        totalOutput.println(hit.to_output)
       }}
 
       // remove the files when we shut down

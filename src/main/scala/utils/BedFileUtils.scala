@@ -97,6 +97,8 @@ case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: m
     else
       allOptions(option) = value
   }
+
+  def outputString: String = "BED:" + contig + ":" + start + "-" + stop + "_" + name
 }
 
 object BedEntry {

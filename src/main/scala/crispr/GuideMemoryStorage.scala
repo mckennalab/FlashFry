@@ -7,12 +7,12 @@ import reference.CRISPRSite
 import scala.collection.mutable
 
 /**
-  * Created by aaronmck on 2/9/17.
+  * a simple in-memory storage for guides
   */
 class GuideMemoryStorage extends GuideContainer {
 
   val guideHits = new mutable.ArrayBuffer[CRISPRSite]()
   override def addHit(cRISPRSite: CRISPRSite): Unit = guideHits += cRISPRSite
 
-  override def close(outputFile: File): Unit = {/* haha do nothing */}
+  override def close(outputFile: File): Unit = {}
 }

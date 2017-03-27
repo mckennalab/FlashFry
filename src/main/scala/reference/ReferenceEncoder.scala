@@ -20,25 +20,25 @@ object ReferenceEncoder extends LazyLogging {
   /**
     * given a reference, find all of the potential target sequences and send them to the guide storage
     *
-    * @param reference
-    * @param binWriter
-    * @param params
-    * @param filters
-    * @return
+    * @param reference the reference file, either as plain text or with a gz extension
+    * @param binWriter the output location for any guides we find
+    * @param params the parameter pack, defining the enzyme's parameters
+    * @return the encoding schemes that this parameter pack and refenence use
     */
-  def findTargetSites(reference: File, binWriter: GuideContainer, params: ParameterPack, filters: Array[SequencePreFilter], flankingSequence: Int): Tuple2[BitEncoding, BitPosition] = {
+  def findTargetSites(reference: File, binWriter: GuideContainer, params: ParameterPack, flankingSequence: Int): Tuple2[BitEncoding, BitPosition] = {
 
     val bitEncoder = new BitEncoding(params)
     val posEncoder = new BitPosition()
+
     val cls: CRISPRDiscovery = if (flankingSequence == 0) {
       logger.info("Running with fast circle-buffer site finder due to no flanking sequence request")
       CRISPRCircleBuffer(binWriter, params)
     } else {
       logger.info("Running with simple site finder due to flanking sequence request")
-      SimpleSiteFinder(binWriter, params, filters, flankingSequence)
+      SimpleSiteFinder(binWriter, params, flankingSequence)
     }
 
-    Source.fromFile(reference).getLines().foreach { line => {
+    fileToSource(reference).getLines().foreach { line => {
       if (line.startsWith(">")) {
         logger.info("Switching to chromosome " + line)
         posEncoder.addReference(line.stripPrefix(">").split(" ")(0))
@@ -53,7 +53,23 @@ object ReferenceEncoder extends LazyLogging {
 
     (bitEncoder, posEncoder)
   }
+
+
+  /**
+    * @param file the input file, either gzipped (.gz) or plain text
+    * @return a Source object for this file
+    */
+  def fileToSource(file:File): Source = {
+
+    if (file.getAbsolutePath endsWith ".gz")
+      Source.fromInputStream(Utils.gis(file.getAbsolutePath))
+    else
+      Source.fromFile(file.getAbsolutePath)
+  }
 }
+
+
+
 
 /**
   *
@@ -71,10 +87,9 @@ trait CRISPRDiscovery {
   *
   * @param binWriter        where to send the site we've found
   * @param params           the parameters to look for
-  * @param filters          what filters should we apply to sites we've found
   * @param flankingSequence pull out X bases on either side of the putitive target
   */
-case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, filters: Array[SequencePreFilter], flankingSequence: Int)
+case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, flankingSequence: Int)
   extends LazyLogging with CRISPRDiscovery {
 
   val currentBuffer = mutable.ArrayBuilder.make[String]()
@@ -97,10 +112,10 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fi
         //if (!site.sequenceContext.isDefined)
         //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
 
-        val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
+        //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
 
-        if (passesFilter)
-          binWriter.addHit(site)
+        //if (passesFilter)
+        binWriter.addHit(site)
       }
       }
 
@@ -114,10 +129,10 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fi
         //if (!site.sequenceContext.isDefined)
         //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
 
-        val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
+        //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
 
-        if (passesFilter)
-          binWriter.addHit(site)
+        //if (passesFilter)
+        binWriter.addHit(site)
       }
       }
 

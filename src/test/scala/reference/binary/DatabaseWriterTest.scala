@@ -22,8 +22,12 @@ class DatabaseWriterTest extends FlatSpec with Matchers {
                            maxGenomicLocationsPerTarget: Int = 1000) {
 
     */
-  val inputSortedBed = new File("test_data/test_block_for_GTGTTAACC.txt")
-  val output = "test_data/test_block_for_GTGTTAACC_output.txt"
+  val inputSortedBed    = new File("test_data/test_block_for_GTGTTAACC.txt")
+  val output            = "test_data/test_block_for_GTGTTAACC_output.txt"
+
+  val largerBlock       = new File("test_data/binAAAAAA7163492863143098117.txt")
+  val largerBlockOutput = "test_data/binAAAAAA7163492863143098117.txt.outputBlock"
+
   val encoder = new BitEncoding(Cas9ParameterPack)
   val posEnc = new BitPosition()
   posEnc.addReference("chr22")
@@ -32,14 +36,11 @@ class DatabaseWriterTest extends FlatSpec with Matchers {
   "BinaryWriteReadTest" should "successfully write a block to disk" in {
     DatabaseWriter.writeToBinnedFileSet(inputSortedBed,output,encoder,posEnc,binGen,Cas9ParameterPack)
 
-    val header = BinaryHeader.readHeader(output + BinaryHeader.headerExtension,encoder)
+    val header = BinaryHeader.readHeader(output + BinaryHeader.headerExtension)
     val blockOffsets = header.blockOffsets("GTGTTAACC")
     (blockOffsets.blockPosition) should be (0)
     (blockOffsets.uncompressedSize) should be (96)
     (blockOffsets.numberOfTargets) should be (6)
-
-
   }
-
 
 }

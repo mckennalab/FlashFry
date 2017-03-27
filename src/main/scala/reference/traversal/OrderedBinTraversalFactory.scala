@@ -42,7 +42,7 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
 
 
   /**
-    * our private implementation of an iterator over full bins
+    * our private implementation of an iterator over target sequence bins
     *
     * @param binIterator the full iterator over bin sequences
     * @param binToTarget a mapping of bins with at least one target to those targets
@@ -117,14 +117,17 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   val guideBinMask = binaryEncoder.compBitmaskForBin(binGenerator.width)
   val totalPossibleBins = math.pow(4, binGenerator.width).toInt
 
-  // --------------------------------------------------------------------------------
-  // while loop for speed here -- for each guide create a traversal of bins
+  // ----------------------------------------------------------------------------------------------------
+  // while loop for speed here -- for each guide create a traversal of bins -- this code is ugly
   var index = 0
   while (index < binArray.size) {
+
+
     var guideIndex = 0
     val currentBinBuilder = mutable.ArrayBuilder.make[Long]
+
     while (guideIndex < guides.size) {
-      if (binaryEncoder.mismatches(binArray(index)._1, guides(guideIndex).longEncoding, guideBinMask) <= maxMismatch) {
+      if (binaryEncoder.mismatchBin(binArray(index)._1, guides(guideIndex).longEncoding) <= maxMismatch) {
         currentBinBuilder += guides(guideIndex).longEncoding
       }
       guideIndex += 1

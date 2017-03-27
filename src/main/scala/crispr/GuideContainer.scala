@@ -5,7 +5,7 @@ import java.io.File
 import reference.CRISPRSite
 
 /**
-  * our interface for guide storage / writers
+  * our interface for guide storage objects
   */
 trait GuideContainer {
   def addHit(cRISPRSite: CRISPRSite)

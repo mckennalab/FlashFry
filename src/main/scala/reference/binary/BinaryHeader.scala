@@ -6,7 +6,6 @@ import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import utils.BaseCombinationGenerator
 import reference.traverser.Traverser._
-import spray.json.{DefaultJsonProtocol, JsArray, JsNumber, JsValue, RootJsonFormat}
 import standards.{Enzyme, ParameterPack}
 
 import scala.collection.mutable
@@ -93,7 +92,7 @@ object BinaryHeader extends LazyLogging {
     * @param filename the file name, just to print in error messages
     * @return a bin-lookup object
     */
-  def readHeader(filename: String, bitCoder: BitEncoding): BinaryHeader = {
+  def readHeader(filename: String): BinaryHeader = {
 
     // setup our input file
     val inputText = Source.fromFile(filename).getLines()
@@ -129,11 +128,11 @@ object BinaryHeader extends LazyLogging {
     val positionEncoder = new BitPosition()
     inputText.foreach(remainingLine => {
       val line = remainingLine.split("=")
-      positionEncoder.addReference(line(1))
+      positionEncoder.addReference(line(0))
     })
 
-    val binMask = bitCoder.compBitmaskForBin(binWidth)
+    val binEncoder = new BitEncoding(enzymeType)
 
-    BinaryHeader(binGenerator, enzymeType, bitCoder, positionEncoder, blockInformation)
+    BinaryHeader(binGenerator, enzymeType, binEncoder, positionEncoder, blockInformation)
   }
 }

@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.LazyLogging
 import crispr.BinWriter
 import utils.BaseCombinationGenerator
 import reference.binary.DatabaseWriter
-import crispr.filter.SequencePreFilter
 import reference.{ReferenceDictReader, ReferenceEncoder}
 import standards.ParameterPack
 
@@ -16,7 +15,7 @@ import standards.ParameterPack
   *
   * Febuary 9th, 2017
   */
-class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
+class BuildOffTargetDatabase(args: Array[String]) extends LazyLogging {
 
   // parse the command line arguments
   val parser = new scopt.OptionParser[TallyConfig]("Tally") {
@@ -48,11 +47,11 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
       val params = ParameterPack.nameToParameterPack(config.enzyme)
 
       // first discover sites in the target genome -- writing out in bins
-      val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, Array[SequencePreFilter](), 0)
+      val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, 0)
 
       // sort them into an output file, and remove it when we're done
-      val totalOutput = File.createTempFile("totalFile",".txt",new File(config.tmp))
-      //totalOutput.deleteOnExit()
+      val totalOutput = File.createTempFile("totalFile",".txt.gz",new File(config.tmp))
+      totalOutput.deleteOnExit()
       logger.info("Creating output file " + totalOutput)
 
       //totalOutput.deleteOnExit()
@@ -63,9 +62,6 @@ class DiscoverGenomeOffTargets(args: Array[String]) extends LazyLogging {
 
       // then process this total file into a binary file
       DatabaseWriter.writeToBinnedFileSet(totalOutput, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
-
-      // now write the position encoder information to a companion file
-      BitPosition.toFile(encoders._2, config.output + BitPosition.positionExtension)
 
     }}
 

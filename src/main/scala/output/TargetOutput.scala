@@ -4,7 +4,6 @@ import java.io.PrintWriter
 
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.CRISPRSiteOT
-import crispr.filter.SequencePreFilter
 
 /**
   * handle outputing the target list, in a style the user requests
@@ -13,7 +12,6 @@ case class TargetOutput(outputFile: String,
                         targets: Array[CRISPRSiteOT],
                         includePositionInformation: Boolean,
                         indicateIfTargetHasPefectMatch: Boolean,
-                        filters: Array[SequencePreFilter],
                         bitEncoder: BitEncoding,
                         bitPosition: BitPosition
                        ) {
@@ -24,10 +22,10 @@ case class TargetOutput(outputFile: String,
   // create a output file
   val output = new PrintWriter(outputFile)
 
-  // add the filter informations to the top
+  /* add the filter informations to the top
   filters.foreach{filter => {
     output.write(TargetOutput.headerComment + filter.toStringSummary() + "\n")
-  }}
+  }}*/
 
   // output the targets
   targets.foreach{target => {
@@ -54,9 +52,10 @@ case class TargetOutput(outputFile: String,
       val offTargetsString = target.offTargets.toArray.map{ot => {
         val otDecoded = bitEncoder.bitDecodeString(ot.sequence)
         val positions = ot.coordinates.map{otPos => {
-          bitPosition.decode(otPos)._1 + ":" + bitPosition.decode(otPos)._2
+          val decoded = bitPosition.decode(otPos)
+          decoded.contig + ":" + decoded.start + "^" + (if (decoded.forwardStrand) "F" else "R")
         }}.mkString(",")
-        otDecoded.str + "_" + otDecoded.count + bitEncoder.mismatches(target.longEncoding,ot.sequence) + "<" + positions + ">"
+        otDecoded.str + "_" + otDecoded.count + "_" + bitEncoder.mismatches(target.longEncoding,ot.sequence) + "<" + positions + ">"
       }}.mkString(",")
 
       targetString.append(offTargetsString)

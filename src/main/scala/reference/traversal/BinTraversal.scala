@@ -27,4 +27,5 @@ trait BinTraversal extends Iterator[BinToGuidesLookup] {
     * @param guide a guide that no longer should be considered for off-target sequences
     */
   def overflowGuide(guide: Long)
+
 }

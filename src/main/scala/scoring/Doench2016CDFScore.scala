@@ -1,4 +1,4 @@
-package models
+package scoring
 import bitcoding.BitEncoding
 import crispr.CRISPRSiteOT
 import utils.Utils
@@ -8,7 +8,7 @@ import standards.{Cas9Type, ParameterPack}
   * implementation of the Doench 2016 CFD score from their python code
   * doi:10.1038/nbt.3437
   */
-class Doench2016CDFScore extends ScoreModel {
+class Doench2016CDFScore extends SingleGuideScoreModel {
   var bitCode: Option[BitEncoding] = None
 
   /**
@@ -27,7 +27,7 @@ class Doench2016CDFScore extends ScoreModel {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  override def scoreGuide(guide: CRISPRSiteOT): String = {
+  def scoreGuide(guide: CRISPRSiteOT): String = {
     assert(guide.target.bases.size == 23, "We saw an unexpected guide size of " + guide.target.bases.size)
 
     var totalScore = 0.0

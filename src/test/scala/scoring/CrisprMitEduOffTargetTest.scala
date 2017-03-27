@@ -1,4 +1,4 @@
-package models
+package scoring
 
 import bitcoding.{BitEncoding, StringCount}
 import crispr.{CRISPRHit, CRISPRSiteOT}
@@ -14,7 +14,7 @@ class CrisprMitEduOffTargetTest extends FlatSpec with Matchers {
 
   val bitEncoder = new BitEncoding(Cas9ParameterPack)
   val target = new CRISPRSite("1", "GACTTGCATCCGAAGCCGGTGGG", true, 1, None)
-  val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 0)))
+  val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 1)),1000)
 
   // now add the known off-target sites
   /*

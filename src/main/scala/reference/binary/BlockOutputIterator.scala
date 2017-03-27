@@ -2,7 +2,8 @@ package reference.binary
 
 import java.io.File
 
-import bitcoding.{BitEncoding, BitPosition, StringCount}
+import bitcoding.{BinAndMask, BitEncoding, BitPosition, StringCount}
+import utils.Utils
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -11,13 +12,13 @@ import scala.io.Source
 /**
   * given an input file and a bin iterator, return blocks of guides and their genome positions as an array of longs
   */
-class BlockOutputIterator(inputFile: File,
+class BlockOutputIterator(inputCompressedFile: File,
                           binIterator: Iterator[String],
                           bitEnc: BitEncoding,
                           posEnc: BitPosition) extends Iterator[BlockDescriptor] {
 
   // for each line in the sorted file, split and rerecord
-  val input = Source.fromFile(inputFile).getLines()
+  val input = Source.fromInputStream(Utils.gis(inputCompressedFile.getAbsolutePath)).getLines()
 
   // store the growing block before returning it to the user
   var currentBlock: Option[Tuple2[Array[Long],Int]] = None
@@ -29,7 +30,7 @@ class BlockOutputIterator(inputFile: File,
   val binIter = binIterator
 
   // the current bin we're in
-  var currentBin : Option[String] = None
+  var currentBinAndMask : Option[BinAndMask] = None
 
   // setup the first block (VERY IMPORTANT)
   loadNextBlock()
@@ -43,7 +44,7 @@ class BlockOutputIterator(inputFile: File,
     * @return the next block of the iterator -- can be a size 0 array
     */
   override def next(): BlockDescriptor = {
-    val ret = BlockDescriptor(currentBin.get, currentBlock.getOrElse( (Array[Long](),0) )._1, currentBlock.getOrElse( (Array[Long](),0) )._2)
+    val ret = BlockDescriptor(currentBinAndMask.get.bin, currentBlock.getOrElse( (Array[Long](),0) )._1, currentBlock.getOrElse( (Array[Long](),0) )._2)
     loadNextBlock()
     ret
   }
@@ -57,39 +58,47 @@ class BlockOutputIterator(inputFile: File,
       currentBlock = None
       return
     }
-    currentBin = Some(binIter.next)
+
+    currentBinAndMask = Some(bitEnc.binToLongComparitor(binIter.next))
 
     val nextBinBuilder = mutable.ArrayBuilder.make[Long]
     var numberOfTargets = 0
+    var numberOfLongs = 0
 
     if (!(nextGuide.isDefined) && input.hasNext) {
       nextGuide = Some(BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc))
-      numberOfTargets += 1
     }
 
-    while (input.hasNext && nextGuide.isDefined && bitEnc.mismatchBin(currentBin.get, nextGuide.get.target) == 0) {
+    while (input.hasNext && nextGuide.isDefined && bitEnc.mismatchBin(currentBinAndMask.get, nextGuide.get.target) == 0) {
       val guide = BlockOutputIterator.lineToTargetAndPosition(input.next(), bitEnc, posEnc)
 
+      // they are the same guide, add their positions together
       if (bitEnc.mismatches(nextGuide.get.target, guide.target) == 0) {
-        nextGuide = Some(guide.combine(nextGuide.get, bitEnc)) // combine off-targets
-      } else {
-
-        nextBinBuilder += nextGuide.get.target
-        nextBinBuilder ++= nextGuide.get.positions
-        nextGuide = Some(guide)
+        nextGuide = Some(guide.combine(nextGuide.get)) // combine off-targets
+      }
+      // if they're not the same sequence, add the old and setup the new as the nextGuide
+      else {
+        assert(bitEnc.getCount(nextGuide.get.target) == nextGuide.get.positions.size,"Size of position array and the count in the guide don't match")
+        nextBinBuilder ++= nextGuide.get.toLongBuffer
         numberOfTargets += 1
+        numberOfLongs += nextGuide.get.sz
+
+        nextGuide = Some(guide)
       }
     }
 
-    // rare situation -- in the last block we need to write the guide
-    if (nextGuide.isDefined && !(input.hasNext)) {
-      nextBinBuilder += nextGuide.get.target
-      nextBinBuilder ++= nextGuide.get.positions
+    // handle the last guide in the file; we may have to try many bins before it matches
+    if (nextGuide.isDefined && !input.hasNext && bitEnc.mismatchBin(currentBinAndMask.get, nextGuide.get.target) == 0) {
+      nextBinBuilder ++= nextGuide.get.toLongBuffer
       numberOfTargets += 1
+      numberOfLongs += nextGuide.get.sz
+
       nextGuide = None
     }
 
-    currentBlock = Some((nextBinBuilder.result(),numberOfTargets))
+    val resultingLongs = nextBinBuilder.result()
+    assert(resultingLongs.size == numberOfLongs,"Block size check: size " + resultingLongs.size + " should equal the number of packed longs " + numberOfLongs + " (targets " + numberOfTargets + " )")
+    currentBlock = Some((resultingLongs,numberOfTargets))
   }
 
 }
@@ -108,18 +117,40 @@ object BlockOutputIterator {
   def lineToTargetAndPosition(line: String, bitEnc: BitEncoding, posEnc: BitPosition): TargetPos = {
     val sp = line.split("\t")
 
-    TargetPos(bitEnc.bitEncodeString(StringCount(sp(3), 1)), Array[Long](posEnc.encode(sp(0), sp(1).toInt)))
+    assert(sp.size == 5,"Each line must have 5 fields")
+    assert(sp(3).size <= 24, sp(3) + " too long to be encoded in a 24 base long: " + sp(3).size)
+    assert(sp(4) == "F" || sp(4) == "R", sp(4) + "should be either forward or reverse")
+
+
+    val positionEncoded = posEnc.encode(sp(0), sp(1).toInt, sp(3).size, if (sp(4) == "F") true else false)
+
+    TargetPos(bitEnc.bitEncodeString(StringCount(sp(3), 1)), Array[Long](positionEncoded),bitEnc)
   }
 }
 
 
 
-case class TargetPos(target: Long, positions: Array[Long]) {
+case class TargetPos(target: Long, positions: Array[Long], bitEnc: BitEncoding) {
+  assert(bitEnc.bitDecodeString(target).str.size <= 24,"Size of decoded string is too long. The string was " + bitEnc.bitDecodeString(target).str)
 
-  def combine(other: TargetPos, bitEnc: BitEncoding) = {
+  def combine(other: TargetPos) = {
     assert(bitEnc.mismatches(other.target, target) == 0)
-    TargetPos(target, positions ++ other.positions)
+    assert(bitEnc.bitDecodeString(target).str.size <= 24,"Size of decoded string is too long. The string was " + bitEnc.bitDecodeString(target).str)
+    assert(bitEnc.bitDecodeString(other.target).str.size <= 24,"Size of other decoded string is too long. The string was " + bitEnc.bitDecodeString(other.target).str)
+
+
+    var newTotal = bitEnc.getCount(target) + bitEnc.getCount(other.target)
+    if (newTotal > Short.MaxValue)
+      newTotal = Short.MaxValue
+
+
+    TargetPos(bitEnc.bitEncodeString(StringCount(bitEnc.bitDecodeString(target).str,newTotal.toShort)),
+      (positions ++ other.positions).slice(0,Short.MaxValue), bitEnc)
   }
+
+  def sz = 1 + positions.size
+
+  def toLongBuffer: Array[Long] = Array[Long](target) ++ positions
 }
 
 case class BlockDescriptor(bin: String, block: Array[Long], numberOfTargets: Int)

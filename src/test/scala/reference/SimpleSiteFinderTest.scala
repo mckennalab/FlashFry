@@ -13,7 +13,7 @@ class SimpleSiteFinderTest extends FlatSpec with Matchers {
     val string = "ATTTA AAAAA CCCCC AAAAA GGG".filter{c => c != ' '}.mkString("")
 
     val guideStore = new GuideMemoryStorage()
-    val circ = SimpleSiteFinder(guideStore,Cas9ParameterPack,Array[SequencePreFilter](),0)
+    val circ = SimpleSiteFinder(guideStore,Cas9ParameterPack,0)
     circ.reset("testContig")
 
     circ.addLine(string)
