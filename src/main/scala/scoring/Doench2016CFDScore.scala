@@ -8,7 +8,7 @@ import standards.{Cas9Type, ParameterPack}
   * implementation of the Doench 2016 CFD score from their python code
   * doi:10.1038/nbt.3437
   */
-class Doench2016CDFScore extends SingleGuideScoreModel {
+class Doench2016CFDScore extends SingleGuideScoreModel {
   var bitCode: Option[BitEncoding] = None
 
   /**
@@ -29,13 +29,17 @@ class Doench2016CDFScore extends SingleGuideScoreModel {
     */
   def scoreGuide(guide: CRISPRSiteOT): String = {
     assert(guide.target.bases.size == 23, "We saw an unexpected guide size of " + guide.target.bases.size)
+    assert(bitCode.isDefined, "Our bitEncoder has not been set")
 
-    var totalScore = 0.0
+    val bases = guide.target.bases
+    var totalScore = Doench2016CFDScore.pamLookup(bases.slice(bases.length - 2,bases.length))
+    //println("Score = " + totalScore)
     guide.offTargets.foreach{ ot => {
-      val pam = guide.target.bases
+
       val otScore = bitCode.get.bitDecodeString(ot.sequence)
-      totalScore *= scoreCFD(pam.slice(pam.length - 2,pam.length),
-        pam.slice(0,20), otScore.str.slice(0,20))
+      totalScore *= scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
+      //println("Score = " + totalScore)
+
     }}
     totalScore.toString
   }
@@ -76,36 +80,35 @@ class Doench2016CDFScore extends SingleGuideScoreModel {
 
   /**
     * score the CFD
-    * @param pam the pam sequence, as a two base representation
     * @param guide the guide, as 20 bases
-    * @param wtString the string we want to score against
+    * @param otString the string we want to score against
     * @return the score, as a double
     */
-  private def scoreCFD(pam: String, guide: String, wtString: String): Double = {
-    assert(pam.size == 2, "PAM size is not 2")
+  private def scoreCFD(guide: String, otString: String): Double = {
     assert(guide.size == 20, "guide size is not 20")
-    assert(wtString.size == 20, "Wildtype string size is not 20")
+    assert(otString.size == 20, "Wildtype string size is not 20")
 
     val guideWithUs = guide.toUpperCase().replace('T','U')
-    val wtWithUs = wtString.toUpperCase().replace('T','U')
+    val offTString = otString.toUpperCase().replace('T','U')
 
-    assert(Doench2016CDFScore.pamLookup contains pam)
-    var score = Doench2016CDFScore.pamLookup(pam)
-
-    guideWithUs.zip(wtWithUs).zipWithIndex.foreach{case((gBase,wBase),index) => {
-      if (gBase != wBase) {
-        val key = "r" + wBase + "d" + Utils.compBase(gBase) + "," + index
-        assert(key contains Doench2016CDFScore.mmLookup,"Missing key " + key + " in mm Lookup table")
-        score *= Doench2016CDFScore.mmLookup(key)
+    var score = 1.0
+    guideWithUs.zip(offTString).zipWithIndex.foreach{case((gBase,otBase),index) => {
+      if (gBase != otBase) {
+        val key = "r" + gBase + ":d" + specialReverseCompBase(otBase) + "," + (index + 1)
+        //println("key = " + key)
+        assert(Doench2016CFDScore.mmLookup contains key,"Missing key " + key + " in mm Lookup table")
+        score *= Doench2016CFDScore.mmLookup(key)
       }
     }}
 
     score
   }
+
+  def specialReverseCompBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'U') 'A' else c
 }
 
 // constants for the CDF score --- taken from their Python Pickle files
-object Doench2016CDFScore {
+object Doench2016CFDScore {
   val mmLookup = Map("rC:dC,9" -> 0.619047619, "rC:dC,8" -> 0.642857143, "rG:dA,8" -> 0.625, "rG:dG,19" -> 0.448275862, "rG:dG,18" -> 0.476190476,
     "rG:dG,15" -> 0.272727273, "rG:dG,14" -> 0.428571429, "rG:dG,17" -> 0.235294118, "rG:dG,16" -> 0.0, "rC:dC,20" -> 0.058823529, "rG:dT,20" -> 0.9375,
     "rG:dG,13" -> 0.421052632, "rG:dG,12" -> 0.529411765, "rC:dT,13" -> 0.384615385, "rC:dT,18" -> 0.538461538, "rC:dC,3" -> 0.5, "rU:dG,12" -> 0.947368421,

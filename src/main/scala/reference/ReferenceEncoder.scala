@@ -22,7 +22,7 @@ object ReferenceEncoder extends LazyLogging {
     *
     * @param reference the reference file, either as plain text or with a gz extension
     * @param binWriter the output location for any guides we find
-    * @param params the parameter pack, defining the enzyme's parameters
+    * @param params    the parameter pack, defining the enzyme's parameters
     * @return the encoding schemes that this parameter pack and refenence use
     */
   def findTargetSites(reference: File, binWriter: GuideContainer, params: ParameterPack, flankingSequence: Int): Tuple2[BitEncoding, BitPosition] = {
@@ -40,7 +40,7 @@ object ReferenceEncoder extends LazyLogging {
 
     fileToSource(reference).getLines().foreach { line => {
       if (line.startsWith(">")) {
-        logger.info("Switching to chromosome " + line)
+        //logger.info("Switching to chromosome " + line)
         posEncoder.addReference(line.stripPrefix(">").split(" ")(0))
         cls.reset(line.split(" ")(0).slice(1, line.split(" ")(0).length))
       } else {
@@ -59,7 +59,7 @@ object ReferenceEncoder extends LazyLogging {
     * @param file the input file, either gzipped (.gz) or plain text
     * @return a Source object for this file
     */
-  def fileToSource(file:File): Source = {
+  def fileToSource(file: File): Source = {
 
     if (file.getAbsolutePath endsWith ".gz")
       Source.fromInputStream(Utils.gis(file.getAbsolutePath))
@@ -67,8 +67,6 @@ object ReferenceEncoder extends LazyLogging {
       Source.fromFile(file.getAbsolutePath)
   }
 }
-
-
 
 
 /**
@@ -105,34 +103,38 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
       // check forward
       (params.fwdRegex findAllIn contigBuffer).matchData.foreach { fwdMatch => {
         val subStr = contigBuffer.slice(fwdMatch.start, fwdMatch.end)
-        val context = contigBuffer.slice(math.max(0, fwdMatch.start - flankingSequence), fwdMatch.end + flankingSequence)
+        if (!subStr.contains("N")) {
+          val context = contigBuffer.slice(math.max(0, fwdMatch.start - flankingSequence), fwdMatch.end + flankingSequence)
 
-        var site = CRISPRSite(currentContig.get, subStr, true, fwdMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
+          var site = CRISPRSite(currentContig.get, subStr, true, fwdMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
 
-        //if (!site.sequenceContext.isDefined)
-        //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
+          //if (!site.sequenceContext.isDefined)
+          //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
 
-        //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
+          //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
 
-        //if (passesFilter)
-        binWriter.addHit(site)
+          //if (passesFilter)
+          binWriter.addHit(site)
+        }
       }
       }
 
       // check reverse
       (params.revRegex findAllIn contigBuffer).matchData.foreach { revMatch => {
         val subStr = Utils.reverseCompString(contigBuffer.slice(revMatch.start, revMatch.end))
-        val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, revMatch.start - flankingSequence), revMatch.end + flankingSequence))
+        if (!subStr.contains("N")) {
+          val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, revMatch.start - flankingSequence), revMatch.end + flankingSequence))
 
-        var site = CRISPRSite(currentContig.get, subStr, false, revMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
+          var site = CRISPRSite(currentContig.get, subStr, false, revMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
 
-        //if (!site.sequenceContext.isDefined)
-        //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
+          //if (!site.sequenceContext.isDefined)
+          //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
 
-        //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
+          //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
 
-        //if (passesFilter)
-        binWriter.addHit(site)
+          //if (passesFilter)
+          binWriter.addHit(site)
+        }
       }
       }
 
@@ -160,8 +162,8 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
   */
 case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) extends LazyLogging with CRISPRDiscovery {
 
-  val revCompPam = Utils.reverseCompString(params.pam)
-  val compPam = Utils.compString(params.pam)
+  val revCompPams = params.pam.map { pm => Utils.reverseCompString(pm) }
+  val compPams = params.pam.map { pm => Utils.compString(pm) }
   val cutSiteFromEnd = 6
   var stack = new Array[Char](params.totalScanLength)
   var currentPos = 0
@@ -183,7 +185,8 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
     if (currentPos >= params.totalScanLength)
       checkCRISPR().foreach { ct => {
         binWriter.addHit(ct)
-      }}
+      }
+      }
   }
 
   def reset(cntig: String) {
@@ -207,16 +210,16 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
           hits += 1
         bases += 1
       }
-      hits == params.pam.size
+      hits == pam.size
     } || {
       var rhits = 0
       var rbases = 1
       while (rbases <= compPam.size) {
-        if (stack((currentPos - rbases) % params.totalScanLength) == compPam(params.pam.size - rbases))
+        if (stack((currentPos - rbases) % params.totalScanLength) == compPam(pam.size - rbases))
           rhits += 1
         rbases += 1
       }
-      rhits == params.pam.size
+      rhits == pam.size
     }
 
   }
@@ -224,7 +227,11 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
 
   def checkCRISPR(): Array[CRISPRSite] = {
 
-    val matched = if (params.fivePrimePam) checkForPAM(params.pam, compPam) else checkForPAM(compPam, params.pam)
+    val matched =
+      if (params.fivePrimePam)
+        params.pam.zip(compPams).map { case (pm, cmp) => checkForPAM(pm, cmp) }.filter(t => t).size > 0
+      else
+        params.pam.zip(compPams).map { case (pm, cmp) => checkForPAM(cmp, pm) }.filter(t => t).size > 0
 
     if (!matched || stack.map { base => if (base == 'A' || base == 'C' || base == 'G' || base == 'T') 0 else 1 }.sum > 0)
       return Array[CRISPRSite]()
@@ -234,24 +241,33 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
     var ret = Array[CRISPRSite]()
 
     if (!params.fivePrimePam) {
-      if (str.endsWith(params.pam))
-        ret :+= CRISPRSite(contig, str, true, currentPos - params.totalScanLength, None)
-      if (str.startsWith(revCompPam))
-        ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
-      ret
-    } else {
-      if (str.startsWith(params.pam))
-        ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), None)
-      if (str.endsWith(revCompPam))
-        ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
-      ret
+      params.pam.zip(revCompPams).foreach { case(pm,rcp) => {
+        if (str.endsWith(pm))
+          ret :+= CRISPRSite(contig, str, true, currentPos - params.totalScanLength, None)
+        if (str.startsWith(rcp))
+          ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
+        }}
+        ret
+      }
+      else
+      {
+        params.pam.zip(revCompPams).foreach { case(pm,rcp) => {
+          if (str.startsWith(pm))
+            ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), None)
+          if (str.endsWith(rcp))
+            ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
+        }}
+        ret
+      }
     }
+
+
+    // create a target string from the buffer
+    def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString + stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
+
+    override def close(): Unit
+
+    =
+    {} // do nothing
   }
-
-
-  // create a target string from the buffer
-  def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString + stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
-
-  override def close(): Unit = {} // do nothing
-}
 

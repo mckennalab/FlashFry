@@ -6,7 +6,7 @@ import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage}
 import utils.BaseCombinationGenerator
-import output.TargetOutput
+import targetio.TargetOutput
 import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
 import reference.{CRISPRSite, ReferenceEncoder}
 import reference.binary.BinaryHeader
@@ -28,8 +28,6 @@ class OffTargetDiscovery(args: Array[String]) extends LazyLogging {
 
   parser.parse(args, DiscoverConfig()) map {
     config => {
-      val initialTime = System.nanoTime()
-
       val formatter = java.text.NumberFormat.getIntegerInstance
 
       // get our enzyme's (cas9, cpf1) settings
@@ -88,14 +86,15 @@ class OffTargetDiscovery(args: Array[String]) extends LazyLogging {
       logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
 
       // now output the scores per site
-      val tgtOutput = TargetOutput(config.outputFile,
+      TargetOutput.output(config.outputFile,
         guideOTStorage,
         config.includePositionOutputInformation,
         config.markTargetsWithExactGenomeHits,
         header.bitCoder,
-        header.bitPosition)
+        header.bitPosition,
+        Array[String]())
 
-      println("Total runtime " + ((System.nanoTime() - initialTime) / 1000000000.0) + " seconds")
+
     }
   }
 }
@@ -122,8 +121,8 @@ class OffTargetBaseOptions extends scopt.OptionParser[DiscoverConfig]("DiscoverO
 
   // *********************************** Inputs *******************************************************
   opt[String]("analysis") required() valueName ("<string>") action {
-  (x, c) => c.copy(analysisType = Some(x))
-} text ("The run type: one of: discovery, score")
+    (x, c) => c.copy(analysisType = Some(x))
+  } text ("The run type: one of: discovery, score")
 
   // *********************************** Inputs *******************************************************
   opt[String]("inputFasta") required() valueName ("<string>") action { (x, c) => c.copy(inputFasta = x) } text ("the reference file to scan for putitive targets")

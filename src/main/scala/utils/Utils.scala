@@ -46,6 +46,7 @@ object Utils extends LazyLogging {
 
   // utilities to reverse complement
   def compBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'T') 'A' else c
+  def compRNABase(c: Char): Char = if (c == 'A') 'U' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'U') 'A' else c
 
   def compString(str: String): String = str.map {
     compBase(_)

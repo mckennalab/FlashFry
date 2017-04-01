@@ -18,7 +18,7 @@ class BinaryFullCircleTest extends FlatSpec with Matchers {
   posEncoder.addReference("chr22")
   val generator = BaseCombinationGenerator(9)
 
-  "BinaryWriteReadTest" should "write and read " in {
+  "BinaryFullCircleTest" should "write and read " in {
     val inputFile = "test_data/6_target_with_various_counts.txt"
     val outputFile = "test_data/6_target_with_various_counts.binary"
 

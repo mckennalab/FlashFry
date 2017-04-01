@@ -16,7 +16,7 @@ import utils.BaseCombinationGenerator
   */
 class SeekTraverserTest extends FlatSpec with Matchers {
 
-  val inputSortedBed = new File("test_data/test_block_for_GTGTTAACC.txt")
+  val inputSortedBed = new File("test_data/test_block_for_GTGTTAACC.txt.gz")
   val output = "test_data/test_block_for_GTGTTAACC_output"
   val encoder = new BitEncoding(Cas9ParameterPack)
   val posEnc = new BitPosition()

@@ -22,10 +22,10 @@ class DatabaseWriterTest extends FlatSpec with Matchers {
                            maxGenomicLocationsPerTarget: Int = 1000) {
 
     */
-  val inputSortedBed    = new File("test_data/test_block_for_GTGTTAACC.txt")
+  val inputSortedBed    = new File("test_data/test_block_for_GTGTTAACC.txt.gz")
   val output            = "test_data/test_block_for_GTGTTAACC_output.txt"
 
-  val largerBlock       = new File("test_data/binAAAAAA7163492863143098117.txt")
+  val largerBlock       = new File("test_data/binAAAAAA7163492863143098117.txt.gz")
   val largerBlockOutput = "test_data/binAAAAAA7163492863143098117.txt.outputBlock"
 
   val encoder = new BitEncoding(Cas9ParameterPack)
@@ -33,7 +33,7 @@ class DatabaseWriterTest extends FlatSpec with Matchers {
   posEnc.addReference("chr22")
   val binGen = BaseCombinationGenerator(9)
 
-  "BinaryWriteReadTest" should "successfully write a block to disk" in {
+  "DatabaseWriterTest" should "successfully write a block to disk" in {
     DatabaseWriter.writeToBinnedFileSet(inputSortedBed,output,encoder,posEnc,binGen,Cas9ParameterPack)
 
     val header = BinaryHeader.readHeader(output + BinaryHeader.headerExtension)

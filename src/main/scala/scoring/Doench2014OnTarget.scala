@@ -37,7 +37,6 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     require(validOverGuideSequence(Cas9ParameterPack,guide), "We're not a valid score over this guide")
 
     val guidePos = guide.target.sequenceContext.get.indexOf(guide.target.bases)
-    logger.info("Scoring guide " + guide.target.bases)
     (calc_score(guide.target.sequenceContext.get.slice(guidePos - Doench2014OnTarget.contextInFront, guidePos + guide.target.bases.length + Doench2014OnTarget.contextBehind))).toString
   }
 
@@ -77,17 +76,17 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    require(enzyme.enzyme == SpCAS9,"We cannot score this guide, as the target wasn't screened with Cas9") // this should already by checked but check again
+    if (enzyme.enzyme != SpCAS9) return false
     if (!guide.target.sequenceContext.isDefined) return false
 
     // find the guide within the context, and determine if we have enough flanking sequence for the scoring metric
-    val guidePos = guide.target.sequenceContext.get.indexOf(guide.target.bases)
-    if (guidePos < 0) return false
+    val guidePos = SingleGuideScoreModel.findGuideSequenceWithinContext(guide)
 
+    // do we have enough sequence?
     val enoughContextOnTheLeft = guidePos >= 4
-    val enoughContextOnTheRight = guidePos >= 3
+    val enoughContextOnTheRight = guide.target.sequenceContext.get.size - (guidePos + guide.target.bases.size) >= 3
 
-    enoughContextOnTheLeft & enoughContextOnTheRight // do we have enough sequence?
+    enoughContextOnTheLeft & enoughContextOnTheRight
   }
 
   /**

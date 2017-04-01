@@ -23,7 +23,7 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
 
   binGenerator.iterator.foreach{bin => {
     binToFile(bin) = File.createTempFile(binPrefix + bin , binSuffix, tempLocation)
-    binToWriter(bin) = new PrintWriter(binToFile(bin).getAbsolutePath)
+    binToWriter(bin) = new PrintWriter(Utils.gos(binToFile(bin).getAbsolutePath))
   }}
 
   def addHit(cRISPRSite: CRISPRSite): Unit = {
@@ -32,12 +32,13 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
   }
 
   def close(outputFile: File): Unit = {
-    val totalOutput = new PrintStream(Utils.gos(outputFile.getAbsolutePath)) // PrintWriter(outputFile)
+    val totalOutput = new PrintStream(Utils.gos(outputFile.getAbsolutePath))
+
     binGenerator.iterator.foreach{bin => {
       binToWriter(bin).close()
 
       val toSort = new ArrayBuffer[CRISPRSite]()
-      Source.fromFile(binToFile(bin).getAbsolutePath).getLines().foreach{line => {
+      Source.fromInputStream(Utils.gis(binToFile(bin).getAbsolutePath)).getLines().foreach{line => {
         toSort += CRISPRSite.fromLine(line)
       }}
 

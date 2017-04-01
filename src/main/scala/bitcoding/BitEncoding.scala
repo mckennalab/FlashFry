@@ -45,6 +45,15 @@ class BitEncoding(parameterPack: ParameterPack) {
   }
 
   /**
+    * encode our target string and a count of 1 into a 64-bit Long
+    * @param str the string
+    * @return the Long encoding of this string
+    */
+  def bitEncodeString(str: String): Long = {
+    bitEncodeString(StringCount(str,1))
+  }
+
+  /**
     * decode the string and count into an object
     * @param encoding the encoding as a long
     * @return an object representation

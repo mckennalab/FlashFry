@@ -6,7 +6,7 @@ import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage}
 import utils.BaseCombinationGenerator
-import output.TargetOutput
+import targetio.TargetOutput
 import reference.traverser.SeekTraverser
 import reference.{CRISPRSite, ReferenceEncoder}
 import crispr.filter.{EntropyFilter, SequencePreFilter, MaxPolyNTrackFilter}

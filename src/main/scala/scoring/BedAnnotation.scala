@@ -108,6 +108,13 @@ class BedAnnotation() extends ScoreModel {
       }
     }
   }
+
+  /**
+    * set the bit encoder for this scoring metric
+    *
+    * @param bitEncoding
+    */
+  override def bitEncoder(bitEncoding: BitEncoding): Unit = {} // we don't need one
 }
 
 

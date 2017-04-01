@@ -14,13 +14,14 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
   val offTargets = new ArrayBuffer[CRISPRHit]
   val longEncoding = encoding
   var currentTotal = 0
+
   val namedAnnotations = new mutable.HashMap[String,Array[String]]
 
 
   def full = currentTotal >= overflow
 
   def addOT(offTarget: CRISPRHit) = {
-    assert(currentTotal < overflow,"We should not add off-targets to an overflowed guide")
+    assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide")
     offTargets += offTarget
     currentTotal += 1
   }
@@ -30,9 +31,9 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
     // 1) not even cycle on the buffer they provide if we're already overfull
     // 2) if we do fill up while we're adding from their buffer, again we should stop
     //
-    if (currentTotal < overflow) {
+    if (currentTotal < overflow || overflow == 0) {
       offTargetList.foreach { t => {
-        if (currentTotal < overflow) {
+        if (currentTotal < overflow || overflow == 0) {
           offTargets += t
           currentTotal += 1
         }

@@ -1,48 +1,63 @@
 package scoring
 
-import bitcoding.BitEncoding
+import bitcoding.{BitEncoding, BitPosition}
+import com.typesafe.scalalogging.LazyLogging
+import crispr.CRISPRSiteOT
 
 /**
   * create the scoring metrics, and then run each scoring metric on the guide and their off-targets
   *
   */
-class ScoringManager {
+class ScoringManager(bitEncoder: BitEncoding, posEncoder: BitPosition, scoringMetrics: Seq[String], commandLineArgs: Array[String]) extends LazyLogging {
 
   // store our models
   var scoringModels = List[ScoreModel]()
 
-  // parse out the scoring methods into a corresponding object list
-  def findModelsFromCommandLine(parsedCommandLineTokens: Seq[String], bitEncoder: BitEncoding, commandLineArgs: Array[String]) = {
-    assert(scoringModels.size == 0, "You can't reinitialize the scoring models")
+  def scoringAnnotations = scoringModels.map{mdl => mdl.scoreName()}.toArray
 
-    parsedCommandLineTokens.foreach{ model => {
-      val model = ScoringManager.getRegisteredScoringMetric(model,bitEncoder)
-      model.parseScoringParameters(commandLineArgs)
-      scoringModels :+= model
+  scoringMetrics.foreach { modelParameter => {
+    val model = ScoringManager.getRegisteredScoringMetric(modelParameter, bitEncoder)
+
+    model.foreach{mdl => {
+      mdl.parseScoringParameters(commandLineArgs)
+      if (mdl.validOverScoreModel(bitEncoder.mParameterPack)) {
+        logger.info("adding score: " + mdl.scoreName())
+        mdl.bitEncoder(bitEncoder)
+        scoringModels :+= mdl
+      } else
+        logger.error("DROPPING SCORING METHOD: " + mdl.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEncoder.mParameterPack.enzyme)
     }}
-  }
+  }}
 
+
+  def scoreGuides(guides: Array[CRISPRSiteOT]): Array[CRISPRSiteOT] = {
+    var newGuides = guides
+    scoringModels.foreach{model => {
+      newGuides = model.scoreGuides(newGuides,bitEncoder,posEncoder)
+    }}
+    guides
+  }
 }
 
 object ScoringManager {
 
-  def getRegisteredScoringMetric(name: String, bitEncoder: BitEncoding): ScoreModel = name.toLowerCase() match {
+  def getRegisteredScoringMetric(name: String, bitEncoder: BitEncoding): Option[ScoreModel] = name.toLowerCase() match {
     case "crisprmit" => {
       val sc = new CrisprMitEduOffTarget()
       sc.bitEncoder(bitEncoder)
-      sc
+      Some(sc)
     }
     case "annotate" => {
-      new BedAnnotation()
+      Some(new BedAnnotation())
     }
-    case "Doench2014OnTarget" => {
-      new Doench2014OnTarget()
+    case "doench2014ontarget" => {
+      Some(new Doench2014OnTarget())
     }
-    case "Doench2016CDF" => {
-      new Doench2016CDFScore()
+    case "doench2016cdf" => {
+      Some(new Doench2016CFDScore())
     }
     case _ => {
-      throw new IllegalStateException("Unknown scoring metric requested: " + name)
+      throw new IllegalArgumentException("Unknown scoring metric: " + name)
     }
 
   }

@@ -44,6 +44,17 @@ class CRISPRCircleBufferTest extends FlatSpec with Matchers {
     (guideStore.guideHits(0).bases) should be (string)
   }
 
+  "CRISPRCircleTest" should "find an alternate cas9 pam correctly" in {
+    val string = "AAAAA CCCCC GGGGG TTTTA CAG".filter{c => c != ' '}.mkString("")
+
+    val guideStore = new GuideMemoryStorage()
+    val circ = CRISPRCircleBuffer(guideStore,Cas9ParameterPack)
+
+    circ.addLine(string)
+    (guideStore.guideHits.size) should be (1)
+    (guideStore.guideHits(0).bases) should be (string)
+  }
+
   "CRISPRCircleTest" should "find a reverse COMP cas9 pam correctly" in {
     val string = "CCA AAAAA CCCCC GGGGG TTTTA".filter{c => c != ' '}.mkString("")
 
