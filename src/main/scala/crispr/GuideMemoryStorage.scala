@@ -14,5 +14,5 @@ class GuideMemoryStorage extends GuideContainer {
   val guideHits = new mutable.ArrayBuffer[CRISPRSite]()
   override def addHit(cRISPRSite: CRISPRSite): Unit = guideHits += cRISPRSite
 
-  override def close(outputFile: File): Unit = {}
+  override def close(): mutable.HashMap[String,File] = {new mutable.HashMap[String,File]()}
 }

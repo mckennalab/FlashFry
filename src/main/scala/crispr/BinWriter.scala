@@ -26,32 +26,27 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
     binToWriter(bin) = new PrintWriter(Utils.gos(binToFile(bin).getAbsolutePath))
   }}
 
+  /**
+    * add a crispr site to the output bins
+    * @param cRISPRSite the site to add
+    */
   def addHit(cRISPRSite: CRISPRSite): Unit = {
     val putToBin = cRISPRSite.bases.slice(0,binGenerator.width)
     binToWriter(putToBin).write(cRISPRSite.to_output + "\n")
   }
 
-  def close(outputFile: File): Unit = {
-    val totalOutput = new PrintStream(Utils.gos(outputFile.getAbsolutePath))
-
+  /**
+    * close out the files
+    * @return a mapping from the bin to a file
+    */
+  def close(): mutable.HashMap[String,File] = {
     binGenerator.iterator.foreach{bin => {
       binToWriter(bin).close()
-
-      val toSort = new ArrayBuffer[CRISPRSite]()
-      Source.fromInputStream(Utils.gis(binToFile(bin).getAbsolutePath)).getLines().foreach{line => {
-        toSort += CRISPRSite.fromLine(line)
-      }}
-
-      val toSortResults = toSort.toArray
-      scala.util.Sorting.quickSort(toSortResults)
-      toSortResults.foreach{hit => {
-        totalOutput.println(hit.to_output)
-      }}
 
       // remove the files when we shut down
       binToFile(bin).deleteOnExit()
     }}
-    totalOutput.close()
+    binToFile
   }
 
 }

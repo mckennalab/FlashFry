@@ -11,6 +11,7 @@ import scala.annotation.switch
 
 /**
   * perform high-speed encoding and decoding of strings to longs, supporting comparison functions
+  *
   * @param parameterPack the parameter pack
   */
 class BitEncoding(parameterPack: ParameterPack) {
@@ -19,11 +20,12 @@ class BitEncoding(parameterPack: ParameterPack) {
 
   /**
     * encode our target string and count into a 64-bit Long
+    *
     * @param strEncoding the string and count to encode
     * @return the Long encoding of this string
     */
   def bitEncodeString(strEncoding: StringCount): Long = {
-    require(strEncoding.str.size <= 24, "String " + strEncoding.str + " is too long to be encoded (" + strEncoding.str.size  + " > 24)")
+    require(strEncoding.str.size <= 24, "String " + strEncoding.str + " is too long to be encoded (" + strEncoding.str.size + " > 24)")
     require(strEncoding.count >= 1, "String count " + strEncoding.toStr + " has a count <= 0")
 
     var encoding: Long = 0l
@@ -38,7 +40,8 @@ class BitEncoding(parameterPack: ParameterPack) {
         case 'T' => encoding = BitEncoding.encodeT | encoding
         case _ => throw new IllegalStateException("Unable to encode character " + ch)
       }
-    }}
+    }
+    }
 
     // now shift the counts to the top of the 64 bit encoding
     encoding | ((strEncoding.count.toLong << 48))
@@ -46,15 +49,17 @@ class BitEncoding(parameterPack: ParameterPack) {
 
   /**
     * encode our target string and a count of 1 into a 64-bit Long
+    *
     * @param str the string
     * @return the Long encoding of this string
     */
   def bitEncodeString(str: String): Long = {
-    bitEncodeString(StringCount(str,1))
+    bitEncodeString(StringCount(str, 1))
   }
 
   /**
     * decode the string and count into an object
+    *
     * @param encoding the encoding as a long
     * @return an object representation
     */
@@ -62,21 +67,23 @@ class BitEncoding(parameterPack: ParameterPack) {
     val stringEncoding = new Array[Char](actualSize)
     val count: Short = (encoding >> 48).toShort
 
-    (0 until actualSize).foreach{index => {
+    (0 until actualSize).foreach { index => {
       (0x3 & (encoding >> (index * 2))) match {
         case BitEncoding.encodeA => stringEncoding(index) = 'A'
         case BitEncoding.encodeC => stringEncoding(index) = 'C'
         case BitEncoding.encodeG => stringEncoding(index) = 'G'
         case BitEncoding.encodeT => stringEncoding(index) = 'T'
       }
-    }}
-    StringCount(stringEncoding.mkString("").reverse,count)
+    }
+    }
+    StringCount(stringEncoding.mkString("").reverse, count)
   }
 
   /**
     * add a counter value this this long's encoding
+    *
     * @param encodedTarget the currently encoded target
-    * @param count the count to add
+    * @param count         the count to add
     * @return
     */
   def updateCount(encodedTarget: TargetLong, count: Short): Long = {
@@ -93,8 +100,8 @@ class BitEncoding(parameterPack: ParameterPack) {
     * as well as an additional mask (optional). This uses the Java bitCount, which on any modern platform should call out
     * to the underlying POPCNT instructios. With bitshifting it's about 20X faster than any loop you'll come up with
     *
-    * @param encoding1 the first string encoded as a long
-    * @param encoding2 the second string
+    * @param encoding1      the first string encoded as a long
+    * @param encoding2      the second string
     * @param additionalMask consider only the specified bases
     * @return their differences, as a number of bases
     */
@@ -109,7 +116,7 @@ class BitEncoding(parameterPack: ParameterPack) {
     * given a bin sequence -- a short sequence we've used for binning targets, find the number of mismatches
     * between this bin and the guide of interest. Count values are not considered
     *
-    * @param bin the bin sequence as a string
+    * @param bin   the bin sequence as a string
     * @param guide the guide sequences
     * @return a number of mismatches
     */
@@ -118,35 +125,43 @@ class BitEncoding(parameterPack: ParameterPack) {
   }
 
   /**
-    * given a bin -- a subsequence we've used for binning targets, find the number of mismatches
-    * between this bin and the guide of interest. Count values are not considered
+    * generate a long encoding and a mask for this bin
     *
-    * @param bin the bin sequence as a string
-    * @return a number of mismatches
+    * @param bin              the bin sequence as a string
+    * @param rightShiftXBases if the bin isn't the first bin, we need to offset by this many bases (bits * 2)
+    * @return a bin and mask object
     */
-  def binToLongComparitor(bin: String): BinAndMask = {
-    val longBin = bitEncodeString(StringCount(bin,1))
-    val binSize = bin.size
+  def binToLongComparitor(bin: String, rightShiftXBases: Int = 0): BinAndMask = {
+    val binLong = binShift(bin.size, bitEncodeString(bin), rightShiftXBases)
 
-    if (parameterPack.fivePrimePam) {
-      // the bin starts after the pam -- make space for it
-      val shiftAmount = ((parameterPack.totalScanLength - (binSize - 1)) - parameterPack.pam.size) * 2
-      BinAndMask(bin, (longBin << shiftAmount) &  BitEncoding.stringMask,(BitEncoding.stringMask << shiftAmount))
-    } else {
-      val shiftAmount = ((parameterPack.totalScanLength - (binSize)) * 2)
-      BinAndMask(bin, (longBin << shiftAmount) &  BitEncoding.stringMask,(BitEncoding.stringMask << shiftAmount))
-    }
+    BinAndMask(bin, binLong, compBitmaskForBin(bin.size, rightShiftXBases))
   }
 
 
+  /**
+    * create a bitshifting for a bin comparison.
+    *
+    * @param binSize          the size of the bin
+    * @param rightShiftXBases if the bin isn't the first bin, we need to offset by this many bases (bits * 2)
+    * @return a comparison mask for the bin of interest, which you can use to compare a bin to a target site
+    */
+  def compBitmaskForBin(binSize: Int, rightShiftXBases: Int = 0): Long = {
+    val base = (BitEncoding.stringMask >> (48 - (binSize * 2)))
+    binShift(binSize, base, rightShiftXBases)
+  }
 
-  def compBitmaskForBin(binSize: Int): Long = {
+  /**
+    * given a bin and our base parameter set, shift the bin to the correct comparison position
+    * @param binSize the size of the bin
+    * @param base the base bit vector to shift into the correct place; we assume this is currently right-justified (lowest bits)
+    * @param rightShiftXBases adjust to the right by X bases
+    * @return the long value of the shifted bit-vector, AND'ed to the standard string mask
+    */
+  def binShift(binSize: Int, base: Long, rightShiftXBases: Int = 0): Long = {
     if (parameterPack.fivePrimePam) {
-      val shiftAmount = ((parameterPack.totalScanLength - (binSize - 1)) - parameterPack.pam.size) * 2
-      (BitEncoding.stringMask << shiftAmount)
+      base << (2 * (parameterPack.totalScanLength - (binSize + parameterPack.pam.size + rightShiftXBases))) & BitEncoding.stringMask
     } else {
-      val shiftAmount = ((parameterPack.totalScanLength - (binSize)) * 2)
-      (BitEncoding.stringMask << shiftAmount)
+      base << (2 * (parameterPack.totalScanLength - (binSize + rightShiftXBases))) & BitEncoding.stringMask
     }
   }
 
@@ -167,22 +182,24 @@ object BitEncoding {
 
   val stringLimit = 24
 
-  val stringMask         = 0xFFFFFFFFFFFFl
-  val upperBits          = 0xAAAAAAAAAAAAl
+  val stringMask = 0xFFFFFFFFFFFFl
+  val upperBits = 0xAAAAAAAAAAAAl
   val stringMaskHighBits = 0xAAAAAAAAAAAAl
-  val stringMaskLowBits =  0x555555555555l
+  val stringMaskLowBits = 0x555555555555l
 
   type TargetLong = Long
 }
 
 /**
   * a case class for passing target strings and their counts back and forth
-  * @param str the base string
+  *
+  * @param str   the base string
   * @param count it's count
   */
 case class StringCount(str: String, count: Short) {
-  require (str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " + BitEncoding.stringLimit + ", size is: " + str.size + " for string " + str + ")")
-  require (count >= 1, "the count for a string should be greater than 0, not " + count + " for string " + str)
+  require(str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " + BitEncoding.stringLimit + ", size is: " + str.size + " for string " + str + ")")
+  require(count >= 1, "the count for a string should be greater than 0, not " + count + " for string " + str)
+
   def toStr: String = str + " - " + count
 }
 

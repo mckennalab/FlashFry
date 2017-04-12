@@ -92,8 +92,10 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
 
   val currentBuffer = mutable.ArrayBuilder.make[String]()
   var currentContig: Option[String] = None
+  var targetCount = 0
 
   override def addLine(line: String): Unit = currentBuffer += line
+  def getTotal: Int = targetCount
 
   override def reset(contig: String): Unit = {
     // first processes the sequence supplied, looking for guides
@@ -107,14 +109,8 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
           val context = contigBuffer.slice(math.max(0, fwdMatch.start - flankingSequence), fwdMatch.end + flankingSequence)
 
           var site = CRISPRSite(currentContig.get, subStr, true, fwdMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
-
-          //if (!site.sequenceContext.isDefined)
-          //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
-
-          //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
-
-          //if (passesFilter)
           binWriter.addHit(site)
+          targetCount += 1
         }
       }
       }
@@ -126,13 +122,6 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
           val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, revMatch.start - flankingSequence), revMatch.end + flankingSequence))
 
           var site = CRISPRSite(currentContig.get, subStr, false, revMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
-
-          //if (!site.sequenceContext.isDefined)
-          //  logger.warn("Site " + site.to_output + " is too close the boundry of the contig to include flanking information, this may affect some scoring routines")
-
-          //val passesFilter = filters.map { case (filter) => if (filter.filter(site)) 0 else 1 }.sum == 0
-
-          //if (passesFilter)
           binWriter.addHit(site)
         }
       }
@@ -167,7 +156,10 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
   val cutSiteFromEnd = 6
   var stack = new Array[Char](params.totalScanLength)
   var currentPos = 0
+  var targetsFound = 0
   var contig = "UNKNOWN"
+
+  def getTotal: Int = targetsFound
 
   def addLine(line: String) {
     line.foreach { chr => {
@@ -185,6 +177,7 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
     if (currentPos >= params.totalScanLength)
       checkCRISPR().foreach { ct => {
         binWriter.addHit(ct)
+        targetsFound += 1
       }
       }
   }
@@ -263,7 +256,8 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
 
 
     // create a target string from the buffer
-    def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString + stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
+    def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString +
+      stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
 
     override def close(): Unit
 

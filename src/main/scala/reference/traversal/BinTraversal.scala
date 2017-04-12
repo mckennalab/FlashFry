@@ -1,7 +1,7 @@
 package reference.traversal
 
 import bitcoding.BitEncoding
-import crispr.CRISPRHit
+import crispr.{CRISPRHit, GuideIndex}
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuilder, Map}
@@ -26,6 +26,6 @@ trait BinTraversal extends Iterator[BinToGuidesLookup] {
     *
     * @param guide a guide that no longer should be considered for off-target sequences
     */
-  def overflowGuide(guide: Long)
+  def overflowGuide(guide: GuideIndex)
 
 }

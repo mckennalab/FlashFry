@@ -49,19 +49,16 @@ class BuildOffTargetDatabase(args: Array[String]) extends LazyLogging {
       // first discover sites in the target genome -- writing out in bins
       val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, 0)
 
-      // sort them into an output file, and remove it when we're done
-      val totalOutput = File.createTempFile("totalFile",".txt.gz",new File(config.tmp))
-      totalOutput.deleteOnExit()
-      logger.info("Creating output file " + totalOutput)
+      val binToFile = outputBins.close()
 
-      //totalOutput.deleteOnExit()
-      outputBins.close(totalOutput)
+      logger.info("Creating the binary file...")
 
       // setup our bin generator for the output
       val searchBinGenerator = BaseCombinationGenerator(config.binSize)
 
       // then process this total file into a binary file
-      DatabaseWriter.writeToBinnedFileSet(totalOutput, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
+      DatabaseWriter.writeToBinnedFileSet(binToFile, binGenerator.width, config.output, encoders._1, encoders._2 , searchBinGenerator, params)
+
 
     }}
 

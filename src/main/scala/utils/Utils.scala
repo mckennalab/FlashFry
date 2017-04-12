@@ -1,5 +1,6 @@
 package utils
 
+import scala.annotation._, elidable._
 import java.io._
 import java.math.BigInteger
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
@@ -76,6 +77,7 @@ object Utils extends LazyLogging {
     */
   def byteArrayToLong(larray: Array[Byte]): Array[Long] = {
     assert(larray.size % 8 == 0,"You byte array is not a multiple of 8")
+
     val bbuf = java.nio.ByteBuffer.allocate(larray.length)
     bbuf.order(java.nio.ByteOrder.nativeOrder)
     bbuf.put(larray)
@@ -94,5 +96,23 @@ object Utils extends LazyLogging {
     ret
   }
 
+  /**
+    * Custom version of assert, that we can remove later for performace reasons.
+    * The strategy is to richly decorate our code in assertion checks, for testing
+    * and sample runs, but produce a high-speed production version later
+    *
+    *
+    * Tests an expression, throwing an `AssertionError` if false.
+    *  Calls to this method will not be generated if `-Xelide-below`
+    *  is at least `ASSERTION`.
+    *
+    *  @see elidable
+    *  @param assertionFunction   the expression to test
+    */
+  @elidable(WARNING)
+  def verificationAssert(assertionFunction: Boolean) {
+    if (!assertionFunction)
+      throw new java.lang.AssertionError("assertion failed")
+  }
 
 }

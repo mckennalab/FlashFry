@@ -2,7 +2,7 @@ package reference.traversal
 
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRHit, CRISPRSiteOT}
+import crispr._
 import utils.BaseCombinationGenerator
 
 import scala.collection.mutable
@@ -14,7 +14,7 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
                                  maxMismatch: Int,
                                  binaryEncoder: BitEncoding,
                                  upperBinProportionToJustSearchAll: Double,
-                                 guides: Array[CRISPRSiteOT],
+                                 guides: ResultsAggregator,
                                  filtering: Boolean = true) extends LazyLogging {
 
   val bGenerator = binGenerator
@@ -25,7 +25,7 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   def saturated = isSaturated
 
   // provide a mapping from each bin to targets we need to score in that bin
-  val binToTargets = new mutable.TreeMap[String, Array[Long]]()
+  val binToTargets = new mutable.TreeMap[String, Array[GuideIndex]]()
   def traversalSize() = binToTargets.size
 
   // take a bin iterator, and make an array of longs
@@ -47,9 +47,9 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
     * @param binIterator the full iterator over bin sequences
     * @param binToTarget a mapping of bins with at least one target to those targets
     */
-  private case class PrivateBinIterator(binIterator: Iterator[String], binToTarget: mutable.TreeMap[String, Array[Long]], isSaturated: Boolean) extends BinTraversal {
+  private case class PrivateBinIterator(binIterator: Iterator[String], binToTarget: mutable.TreeMap[String, Array[GuideIndex]], isSaturated: Boolean) extends BinTraversal {
 
-    var guidesToExclude = Array[Long]()
+    var guidesToExclude = Array[GuideIndex]()
 
     var cachedNextBin: Option[BinToGuidesLookup] = None
 
@@ -65,7 +65,7 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
     /**
       * @param guide a guide that no longer should be considered for off-target sequences
       */
-    override def overflowGuide(guide: Long): Unit = guidesToExclude :+= guide
+    override def overflowGuide(guide: GuideIndex): Unit = guidesToExclude :+= guide
 
     /**
       * @return do we have a next value
@@ -87,8 +87,6 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
         if (binToTargets contains nextBin) {
           if (filtering) {
             cachedNextBin = Some(BinToGuidesLookup(nextBin, binToTarget(nextBin).filter { case (target) => !(guidesToExclude contains target) }))
-            //if (binToTarget(nextBin).size > cachedNextBin.get.guides.size)
-            //  logger.info(binToTarget(nextBin).size + " to " + cachedNextBin.get.guides.size + " --" + cachedNextBin.isDefined + " ==== " + binIterator.hasNext)
           } else {
             cachedNextBin = Some(BinToGuidesLookup(nextBin, binToTarget(nextBin)))
           }
@@ -112,7 +110,7 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   }
 
 
-  logger.info("Precomputing bin lookup table for " + guides.size + " guides")
+  logger.info("Precomputing bin lookup table for " + guides.indexedGuides.size + " guides")
 
   val guideBinMask = binaryEncoder.compBitmaskForBin(binGenerator.width)
   val totalPossibleBins = math.pow(4, binGenerator.width).toInt
@@ -122,25 +120,24 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   var index = 0
   while (index < binArray.size) {
 
-
     var guideIndex = 0
-    val currentBinBuilder = mutable.ArrayBuilder.make[Long]
+    val currentBinBuilder = new mutable.ArrayBuffer[GuideIndex]
 
-    while (guideIndex < guides.size) {
-      if (binaryEncoder.mismatchBin(binArray(index)._1, guides(guideIndex).longEncoding) <= maxMismatch) {
-        currentBinBuilder += guides(guideIndex).longEncoding
+    while (guideIndex < guides.indexedGuides.size) {
+      if (binaryEncoder.mismatchBin(binArray(index)._1, guides.indexedGuides(guideIndex).guide) <= maxMismatch) {
+        currentBinBuilder += guides.indexedGuides(guideIndex)
       }
       guideIndex += 1
     }
     val guideResult = currentBinBuilder.result
     if (guideResult.size > 0)
-      binToTargets(binArray(index)._2) = guideResult
+      binToTargets(binArray(index)._2) = guideResult.toArray
 
-    if (index % 50000 == 0) {
+    if (index % 500 == 0) {
       val currentBinSaturation = binToTargets.size.toDouble / totalPossibleBins.toDouble
       val binPropSeen = index.toDouble / totalPossibleBins.toDouble
       logger.info("Comparing guides against bin prefix " + binArray(index)._2 + " the " + index + "th bin prefix we've looked at, total bin saturation = " + currentBinSaturation + ", proportion of bins seen = " + binPropSeen)
-      if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.4 && index > 20000)) {
+      if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.4 && index > 1000)) {
         logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal ( saturation = " + currentBinSaturation + ", proportion = " + (currentBinSaturation / binPropSeen) + " )")
         index = binArray.size
         isSaturated = true
@@ -153,7 +150,8 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   val binProp = binToTargets.size.toDouble / totalPossibleBins.toDouble
   if (binProp >= upperBinProportionToJustSearchAll)
     isSaturated = true
-  logger.info("With " + guides.size + " guides, and allowing " +
+
+  logger.info("With " + guides.indexedGuides.size + " guides, and allowing " +
     mMismatch + " mismatch(es), we're going to scan " + binToTargets.size +
     " target bins out of a total of " + totalPossibleBins)
 }

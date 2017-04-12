@@ -1,5 +1,8 @@
-package utils
+package reference.tree
 
+import java.io.File
+
+import utils.BaseCombinationGenerator
 
 /**
   * created by aaronmck on 1/3/15
@@ -25,46 +28,17 @@ package utils
   * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
   * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   */
-// makes iterators of Bases; from AAAA to TTTT for example
-case class BaseCombinationGenerator(width: Int) extends Iterable[String] {
-  override def iterator: Iterator[String] = new BaseCombinationIterator(width)
-  def totalSearchSpace: Long = math.pow(4,width).toLong
+class SmartTrieLoader(inputDir: File, editDistance: Int) {
+  val ext =  ".bin"
+
+  // check to see if the input directory contains bins for each edit distance
+  val allExist = (new BaseCombinationGenerator(editDistance)).map { case (bs) => (new File(inputDir.getAbsolutePath + File.separator + bs + ext)).exists()}.foldLeft(true)(_ & _)
+
 }
 
-class BaseCombinationIterator(count: Int) extends Iterator[String] {
-
-  import utils.Base._
-
-  var lst = new Array[Base](count)
-  var isLast = false
-  (0 until count).foreach { case (e) => lst(e) = Base.A }
-
-  val terminalStr = (0 until count).map { _ => Base.T }.mkString
-
-  override def hasNext: Boolean =
-    if (terminalStr == lst.mkString) {
-      isLast = true
-      return true
-    }
-    else return !isLast
-
-  def incr(pos: Int): Unit = {
-    if (lst(pos) == Base.T) {
-      lst(pos) = Base.A
-      if (pos - 1 >= 0)
-        incr(pos - 1)
-    }
-    else
-      lst(pos) = Base(Base.baseToInt(lst(pos)) + 1)
-  }
-
-  override def next(): String = {
-    val ret = lst.mkString
-    incr(count - 1)
-    return ret
-
-  }
+object SmartTrieLoader {
+  def intToBase(v: Int): String = if (v == 0) "A" else if (v == 1) "C" else if (v == 2) "G" else if (v == 3) "T" else "N"
 }

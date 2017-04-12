@@ -5,10 +5,13 @@ import java.nio.ByteBuffer
 import java.nio.channels.{Channels, FileChannel, SeekableByteChannel}
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 
+import scala.annotation._
+import elidable._
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.CRISPRSiteOT
+import crispr.{CRISPRSiteOT, ResultsAggregator}
 import htsjdk.samtools.util.{BlockCompressedFilePointerUtil, BlockCompressedInputStream, BlockGunzipper}
+import reference.binary.blocks.BlockManager
 import utils.{BaseCombinationGenerator, Utils}
 import reference.binary.{BinaryHeader, BlockOffset}
 import reference.traversal.{BinToGuidesLookup, BinTraversal}
@@ -27,7 +30,7 @@ object LinearTraverser extends Traverser with LazyLogging {
     * @param binaryFile    the file we're scanning from
     * @param header        we have to parse the header ahead of time so that we know
     * @param traversal     the traversal over bins we'll use
-    * @param targets       the array of candidate guides we have
+    * @param aggregator    guides
     * @param maxMismatch   how many mismatches we support
     * @param configuration our enzyme configuration
     * @param bitCoder      our bit encoder
@@ -37,11 +40,13 @@ object LinearTraverser extends Traverser with LazyLogging {
   def scan(binaryFile: File,
            header: BinaryHeader,
            traversal: BinTraversal,
-           targets: Array[CRISPRSiteOT],
+           aggregator: ResultsAggregator,
            maxMismatch: Int,
            configuration: ParameterPack,
            bitCoder: BitEncoding,
-           posCoder: BitPosition): Array[CRISPRSiteOT] = {
+           posCoder: BitPosition) {
+
+
 
     val formatter = java.text.NumberFormat.getInstance()
 
@@ -52,15 +57,7 @@ object LinearTraverser extends Traverser with LazyLogging {
     val channel = FileChannel.open(filePath, StandardOpenOption.READ)
     val inputStream = Channels.newInputStream(channel)
 
-    // where we collect the off-target hits
-    val siteSequenceToSite = new mutable.LinkedHashMap[Long, CRISPRSiteOT]()
-    val guideList = new Array[Long](targets.size)
-
-    targets.zipWithIndex.foreach { case (tgt, index) => {
-      guideList(index) = tgt.longEncoding
-      siteSequenceToSite(tgt.longEncoding) = tgt
-    }
-    }
+    val blockManager = new BlockManager(header.binWidth,4,bitCoder)
 
     var t0 = System.nanoTime()
     var binIndex = 0
@@ -71,30 +68,21 @@ object LinearTraverser extends Traverser with LazyLogging {
 
       val binPositionInformation = header.blockOffsets(guidesToSeekForBin.bin)
 
+      if (binPositionInformation.blockPosition != 0) // we can't do this before we start moving in the file, if we do the BlockCompressedStream will throw a null pointer exception
+        assert(blockCompressedInput.getPosition == binPositionInformation.blockPosition, "Positions don't match up, expecting " + binPositionInformation.blockPosition+ " but we're currently at " + blockCompressedInput.getPosition)
       val longBuffer = fillBlock(blockCompressedInput, binPositionInformation, new File(binaryFile.getAbsolutePath), guidesToSeekForBin.bin, bitCoder)
 
-      //Traverser.validateBlock(longBuffer,binPositionInformation.numberOfTargets,binPositionInformation.uncompressedSize / 8,bitCoder,guidesToSeekForBin.bin)
-
-      Traverser.compareBlock(longBuffer,
+      blockManager.compareBlock(longBuffer,
         binPositionInformation.numberOfTargets,
         guidesToSeekForBin.guides,
+        aggregator,
         bitCoder,
         maxMismatch,
-        bitCoder.binToLongComparitor(guidesToSeekForBin.bin)).zip(guidesToSeekForBin.guides).foreach { case (ots,guide) => {
-
-        siteSequenceToSite(guide).addOTs(ots)
-
-        // if we're done with a guide, tell our traverser to remove it
-        if (siteSequenceToSite(guide).full) {
-          traversal.overflowGuide(guide)
-          logger.debug("Guide " + bitCoder.bitDecodeString(guide).str + " has overflowed, and will no longer collect off-targets (set limit of " + siteSequenceToSite(guide).offTargets.result().size + ")")
-        }
-      }
-      }
+        bitCoder.binToLongComparitor(guidesToSeekForBin.bin))
 
       binIndex += 1
       if (binIndex % 1000 == 0) {
-        logger.info(formatter.format(binIndex) + " / " + formatter.format(traversal.traversalSize) + " bins; guides: " + guidesToSeekForBin.guides.size + "; targets: " + binPositionInformation.numberOfTargets + "; " + ((System.nanoTime() - t0) / 1000000000.0) +
+        logger.info(formatter.format(binIndex) + "/" + formatter.format(traversal.traversalSize) + " bins; guides: " + guidesToSeekForBin.guides.size + "; targets: " + binPositionInformation.numberOfTargets + "; " + ((System.nanoTime() - t0) / 1000000000.0) +
           " seconds/1K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
         t0 = System.nanoTime()
       }
@@ -102,7 +90,6 @@ object LinearTraverser extends Traverser with LazyLogging {
     }
     }
 
-    siteSequenceToSite.values.toArray
   }
 
   /**
@@ -114,9 +101,10 @@ object LinearTraverser extends Traverser with LazyLogging {
     * @return
     */
   private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File, bin: String, bitCoder: BitEncoding): (Array[Long]) = {
+
     assert(blockInformation.uncompressedSize >= 0, "Bin sizes must be positive (or zero)")
 
-    val readToBlock = new Array[Byte](blockInformation.uncompressedArraySize * 8)
+    val readToBlock = new Array[Byte](blockInformation.uncompressedSize)
     val read = blockCompressedInput.read(readToBlock)
 
     Utils.byteArrayToLong(readToBlock)

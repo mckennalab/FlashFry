@@ -32,9 +32,8 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
   def binGenerator: BaseCombinationGenerator = inputBinGenerator
 }
 
-case class BlockOffset(blockPosition: Long, compressedblockSize: Int, uncompressedSize: Int, numberOfTargets: Int) {
-  def uncompressedArraySize: Int = uncompressedSize / 8
-  def prettyString = "BLOCKPOS:" + blockPosition + ",COMPSIZE:" + compressedblockSize + ",UNCOMPSIZE:" + uncompressedSize + ",NUMTARGET:" + numberOfTargets
+case class BlockOffset(blockPosition: Long, uncompressedSize: Int, numberOfTargets: Int) {
+  def prettyString = "BLOCKPOS:" + blockPosition + ",UNCOMPSIZE:" + uncompressedSize + ",NUMTARGET:" + numberOfTargets
 }
 
 
@@ -63,7 +62,6 @@ object BinaryHeader extends LazyLogging {
       if (header.blockOffsets contains bin)
         writer.write(bin + "=" +
           header.blockOffsets(bin).blockPosition + "," +
-          header.blockOffsets(bin).compressedblockSize + "," +
           header.blockOffsets(bin).uncompressedSize + "," +
           header.blockOffsets(bin).numberOfTargets + "\n"
         )
@@ -113,7 +111,7 @@ object BinaryHeader extends LazyLogging {
     val blockInformation     = new mutable.HashMap[String, BlockOffset]()
 
     // read in the bins and their sizes
-    val binRegex = """(\w+)=(\d+),(\d+),(\d+),(\d+)""".r
+    val binRegex = """(\w+)=(\d+),(\d+),(\d+)""".r
     binGenerator.iterator.zipWithIndex.foreach { case (bin, index) => {
       val binLine = inputText.next
       val inputStrMatch = binRegex.findAllIn(binLine)
@@ -122,7 +120,7 @@ object BinaryHeader extends LazyLogging {
       val inputStr = inputStrMatch.matchData.next()
 
       assert(bin == inputStr.group(1), "Failed to verify bin name, expected: " + bin + " isn't what we got " + inputStr.group(1))
-      blockInformation(bin) = BlockOffset(inputStr.group(2).toLong, inputStr.group(3).toInt, inputStr.group(4).toInt, inputStr.group(5).toInt)
+      blockInformation(bin) = BlockOffset(inputStr.group(2).toLong, inputStr.group(3).toInt, inputStr.group(4).toInt)
     }}
 
     val positionEncoder = new BitPosition()

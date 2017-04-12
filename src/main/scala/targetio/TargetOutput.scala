@@ -3,7 +3,7 @@ package targetio
 import java.io.PrintWriter
 
 import bitcoding.{BitEncoding, BitPosition}
-import crispr.CRISPRSiteOT
+import crispr.{CRISPRSiteOT, ResultsAggregator}
 
 /**
   * handle outputing the target list, in a style the user requests
@@ -11,16 +11,13 @@ import crispr.CRISPRSiteOT
 object TargetOutput {
 
   def output(outputFile: String,
-             targets: Array[CRISPRSiteOT],
+             guides: ResultsAggregator,
              includePositionInformation: Boolean,
              indicateIfTargetHasPefectMatch: Boolean,
              bitEncoder: BitEncoding,
              bitPosition: BitPosition,
              activeAnnotations: Array[String]
             ) {
-
-    // sort the target array
-    scala.util.Sorting.quickSort(targets)
 
     // create a output file
     val output = new PrintWriter(outputFile)
@@ -36,8 +33,8 @@ object TargetOutput {
     }}
 
     // output the targets
-    targets.foreach { guide => {
-      val targetString = GuideEncodingTools.guideToBedString(guide,
+    guides.wrappedGuides.foreach { guide => {
+      val targetString = GuideEncodingTools.guideToBedString(guide.otSite,
         bitEncoder,
         bitPosition,
         indicateIfTargetHasPefectMatch,

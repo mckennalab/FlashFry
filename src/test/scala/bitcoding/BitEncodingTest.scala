@@ -4,7 +4,7 @@ import java.lang.{Integer => JavaInteger}
 
 import utils.Utils
 import org.scalatest._
-import standards.{Cas9ParameterPack, Cpf1ParameterPack, ParameterPack}
+import standards.{Cas9NGGParameterPack, Cas9ParameterPack, Cpf1ParameterPack, ParameterPack}
 import standards.ParameterPack._
 
 import scala.util.Random
@@ -262,5 +262,71 @@ class BitEncodingTest extends FlatSpec with Matchers {
     val differences = encodeDevice.mismatchBin(binMask,encoding)
 
     (differences) should be (0)
+  }
+
+  "A Bit Encoder" should "calculate distances from two bins with a guide correctly" in {
+
+    val strCount = StringCount("AAAAA AAAAC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1)
+    val bin = "AAAAAAAAA"
+    val subBin = "CAG"
+
+    val encodeDevice = new BitEncoding(parameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val binMask = encodeDevice.binToLongComparitor(bin)
+    val differences = encodeDevice.mismatchBin(binMask,encoding)
+
+    (differences) should be (0)
+  }
+
+
+  "A Bit Encoder" should "calculate distances between guides correctly" in {
+
+    val strCount =  StringCount("GAGTC CGAGC AGAAG AAGAA GGG".filter{c => c != ' '}.mkString(""),1)
+    val strCount2 = StringCount("GAATC ATAGC AGAAG ATGAA AGG".filter{c => c != ' '}.mkString(""),1001)
+
+    val encodeDevice = new BitEncoding(Cas9NGGParameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val encoding2 = encodeDevice.bitEncodeString(strCount2)
+    val difference = encodeDevice.mismatches(encoding, encoding2)
+    (difference) should be (4)
+  }
+
+
+  "A Bit Encoder" should "calculate a bin mismatch correctly" in {
+
+    val strCount =  StringCount("GAGTC CGAGC AGAAG AAGAA GGG".filter{c => c != ' '}.mkString(""),1)
+
+    val encodeDevice = new BitEncoding(Cas9NGGParameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("GAGTCCG"), encoding)
+    (difference) should be (0)
+  }
+
+
+  "A Bit Encoder" should "calculate another bin mismatch correctly" in {
+
+    val strCount =  StringCount("GGCTC CGAGC AGAAG AAGAA GGG".filter{c => c != ' '}.mkString(""),1)
+
+    val encodeDevice = new BitEncoding(Cas9NGGParameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("GAGTCCG"), encoding)
+    (difference) should be (2)
+  }
+
+
+
+  "A Bit Encoder" should "calculate very distant bin mismatch correctly" in {
+
+    val strCount =  StringCount("GGCTC CGAGC AGAAG AAGAA GGG".filter{c => c != ' '}.mkString(""),1)
+
+    val encodeDevice = new BitEncoding(Cas9NGGParameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("AAAAAAA"), encoding)
+    (difference) should be (7)
   }
 }

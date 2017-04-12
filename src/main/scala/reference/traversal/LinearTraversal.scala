@@ -2,8 +2,10 @@ package reference.traversal
 
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
-import crispr.CRISPRSiteOT
+import crispr.{CRISPRSiteOT, GuideIndex, ResultsAggregator}
 import utils.BaseCombinationGenerator
+
+import scala.collection.mutable
 
 /**
   * linear traversal over the collection of bins in the file
@@ -12,11 +14,13 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
                       maxMismatch: Int,
                       binaryEncoder: BitEncoding,
                       upperBinProportionToJustSearchAll: Double,
-                      guides: Array[CRISPRSiteOT],
+                      guides: ResultsAggregator,
                       filtering: Boolean = true) extends BinTraversal with LazyLogging {
 
   // an array of guides that are no longer collecting off-target hits
-  var guidesToExclude = Array[Long]()
+  var guidesToUse = guides.indexedGuides.map{case(guide) => guide}.toArray
+
+  var overFlowedGuides = Array[GuideIndex]()
 
   // the internal iterator over bins
   val binIterator = binGenerator.iterator
@@ -38,7 +42,19 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
     *
     * @param guide a guide that no longer should be considered for off-target sequences
     */
-  override def overflowGuide(guide: Long) { guidesToExclude :+= guide }
+  override def overflowGuide(guide: GuideIndex) {
+    logger.warn("Overflowing guide " + guide)
+    val guidesToUseBuilder = new mutable.ArrayBuffer[GuideIndex]()
+    var guidesIndex = 0
+    while (guidesIndex < guidesToUse.size) {
+      if (guidesToUse(guidesIndex) == guide)
+        overFlowedGuides :+= guidesToUse(guidesIndex)
+      else
+        guidesToUseBuilder += guidesToUse(guidesIndex)
+      guidesIndex += 1
+    }
+    guidesToUse = guidesToUseBuilder.toArray
+  }
 
 
   override def hasNext: Boolean = binIterator.hasNext
@@ -47,12 +63,18 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
   override def next(): BinToGuidesLookup = {
     val bin = binaryEncoder.binToLongComparitor(binIterator.next())
 
+    val guidesForRun = new mutable.ArrayBuffer[GuideIndex]()
+    guidesForRun.sizeHint(guidesToUse.size)
 
-    BinToGuidesLookup(bin.bin,guides.filter(
-      cr => {
-        !(guidesToExclude contains cr.longEncoding) && binaryEncoder.mismatchBin(bin,cr.longEncoding) <= maxMismatch
+    var guidesIndex = 0
+    while (guidesIndex < guidesToUse.size) {
+      if (binaryEncoder.mismatchBin(bin,guidesToUse(guidesIndex).guide) <= maxMismatch) {
+        guidesForRun += guidesToUse(guidesIndex)
       }
-    ).map(cr => cr.longEncoding))
+      guidesIndex += 1
+    }
+
+    BinToGuidesLookup(bin.bin,guidesForRun.toArray)
   }
 
 }

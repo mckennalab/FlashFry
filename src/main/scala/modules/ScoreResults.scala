@@ -4,6 +4,7 @@ import java.io.File
 
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
+import crispr.ResultsAggregator
 import scoring.ScoringManager
 import standards.ParameterPack
 import targetio.{TargetInput, TargetOutput}
@@ -34,8 +35,10 @@ class ScoreResults(args: Array[String]) extends LazyLogging {
       // score all the sites
       val newGuides = scoringManager.scoreGuides(posEncoderAndOffTargets._2)
 
+      val results = new ResultsAggregator(newGuides)
+
       // output a new data file with the scored results
-      TargetOutput.output(config.outputBED,newGuides,true,false,bitEnc,posEncoderAndOffTargets._1, scoringManager.scoringAnnotations)
+      TargetOutput.output(config.outputBED,results,true,false,bitEnc,posEncoderAndOffTargets._1, scoringManager.scoringAnnotations)
 
     }
   }

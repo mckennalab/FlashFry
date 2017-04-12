@@ -4,7 +4,7 @@ import java.io._
 
 import bitcoding.{BinAndMask, BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRHit, CRISPRSiteOT}
+import crispr.{CRISPRHit, CRISPRSiteOT, GuideIndex, ResultsAggregator}
 import utils.BaseCombinationGenerator
 import reference.binary.{BinaryConstants, BinaryHeader}
 import reference.traversal.BinTraversal
@@ -23,7 +23,7 @@ trait Traverser {
     * @param binaryFile    the file we're scanning from
     * @param header        we have to parse the header ahead of time so that we know
     * @param traversal     the traversal over bins we'll use
-    * @param targets       the array of candidate guides we have
+    * @param aggregator    the array of candidate guides we have
     * @param maxMismatch   how many mismatches we support
     * @param configuration our enzyme configuration
     * @param bitCoder      our bit encoder
@@ -33,11 +33,11 @@ trait Traverser {
   def scan(binaryFile: File,
            header: BinaryHeader,
            traversal: BinTraversal,
-           targets: Array[CRISPRSiteOT],
+           aggregator: ResultsAggregator,
            maxMismatch: Int,
            configuration: ParameterPack,
            bitCoder: BitEncoding,
-           posCoder: BitPosition): Array[CRISPRSiteOT]
+           posCoder: BitPosition)
 
 }
 
@@ -168,5 +168,66 @@ object Traverser extends LazyLogging {
     assert(numberOfLongs == pointer, "We did not use the expected number of longs: used = " + pointer + " and buffer size " + numberOfLongs)
 
     ret.toArray
+  }
+
+  /**
+    * given a block of longs representing the targets and their positions, add any potential off-targets sequences to
+    * each guide it matches
+    *
+    * @param blockOfTargetsAndPositions an array of longs representing a block of encoded target and positions
+    * @param guides                     the guides
+    * @return an mapping from a potential guide to it's discovered off target sequences
+    */
+  def compareHeapBlock(blockOfTargetsAndPositions: Array[Long],
+                   numberOfTargets: Int,
+                   guides: Array[Long],
+                   bitEncoding: BitEncoding,
+                   maxMismatches: Int,
+                   bin: BinAndMask): Array[Array[CRISPRHit]] = {
+
+    val returnArray = Array.fill[ArrayBuffer[CRISPRHit]](guides.size)(new ArrayBuffer[CRISPRHit]())
+
+    // filter down the guides we actually want to look at
+    val lookAtGuides = guides.filter(gd => bitEncoding.mismatchBin(bin, gd) <= maxMismatches)
+
+    // we aim to be as fast as possible here, so while loops over foreach's, etc
+    var offset = 0
+    var currentTarget = 0l
+    var targetIndex = 0
+
+    // process each target in the block
+    while (targetIndex < numberOfTargets) {
+      targetIndex += 1
+      allTargets += 1
+
+      assert(offset < blockOfTargetsAndPositions.size, "we were about to fetch the " + targetIndex + " target and failed because " + offset + " is  >= to total block " + blockOfTargetsAndPositions.size)
+      val currentTarget = blockOfTargetsAndPositions(offset)
+      val count = bitEncoding.getCount(currentTarget)
+      assert(count > 0,"Encoded position count should be greater than zero: " + bitEncoding.bitDecodeString(currentTarget).toStr)
+
+      require(blockOfTargetsAndPositions.size >= offset + count,
+        "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size)
+
+      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
+      assert(positions.size > 0,"Position count should be greater than zero")
+
+      allTargetsAndPositions += positions.size
+
+      var guideIndex = 0
+      while (guideIndex < lookAtGuides.size) {
+        allComparisions += 1
+        val mismatches = bitEncoding.mismatches(lookAtGuides(guideIndex), currentTarget)
+        if (mismatches <= maxMismatches) {
+          //logger.info("Hit " + bitEncoding.bitDecodeString(lookAtGuides(guideIndex)) +
+          //  " and " + bitEncoding.bitDecodeString(currentTarget) + " + positions " + positions.size + " " + bitEncoding.getCount(currentTarget))
+          returnArray(guideIndex) += CRISPRHit(currentTarget, positions)
+        }
+        guideIndex += 1
+      }
+      offset += count + 1
+    }
+
+    val returnMap = new mutable.HashMap[Long, Array[CRISPRHit]]()
+    returnArray.map{case(offTargetsFound) => offTargetsFound.toArray}
   }
 }

@@ -7,7 +7,7 @@ import akka.pattern.ask
 import akka.routing._
 import akka.util.Timeout
 import bitcoding.{BitEncoding, BitPosition}
-import crispr.{CRISPRHit, CRISPRSiteOT}
+import crispr.{CRISPRHit, CRISPRSiteOT, ResultsAggregator}
 import htsjdk.samtools.util.BlockCompressedInputStream
 import reference.binary.{BinaryHeader, BlockOffset}
 import reference.traversal.BinTraversal
@@ -30,30 +30,19 @@ object ParallelTraverser {
 
   var numberOfThreads = 0
 
-  /**
-    * scan against the binary database of off-target sites in an implmenetation specific way
-    *
-    * @param binaryFile    the file we're scanning from
-    * @param header        we have to parse the header ahead of time so that we know
-    * @param traversal     the traversal over bins we'll use
-    * @param targets       the array of candidate guides we have
-    * @param maxMismatch   how many mismatches we support
-    * @param configuration our enzyme configuration
-    * @param bitCoder      our bit encoder
-    * @param posCoder      the position encoder
-    * @return a guide to OT hit array
-    */
+
   def scan(binaryFile: File,
            header: BinaryHeader,
            traversal: BinTraversal,
-           targets: Array[CRISPRSiteOT],
+           aggregator: ResultsAggregator,
            maxMismatch: Int,
            configuration: ParameterPack,
            bitCoder: BitEncoding,
-           posCoder: BitPosition): Array[CRISPRSiteOT] = {
+           posCoder: BitPosition) {
 
     // create the master
-    val master = system.actorOf(ParallelBinController.props(binaryFile, bitCoder, maxMismatch, traversal, header, numberOfThreads, targets), name = "master")
+    if (0 == 1) throw new IllegalStateException("This code isn't up and running")
+    val master = system.actorOf(ParallelBinController.props(binaryFile, bitCoder, maxMismatch, traversal, header, numberOfThreads, aggregator.wrappedGuides.map{gd => gd.otSite}), name = "master")
 
     implicit val timeout = Timeout(5 day)
     val future: Future[GuideResult] = ask(master, StartChecking).mapTo[GuideResult]
@@ -128,7 +117,7 @@ class ParallelBinController(binaryFile: File,
       workerPool ! ParallelWork(longBuffer,
         guidesToSeekForBin.bin,
         binPositionInformation.numberOfTargets,
-        guidesToSeekForBin.guides,
+        guidesToSeekForBin.guides.map{g => g.guide},
         binaryFile,
         bitEncoding,
         numberOfMismatches,
@@ -168,7 +157,7 @@ class ParallelBinController(binaryFile: File,
         workerPool ! ParallelWork(longBuffer,
           guidesToSeekForBin.bin,
           binPositionInformation.numberOfTargets,
-          guidesToSeekForBin.guides,
+          guidesToSeekForBin.guides.map{g => g.guide},
           binaryFile,
           bitEncoding,
           numberOfMismatches,
@@ -202,7 +191,7 @@ class ParallelBinController(binaryFile: File,
     assert(blockInformation.uncompressedSize >= 0, "Bin sizes must be positive (or zero)")
 
     blockCompressedInput.seek(blockInformation.blockPosition)
-    val readToBlock = new Array[Byte](blockInformation.uncompressedArraySize * 8)
+    val readToBlock = new Array[Byte](blockInformation.uncompressedSize)
     val read = blockCompressedInput.read(readToBlock)
 
     Utils.byteArrayToLong(readToBlock)

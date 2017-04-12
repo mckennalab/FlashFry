@@ -21,7 +21,7 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
   def full = currentTotal >= overflow
 
   def addOT(offTarget: CRISPRHit) = {
-    assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide")
+    assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide: " + encoding)
     offTargets += offTarget
     currentTotal += 1
   }
