@@ -1,4 +1,5 @@
-DeepFry
++[![Build Status](https://travis-ci.org/aaronmck/DeepFry.svg?branch=master)](https://travis-ci.org/aaronmck/DeepFry)
+FlashFry
 =======
 
 The CRISPR site finder.  Why reinvent the wheel on this one?  Well there are a couple of nice CRISPR design tools out there, but 
