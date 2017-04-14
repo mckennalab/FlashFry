@@ -44,7 +44,7 @@ object DatabaseWriter extends LazyLogging {
                            outputGenerator: BaseCombinationGenerator,
                            parameterPack: ParameterPack,
                            maxGenomicLocationsPerTarget: Int = 1000,
-                           maxTargetsPerLinearBin: Int = 5000) {
+                           maxTargetsPerLinearBin: Int = 500) {
 
 
     val blockStream = new BlockCompressedOutputStream(output)
