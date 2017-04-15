@@ -6,7 +6,6 @@ import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.GuideContainer
 import utils.Utils
-import crispr.filter.SequencePreFilter
 import standards.ParameterPack
 
 import scala.collection.mutable

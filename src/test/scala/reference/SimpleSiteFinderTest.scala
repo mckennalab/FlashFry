@@ -2,7 +2,6 @@ package reference
 
 import crispr.GuideMemoryStorage
 import org.scalatest.{FlatSpec, Matchers}
-import crispr.filter.SequencePreFilter
 import standards.{Cas9ParameterPack, Cpf1ParameterPack}
 
 /**

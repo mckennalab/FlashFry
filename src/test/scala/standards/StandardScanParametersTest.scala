@@ -3,7 +3,6 @@ package standards
 import crispr.GuideMemoryStorage
 import org.scalatest.{FlatSpec, Matchers}
 import reference.SimpleSiteFinder
-import crispr.filter.SequencePreFilter
 
 /**
   * Created by aaronmck on 3/9/17.

@@ -82,7 +82,7 @@ object BlockManager extends LazyLogging {
     * @param maxMismatches              the maximum number of mismatches
     * @param parentBin                  the parent bin sequence
     * @param blockDescriptorLookup      a description of the underlying bin structure
-    * @return an array of arrays. Each sub array corresponds one-to-one to the guide list, and individual lists can be empty
+    * 
     */
   def compareIndexedBlock(blockOfTargetsAndPositions: Array[Long],
                           numberOfTargets: Int,
@@ -102,7 +102,6 @@ object BlockManager extends LazyLogging {
     // one more while loop speed-up: we get a 2-3X improvement here by switching to a while loop
     var blockIndex = 0
     while (blockIndex < blockDescriptorLookup.size) {
-      // the while loop used to be blockDescriptorLookup.zip(slicedBlock).zipWithIndex.foreach { case ((blkDesc, positionAndSize), index) => {
       val blkDesc = blockDescriptorLookup(blockIndex)
       val positionAndSize = slicedBlock(blockIndex)
 
@@ -124,7 +123,7 @@ object BlockManager extends LazyLogging {
         val fullBinMask = blkDesc.binAndMask.guideMask | parentBin.guideMask
 
         val newGuidesBuilder = new mutable.ArrayBuffer[GuideIndex]()
-        newGuidesBuilder.sizeHint((guides.size * 0.05).toInt) // suggest a reasonable size -- this seems like a reasonable guess
+        newGuidesBuilder.sizeHint((guides.size * 0.05).toInt) // suggest a reasonable size -- this seems like a good guess
 
         // again this is a tight loop that gets hit a lot, so we switched from a idiomatic scala filter to a while loop --
         // this is about ~3X faster than the filter approach in some ad-hoc testing. Always Builder over buffer for primitive types

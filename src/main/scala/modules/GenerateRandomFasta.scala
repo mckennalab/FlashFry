@@ -9,7 +9,6 @@ import utils.BaseCombinationGenerator
 import targetio.TargetOutput
 import reference.traverser.SeekTraverser
 import reference.{CRISPRSite, ReferenceEncoder}
-import crispr.filter.{EntropyFilter, SequencePreFilter, MaxPolyNTrackFilter}
 import standards.ParameterPack
 import utils.RandoCRISPR
 
@@ -54,15 +53,13 @@ class GenerateRandomFasta(args: Array[String]) extends LazyLogging {
       val sequences = new ArrayBuffer[CRISPRSite]()
 
       val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pam.size, params.pam, params.fivePrimePam)
-      val filters = SequencePreFilter.standardFilters()
 
       while (sequences.size < config.randomCount) {
         val randomSeq = crisprMaker.next()
         val crisprSeq = new CRISPRSite(randomSeq, randomSeq, true, 0, None)
-        val isValid = filters.map { case (filter) => if (filter.filter(crisprSeq)) 0 else 1 }.sum == 0
 
         // it's valid, and check to make sure there's only one hit, and not a secret reverse sequence hit
-        if ((isValid) && ((!config.onlyUnidirectional) || (config.onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
+        if ((!config.onlyUnidirectional || (config.onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
             sequences.append(crisprSeq)
         }
       }

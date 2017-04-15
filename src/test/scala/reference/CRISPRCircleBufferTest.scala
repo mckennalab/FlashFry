@@ -4,7 +4,6 @@ import crispr.GuideMemoryStorage
 import utils.Utils
 import scoring.Doench2014OnTarget
 import org.scalatest.{FlatSpec, Matchers}
-import crispr.filter.SequencePreFilter
 import standards.{Cas9ParameterPack, Cpf1ParameterPack}
 
 /**

@@ -6,7 +6,8 @@ scalaVersion := "2.12.1"
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("public"),
-  Resolver.sonatypeRepo("snapshots")
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.sonatypeRepo("releases")
 )
 
 unmanagedBase <<= baseDirectory { base => base / "project" }
@@ -20,6 +21,8 @@ libraryDependencies += "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.12" % "2.4.14"
+
+// libraryDependencies += "org.spire-math" %% "debox" % "0.7.3"
 
 // set the main class for the main 'run' task
 mainClass in (Compile, packageBin) := Some("main.scala.Main")
