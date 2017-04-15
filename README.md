@@ -4,29 +4,5 @@
 FlashFry
 =======
 
-The CRISPR site finder.  Why reinvent the wheel on this one?  Well there are a couple of nice CRISPR design tools out there, but 
-many (though not all) exist as webtools.  So if you're screening a lot of CRISPR targets, you're stuck either 1) feeding them manually
-into the website or 2) feeding / screen-scraping the results in some ugly python script.  Boo.  
-
-Nothing fancy, but it does allow you to rapidly screen targets from any genome.  To achive higher speeds, the genome is preprocessed into a binary format where off-targets and their positions are encoded into long (64 bit) integers. This makes reading quick, and comparison between the putitive guide the off-target amazingly fast. The format is lightly documented below, though the tools can index your genome, so the documentation is more as a sanity check for me.
-
-Binary file format
-------------------
-
-The tools uses a custom binary format that compresses the genome hits for a target sequences into binary values. Values are stored as default big endian in java, so we'll keep it that way here. Here's what the format looks like:
-
-
-header:
-- 64 bit magic value (long)
-- 64 bit version number (long)
-- 64 bit number of bins (long)
-
-bin lookup table:
-- for the number of bins in the header:
-  - 64 bit size of the this block in the file (in bytes, long)
-  - 64 bit offset of this block in the file (in bytes, long)
-
-within each block the following pattern repeats:
-- 1 64 bit long for the target sequence and count information (long)
-- X 64 bit long for the positions within the target genome (long)
+FlashFry is a fast and flexible command-line tool for characterizing large numbers of CRISPR guide sequences. Many similar tools exist, but there is a clear need for a simple, lightweight framework that can score thousands of guides simultaneously for use in genome-wide screens and methods development. FlashFry allows users to specify an unconstrained number of mismatches to putative off-targets, richly annotate discovered sites, and implements many of the commonly used on and off-target scoring metrics. Output is provided as an easy to manipulate text file, and code is provided for post-run analysis in R or Python.
 
