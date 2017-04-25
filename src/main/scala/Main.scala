@@ -36,10 +36,8 @@ import scopt._
 object Main extends App {
   // parse the command line arguments
   val parser = new scopt.OptionParser[Config]("FlashFry") {
-    head("FlashFry", "1.1")
-
-    // scoring metrics varry in their command line arguments, so we need to disable failing when something unexpected comes up
-    errorOnUnknownArgument = false
+    head("FlashFry", "1.2")
+    override def errorOnUnknownArgument = false
 
     // *********************************** Inputs *******************************************************
     opt[String]("analysis") required() valueName ("<string>") action {

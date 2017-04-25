@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, GuideIndex, ResultsAggregator}
 import reference.binary.{BlockDescriptor, TargetPos}
 import reference.binary.blocks.BlockManager.{compareIndexedBlock, compareLinearBlock}
-import reference.traverser.Traverser.{allComparisions, allTargets, allTargetsAndPositions}
+import reference.traverser.Traverser.{allComparisons, allTargets, allTargetsAndPositions}
 import utils.{BaseCombinationGenerator, Utils}
 
 import scala.collection.mutable
@@ -82,7 +82,7 @@ object BlockManager extends LazyLogging {
     * @param maxMismatches              the maximum number of mismatches
     * @param parentBin                  the parent bin sequence
     * @param blockDescriptorLookup      a description of the underlying bin structure
-    * 
+    *
     */
   def compareIndexedBlock(blockOfTargetsAndPositions: Array[Long],
                           numberOfTargets: Int,
@@ -187,7 +187,7 @@ object BlockManager extends LazyLogging {
 
       var guideIndex = 0
       while (guideIndex < guides.size) {
-        allComparisions += 1
+        allComparisons += 1
         val mismatches = bitEncoding.mismatches(guides(guideIndex).guide, currentTarget)
         if (mismatches <= maxMismatches) {
           aggregator.updateOT(guides(guideIndex),CRISPRHit(currentTarget, positions))

@@ -72,4 +72,4 @@ case class TallyConfig(analysisType: Option[String] = None,
                        output: String = "",
                        tmp: String = "/tmp/",
                        enzyme: String = "spCas9",
-                       binSize: Int = 9)
+                       binSize: Int = 7)

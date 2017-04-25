@@ -200,7 +200,7 @@ class BitEncodingTest extends FlatSpec with Matchers {
       val difference = encodeDevice.mismatches(encoding, encoding2)
     }}
     val t1 = System.nanoTime()
-    println("Elapsed time for 100k comparisions (with difference checks): " + ((t1 - t0)/1000000000.0) + " seconds")
+    println("Elapsed time for 100k comparisons (with difference checks): " + ((t1 - t0)/1000000000.0) + " seconds")
   }
 
   "A Bit Encoder" should "compare 1 million of the same string quickly" in {
@@ -217,7 +217,7 @@ class BitEncodingTest extends FlatSpec with Matchers {
       val difference = encodeDevice.mismatches(encoding, encoding2)
     }}
     val t1 = System.nanoTime()
-    println("Elapsed time for 1M comparisions: " + ((t1 - t0)/1000000000.0) + " seconds")
+    println("Elapsed time for 1M comparisons: " + ((t1 - t0)/1000000000.0) + " seconds")
   }
 
   "A Bit Encoder" should "compare a bin correctly to a guide that's a perfect match" in {

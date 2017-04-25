@@ -27,5 +27,35 @@ class UtilsTest extends FlatSpec with Matchers {
     (newLongs(3)) should be (longArray(3))
     (newLongs(1)) should not be (longArray(3))
   }
+
+  "Utils" should "should covert a long to a bit string correctly" in {
+    val longValue = 0xABCDEFABCDEFABCDl
+    val expectedBitString = "1010 1011 1100 1101 1110 1111 1010 1011 1100 1101 1110 1111 1010 1011 1100 1101"
+
+    (Utils.longToBitString(longValue)) should be (expectedBitString)
+  }
+
+  "Utils" should "should convert a long array to a byte array correctly" in {
+    val longValueArray = Array[Long](0x0BCDEFABCDEFABCDl,0x0l,0x1l)
+
+    val byteArray = Utils.longArrayToByteArray(longValueArray)
+    println("asdfasdf " + byteArray.map{byte => byte.toShort.toString}.mkString(" "))
+
+    (byteArray.size) should be (8 * 3)
+    (byteArray(7))   should be (0x0B)
+    (byteArray(16))  should be (0x1)
+  }
+
+  "Utils" should "should convert a byte array into a long array" in {
+    val longValueArray = Array[Long](0xABCDEFABCDEFABCDl,0x0l,0x1l)
+
+    val byteArray = Utils.longArrayToByteArray(longValueArray)
+    val longAgain = Utils.byteArrayToLong(byteArray)
+
+    (longAgain.size) should be (3)
+    (longAgain(0))   should be (0xABCDEFABCDEFABCDl)
+    (longAgain(1))   should be (0x0l)
+    (longAgain(2))  should be (0x1l)
+  }
 }
 

@@ -233,7 +233,7 @@ class ParallelBinCheck extends Actor with ActorLogging {
         pFetch.numberOfMismatches,
         pFetch.bitEncoding.binToLongComparitor(pFetch.bin))
 
-      log.warning("processing actor for bin " + pFetch.bin + " with " + pFetch.guides.size + ", " + BitEncoding.allComparisons + " comparisions")
+      log.warning("processing actor for bin " + pFetch.bin + " with " + pFetch.guides.size + ", " + BitEncoding.allComparisons + " comparisons")
 
       sender ! ParallelResult(pFetch.bin, pFetch.guides, binRes)
 

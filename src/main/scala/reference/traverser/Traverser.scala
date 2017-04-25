@@ -52,7 +52,7 @@ object Traverser extends LazyLogging {
   var allTargetsAndPositions = 0l
 
   // record the total number of comparisons we do
-  var allComparisions = 0l
+  var allComparisons = 0l
 
   // compute the mismatch count between two strings
   def mismatches(str1: String, str2: String): Int = str1.zip(str2).map { case (a, b) => if (a == b) 0 else 1 }.sum
@@ -106,7 +106,7 @@ object Traverser extends LazyLogging {
 
       var guideIndex = 0
       while (guideIndex < lookAtGuides.size) {
-        allComparisions += 1
+        allComparisons += 1
         val mismatches = bitEncoding.mismatches(lookAtGuides(guideIndex), currentTarget)
         if (mismatches <= maxMismatches) {
           //logger.info("Hit " + bitEncoding.bitDecodeString(lookAtGuides(guideIndex)) +
@@ -215,7 +215,7 @@ object Traverser extends LazyLogging {
 
       var guideIndex = 0
       while (guideIndex < lookAtGuides.size) {
-        allComparisions += 1
+        allComparisons += 1
         val mismatches = bitEncoding.mismatches(lookAtGuides(guideIndex), currentTarget)
         if (mismatches <= maxMismatches) {
           //logger.info("Hit " + bitEncoding.bitDecodeString(lookAtGuides(guideIndex)) +

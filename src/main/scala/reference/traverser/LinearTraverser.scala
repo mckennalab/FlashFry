@@ -83,7 +83,7 @@ object LinearTraverser extends Traverser with LazyLogging {
       binIndex += 1
       if (binIndex % 1000 == 0) {
         logger.info(formatter.format(binIndex) + "/" + formatter.format(traversal.traversalSize) + " bins; guides: " + guidesToSeekForBin.guides.size + "; targets: " + binPositionInformation.numberOfTargets + "; " + ((System.nanoTime() - t0) / 1000000000.0) +
-          " seconds/1K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
+          " seconds/1K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisons")
         t0 = System.nanoTime()
       }
 

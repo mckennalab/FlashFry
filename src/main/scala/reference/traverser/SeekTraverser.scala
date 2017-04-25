@@ -75,7 +75,7 @@ object SeekTraverser extends Traverser with LazyLogging {
         //val totalGuidesScoring = traveralIterator.size
         logger.info("Comparing the " + formatter.format(binIndex) +
           "th bin (" + guidesToSeekForBin.bin + ") with " + binPositionInformation.numberOfTargets + " guides, of a total bin count " + formatter.format(traversal.traversalSize) + ". " + ((System.nanoTime() - t0) / 1000000000.0) +
-          " seconds/10K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisions")
+          " seconds/10K bins, executed " + formatter.format(BitEncoding.allComparisons) + " comparisons")
         t0 = System.nanoTime()
       }
       binIndex += 1

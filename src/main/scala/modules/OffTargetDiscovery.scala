@@ -89,7 +89,7 @@ class OffTargetDiscovery(args: Array[String]) extends LazyLogging {
         }
       }
 
-      logger.info("Performed a total of " + formatter.format(Traverser.allComparisions) + " guide to target comparisons")
+      logger.info("Performed a total of " + formatter.format(Traverser.allComparisons) + " guide to target comparisons")
       logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
 
       // now output the scores per site
@@ -114,7 +114,7 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           binaryOTFile: String = "",
                           outputFile: String = "",
                           enzyme: String = "cas9",
-                          maxMismatch: Int = 5,
+                          maxMismatch: Int = 4,
                           includePositionOutputInformation: Boolean = false,
                           markTargetsWithExactGenomeHits: Boolean = false,
                           flankingSequence: Int = 10,
