@@ -45,4 +45,7 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
   def compare(that: CRISPRSiteOT): Int = (target.bases) compare (that.target.bases)
 }
 
-case class CRISPRHit(sequence: Long, coordinates: Array[Long])
+class CRISPRHit(sq: Long, coord: Array[Long]) {
+  val sequence = sq
+  val coordinates = coord
+}

@@ -111,7 +111,7 @@ object Traverser extends LazyLogging {
         if (mismatches <= maxMismatches) {
           //logger.info("Hit " + bitEncoding.bitDecodeString(lookAtGuides(guideIndex)) +
           //  " and " + bitEncoding.bitDecodeString(currentTarget) + " + positions " + positions.size + " " + bitEncoding.getCount(currentTarget))
-          returnArray(guideIndex) += CRISPRHit(currentTarget, positions)
+          returnArray(guideIndex) += new CRISPRHit(currentTarget, positions)
         }
         guideIndex += 1
       }
@@ -151,7 +151,7 @@ object Traverser extends LazyLogging {
       assert(target.count + pointer <= larray.size, "Fetching the current block of positions would underflow our buffer: curpos = " +
         pointer + " positions = " + target.count + " arraysize = " + larray.size)
 
-      ret += CRISPRHit(larray(pointer - 1),larray.slice(pointer, pointer + target.count))
+      ret += new CRISPRHit(larray(pointer - 1),larray.slice(pointer, pointer + target.count))
 
       // now move the counter the number of positions
       pointer += target.count
@@ -220,7 +220,7 @@ object Traverser extends LazyLogging {
         if (mismatches <= maxMismatches) {
           //logger.info("Hit " + bitEncoding.bitDecodeString(lookAtGuides(guideIndex)) +
           //  " and " + bitEncoding.bitDecodeString(currentTarget) + " + positions " + positions.size + " " + bitEncoding.getCount(currentTarget))
-          returnArray(guideIndex) += CRISPRHit(currentTarget, positions)
+          returnArray(guideIndex) += new CRISPRHit(currentTarget, positions)
         }
         guideIndex += 1
       }

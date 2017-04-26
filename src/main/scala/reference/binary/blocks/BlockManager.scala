@@ -1,6 +1,6 @@
 package reference.binary.blocks
 
-import bitcoding.{BinAndMask, BitEncoding}
+import bitcoding.{BinAndMask, BitEncoding, GPUBitBlockCompare}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, GuideIndex, ResultsAggregator}
 import reference.binary.{BlockDescriptor, TargetPos}
@@ -16,7 +16,7 @@ import scala.collection.mutable.ArrayBuffer
   * and handles comparisons between a guide and that block. We allow block files to have interleaved blocks
   * of index and linear traversals in any combination
   */
-class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding) extends LazyLogging {
+class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU: Boolean = false) extends LazyLogging {
 
   // setup a bunch of things we'll only want to create once
   var combinedLongFilter = bitEncoding.compBitmaskForBin(offset + width)
@@ -51,12 +51,20 @@ class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding) extend
     firstLong match {
       case 1 => {
         // we have a linear block, return a linear traversal over that block
-        compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-          numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin)
+        if (useGPU)
+          GPUBitBlockCompare.compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches)
+        else
+          compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin)
       }
       case 2 => {
-        compareIndexedBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-          numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin, blockDescriptorLookup)
+        if (useGPU)
+          GPUBitBlockCompare.compareLinearBlock(blockOfTargetsAndPositions.slice(1 + blockDescriptorLookup.size, blockOfTargetsAndPositions.size),
+            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches)
+        else
+          compareIndexedBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin, blockDescriptorLookup, useGPU)
       }
       case _ => {
         throw new IllegalStateException("Invalid bin type, unknown value: " + firstLong)
@@ -91,7 +99,8 @@ object BlockManager extends LazyLogging {
                           bitEncoding: BitEncoding,
                           maxMismatches: Int,
                           parentBin: BinAndMask,
-                          blockDescriptorLookup: Array[BinToLongComp]) {
+                          blockDescriptorLookup: Array[BinToLongComp],
+                          useGPU: Boolean) {
 
     // for each sub-bin, slice the array of longs to the right size, find the guides that could match this
     // sub grouping, and run the standard linear comparison
@@ -136,7 +145,10 @@ object BlockManager extends LazyLogging {
         val newGuides = newGuidesBuilder.result()
 
         if (newGuides.size > 0) {
-          val linearResults = compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches, parentBin)
+          if (useGPU)
+            GPUBitBlockCompare.compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches)
+          else
+            compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches, parentBin)
         }
       }
 
@@ -190,7 +202,7 @@ object BlockManager extends LazyLogging {
         allComparisons += 1
         val mismatches = bitEncoding.mismatches(guides(guideIndex).guide, currentTarget)
         if (mismatches <= maxMismatches) {
-          aggregator.updateOT(guides(guideIndex),CRISPRHit(currentTarget, positions))
+          aggregator.updateOT(guides(guideIndex), new CRISPRHit(currentTarget, positions))
         }
         guideIndex += 1
       }

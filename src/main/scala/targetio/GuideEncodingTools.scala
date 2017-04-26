@@ -136,7 +136,7 @@ object GuideEncodingTools {
         }
 
         assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-        val otHit = CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
+        val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
         ot.addOT(otHit)
       }
       }

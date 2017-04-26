@@ -29,7 +29,7 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
   "Doench2016CFDScore" should "correctly a simple guide right according to the python code" in {
     val crispr = CRISPRSite("test", "AAAAGGGTTTGGGATATAGCTGG", true, 0, Some("GGTTGTCAGCTAAAAGGGTTTGGGATATAGCTGGCCTCCCTGGGCCC"))
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("AAAAGGGTTTGGGATATAGCTGG", 1)),1000)
-    otListLong.foreach{ot => otHit.addOT(CRISPRHit(ot,Array[Long](0l)))}
+    otListLong.foreach{ot => otHit.addOT(new CRISPRHit(ot,Array[Long](0l)))}
     (dScore.scoreGuide(otHit).toDouble) should be(7.51176486888e-16 +- 1e-16)
   }
 }

@@ -10,6 +10,10 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
+javacOptions += "-g"
+
+javaOptions += "–Dcom.amd.aparapi.enableExecutionModeReporting=true"
+
 unmanagedBase <<= baseDirectory { base => base / "project" }
 
 libraryDependencies += "com.github.samtools" % "htsjdk" % "2.8.1"
