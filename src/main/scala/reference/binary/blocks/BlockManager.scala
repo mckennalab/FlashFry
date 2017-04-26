@@ -16,7 +16,7 @@ import scala.collection.mutable.ArrayBuffer
   * and handles comparisons between a guide and that block. We allow block files to have interleaved blocks
   * of index and linear traversals in any combination
   */
-class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU: Boolean = false) extends LazyLogging {
+class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU: Boolean = true) extends LazyLogging {
 
   // setup a bunch of things we'll only want to create once
   var combinedLongFilter = bitEncoding.compBitmaskForBin(offset + width)

@@ -71,7 +71,7 @@ object SeekTraverser extends Traverser with LazyLogging {
         maxMismatch,
         bitCoder.binToLongComparitor(guidesToSeekForBin.bin))
 
-      if (binIndex % 10000 == 0) {
+      if (binIndex % 1000 == 0) {
         //val totalGuidesScoring = traveralIterator.size
         logger.info("Comparing the " + formatter.format(binIndex) +
           "th bin (" + guidesToSeekForBin.bin + ") with " + binPositionInformation.numberOfTargets + " guides, of a total bin count " + formatter.format(traversal.traversalSize) + ". " + ((System.nanoTime() - t0) / 1000000000.0) +
