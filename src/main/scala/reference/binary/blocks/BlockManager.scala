@@ -1,6 +1,6 @@
 package reference.binary.blocks
 
-import bitcoding.{BinAndMask, BitEncoding, GPUBitBlockCompare}
+import bitcoding.{BinAndMask, BitEncoding}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, GuideIndex, ResultsAggregator}
 import reference.binary.{BlockDescriptor, TargetPos}
@@ -8,6 +8,7 @@ import reference.binary.blocks.BlockManager.{compareIndexedBlock, compareLinearB
 import reference.traverser.Traverser.{allComparisons, allTargets, allTargetsAndPositions}
 import utils.{BaseCombinationGenerator, Utils}
 
+import scala.annotation._, elidable._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -37,6 +38,7 @@ class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU
     * @param bin                        the sequence of this parent bin
     * @return an array of arrays. Each sub array corresponds one-to-one to the guide list, and individual lists can be empty
     */
+
   def compareBlock(blockOfTargetsAndPositions: Array[Long],
                    numberOfTargets: Int,
                    guides: Array[GuideIndex],
@@ -51,20 +53,12 @@ class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU
     firstLong match {
       case 1 => {
         // we have a linear block, return a linear traversal over that block
-        if (useGPU)
-          GPUBitBlockCompare.compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches)
-        else
-          compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin)
+        BlockManager.compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+          numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin)
       }
       case 2 => {
-        if (useGPU)
-          GPUBitBlockCompare.compareLinearBlock(blockOfTargetsAndPositions.slice(1 + blockDescriptorLookup.size, blockOfTargetsAndPositions.size),
-            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches)
-        else
-          compareIndexedBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-            numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin, blockDescriptorLookup, useGPU)
+        BlockManager.compareIndexedBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+          numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin, blockDescriptorLookup, useGPU)
       }
       case _ => {
         throw new IllegalStateException("Invalid bin type, unknown value: " + firstLong)
@@ -145,10 +139,7 @@ object BlockManager extends LazyLogging {
         val newGuides = newGuidesBuilder.result()
 
         if (newGuides.size > 0) {
-          if (useGPU)
-            GPUBitBlockCompare.compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches)
-          else
-            compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches, parentBin)
+          BlockManager.compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches, parentBin)
         }
       }
 
@@ -301,5 +292,20 @@ object BlockManager extends LazyLogging {
     assert(blockSum == res.size - 1, "Our sum of targets and positions doesn't add up the total block size (minus our header long): " + blockSum + " vrs " + (res.size - 1))
     res
   }
+
+  // http://stackoverflow.com/questions/34627179/how-to-pass-scalacoptions-xelide-below-to-sbt-via-command-line
+  /*
+  @elidable(ALL) def elidableGPUCall(blockOfTargetsAndPositions: Array[Long],
+                      numberOfTargets: Int,
+                      guides: Array[GuideIndex],
+                      aggregator: ResultsAggregator,
+                      bitEncoding: BitEncoding,
+                      maxMismatches: Int) {
+
+    import bitcoding.GPUBitBlockCompare
+
+    GPUBitBlockCompare.compareLinearBlock(blockOfTargetsAndPositions,
+      numberOfTargets, guides, aggregator, bitEncoding, maxMismatches)
+  }*/
 }
 

@@ -10,9 +10,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
-javacOptions += "-g"
-
-javaOptions += "–Dcom.amd.aparapi.enableExecutionModeReporting=true"
+// set to true if you want to try and build for a GPU with aparapi
 
 unmanagedBase <<= baseDirectory { base => base / "project" }
 
@@ -28,7 +26,10 @@ libraryDependencies += "com.typesafe.akka" % "akka-actor_2.12" % "2.4.14"
 
 libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0"
 
-libraryDependencies += "com.aparapi" % "aparapi" % "1.3.4"
+//  libraryDependencies += "com.aparapi" % "aparapi" % "1.3.4"
+//  javacOptions += "-g"
+//  javaOptions += "–Dcom.amd.aparapi.enableExecutionModeReporting=true"
+
 
 // set the main class for the main 'run' task
 mainClass in (Compile, packageBin) := Some("main.scala.Main")

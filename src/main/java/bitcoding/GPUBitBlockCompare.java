@@ -1,5 +1,6 @@
 package bitcoding;
 
+/**
 import com.aparapi.Kernel;
 import com.aparapi.Range;
 import crispr.GuideIndex;
@@ -8,9 +9,8 @@ import crispr.ResultsAggregator;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-/**
  * a place to put parellel GPU implementations of bit encoding tests
- */
+ *
 public class GPUBitBlockCompare {
 
     int counter = 0;
@@ -19,14 +19,14 @@ public class GPUBitBlockCompare {
 
     }
 
-    /**
+     **
      * given a block of longs representing the targets and their positions, add any potential off-targets sequences to
      * each guide it matches
      *
      * @param blockOfTargetsAndPositions an array of longs representing a block of encoded target and positions
      * @param guides                     the guides
      * @return an mapping from a potential guide to it's discovered off target sequences
-     */
+     *
     public static void compareLinearBlock(long[] blockOfTargetsAndPositions,
                                           int numberOfTargets,
                                           GuideIndex[] guides,
@@ -71,9 +71,9 @@ public class GPUBitBlockCompare {
                 long firstComp = ((encoding1 ^ encoding2) & additionalMask);
                 return (pop((firstComp & upperBits) | ((firstComp << 1) & upperBits)));
             }
-            /**
+            **
              * Returns the number of bits set in the long -- from the aparapi example code, replaces popcnt
-             */
+             *
             private int pop ( long x) {
                 x = x - ((x >>> 1) & 0x5555555555555555L);
                 x = (x & 0x3333333333333333L) + ((x >>> 2) & 0x3333333333333333L);
@@ -107,4 +107,4 @@ public class GPUBitBlockCompare {
         kernel.dispose();
 
     }
-}
+}*/
