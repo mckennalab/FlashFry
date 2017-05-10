@@ -26,9 +26,7 @@ class ResultsAggregator(guides: Array[CRISPRSiteOT]) extends LazyLogging {
   }}
 
   def updateOTs(guideIndex: GuideIndex, hits: Array[CRISPRHit]): Unit = {
-    if (wrappedGuides(guideIndex.index).otSite.full)
-      logger.warn("Adding OT to overflowed guide: " + guideIndex.guide)
-    else {
+    if (!wrappedGuides(guideIndex.index).otSite.full) {
       wrappedGuides(guideIndex.index).otSite.addOTs(hits)
       if (wrappedGuides(guideIndex.index).otSite.full) {
         guidesToOverflow(guideIndex) = true
@@ -38,9 +36,7 @@ class ResultsAggregator(guides: Array[CRISPRSiteOT]) extends LazyLogging {
   }
 
   def updateOT(guideIndex: GuideIndex, hit: CRISPRHit): Unit = {
-    if (wrappedGuides(guideIndex.index).otSite.full)
-      logger.warn("Adding OT to overflowed guide: " + guideIndex.guide)
-    else {
+    if (!wrappedGuides(guideIndex.index).otSite.full) {
       wrappedGuides(guideIndex.index).otSite.addOT(hit)
       if (wrappedGuides(guideIndex.index).otSite.full) {
         guidesToOverflow(guideIndex) = true

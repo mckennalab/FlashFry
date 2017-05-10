@@ -17,91 +17,92 @@ import standards.ParameterPack
 
 import scala.collection.mutable
 import scala.io.Source
+import scopt.options._
 
 /**
   * Scan a fasta file for targets and tally their off-targets against the genome
   */
-class OffTargetDiscovery(args: Array[String]) extends LazyLogging {
+class OffTargetDiscovery extends LazyLogging with Module {
 
-  // parse the command line arguments
-  val parser = new OffTargetBaseOptions()
+  def runWithOptions(remainingOptions: Seq[String]) {
+    // parse the command line arguments
+    val parser = new OffTargetBaseOptions()
 
-  parser.parse(args, DiscoverConfig()) map {
-    config => {
-      val formatter = java.text.NumberFormat.getIntegerInstance
+    parser.parse(remainingOptions, DiscoverConfig()) map {
+      config => {
+        val formatter = java.text.NumberFormat.getIntegerInstance
 
-      // get our enzyme's (cas9, cpf1) settings
-      val params = ParameterPack.nameToParameterPack(config.enzyme)
+        // get our enzyme's (cas9, cpf1) settings
+        val params = ParameterPack.nameToParameterPack(config.enzyme)
 
-      // load up their input file, and scan for any potential targets
-      val guideHits = new GuideMemoryStorage()
-      val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, config.flankingSequence)
+        // load up their input file, and scan for any potential targets
+        val guideHits = new GuideMemoryStorage()
+        val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, config.flankingSequence)
 
-      logger.info("Reading the header....")
-      val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
+        logger.info("Reading the header....")
+        val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
 
-      // transform our targets into a list for off-target collection
-      logger.info("Setting up the guide recording....")
-      val guideOTs = guideHits.guideHits.map {
-        guide => new CRISPRSiteOT(guide, header.bitCoder.bitEncodeString(StringCount(guide.bases, 1)), config.maximumOffTargets)
-      }.toArray
-      val guideStorage = new ResultsAggregator(guideOTs)
+        // transform our targets into a list for off-target collection
+        logger.info("Setting up the guide recording....")
+        val guideOTs = guideHits.guideHits.map {
+          guide => new CRISPRSiteOT(guide, header.bitCoder.bitEncodeString(StringCount(guide.bases, 1)), config.maximumOffTargets)
+        }.toArray
+        val guideStorage = new ResultsAggregator(guideOTs)
 
-      logger.info("Determine how many bins we'll traverse....")
-      var traversalFactory: Option[OrderedBinTraversalFactory] = None
+        logger.info("Determine how many bins we'll traverse....")
+        var traversalFactory: Option[OrderedBinTraversalFactory] = None
 
-      if (!config.forceLinear)
-        traversalFactory = Some(new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage))
+        if (!config.forceLinear)
+          traversalFactory = Some(new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage))
 
-      logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
+        logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
 
-      val isTraversalSaturdated = if (traversalFactory.isDefined) traversalFactory.get.saturated else false
+        val isTraversalSaturdated = if (traversalFactory.isDefined) traversalFactory.get.saturated else false
 
-      (config.forceLinear, isTraversalSaturdated, config.numberOfThreads) match {
-        case (fl, sat, threads) if ((fl | sat) & threads == 1) => {
-          val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
-          guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
-          logger.info("Starting linear traversal")
-          LinearTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+        (config.forceLinear, isTraversalSaturdated, config.numberOfThreads) match {
+          case (fl, sat, threads) if ((fl | sat) & threads == 1) => {
+            val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
+            guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
+            logger.info("Starting linear traversal")
+            LinearTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+          }
+          case (fl, sat, threads) if (!fl & !sat & threads == 1) => {
+            logger.info("Starting seek traversal")
+            val traversal = traversalFactory.get.iterator
+            guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
+            SeekTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+          }
+          case (fl, sat, threads) if (!fl & !sat & threads > 1) => {
+            logger.info("Starting parallel traversal")
+            ParallelTraverser.numberOfThreads = threads
+            val traversal = traversalFactory.get.iterator
+            guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
+            ParallelTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+          }
+          case (fl, sat, threads) if (!fl & threads > 1) => {
+            logger.info("Starting parallel linear traversal")
+            val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
+            guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
+            ParallelTraverser.numberOfThreads = threads
+            ParallelTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+          }
+          case (fl, sat, threads) => {
+            throw new IllegalStateException("We don't have a run type when --forceLinear=" + fl + ", binSaturation=" + sat + ", and --numberOfThreads=" + threads)
+          }
         }
-        case (fl, sat, threads) if (!fl & !sat & threads == 1) => {
-          logger.info("Starting seek traversal")
-          val traversal = traversalFactory.get.iterator
-          guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
-          SeekTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
-        }
-        case (fl, sat, threads) if (!fl & !sat & threads > 1) => {
-          logger.info("Starting parallel traversal")
-          ParallelTraverser.numberOfThreads = threads
-          val traversal = traversalFactory.get.iterator
-          guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
-          ParallelTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
-        }
-        case (fl, sat, threads) if (!fl & threads > 1) => {
-          logger.info("Starting parallel linear traversal")
-          val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
-          guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
-          ParallelTraverser.numberOfThreads = threads
-          ParallelTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
-        }
-        case (fl, sat, threads) => {
-          throw new IllegalStateException("We don't have a run type when --forceLinear=" + fl + ", binSaturation=" + sat + ", and --numberOfThreads=" + threads)
-        }
+
+        logger.info("Performed a total of " + formatter.format(Traverser.allComparisons) + " guide to target comparisons")
+        logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
+
+        // now output the scores per site
+        TargetOutput.output(config.outputFile,
+          guideStorage,
+          config.includePositionOutputInformation,
+          config.markTargetsWithExactGenomeHits,
+          header.bitCoder,
+          header.bitPosition,
+          Array[String]())
       }
-
-      logger.info("Performed a total of " + formatter.format(Traverser.allComparisons) + " guide to target comparisons")
-      logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
-
-      // now output the scores per site
-      TargetOutput.output(config.outputFile,
-        guideStorage,
-        config.includePositionOutputInformation,
-        config.markTargetsWithExactGenomeHits,
-        header.bitCoder,
-        header.bitPosition,
-        Array[String]())
-
-
     }
   }
 }
@@ -123,7 +124,7 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           numberOfThreads: Int = 1)
 
 
-class OffTargetBaseOptions extends scopt.OptionParser[DiscoverConfig]("DiscoverOTSites") {
+class OffTargetBaseOptions extends OptionParser[DiscoverConfig]("DiscoverOTSites") {
   head("DiscoverOTSites", "1.0")
 
   // *********************************** Inputs *******************************************************

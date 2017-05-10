@@ -151,9 +151,10 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   if (binProp >= upperBinProportionToJustSearchAll)
     isSaturated = true
 
-  logger.info("With " + guides.indexedGuides.size + " guides, and allowing " +
-    mMismatch + " mismatch(es), we're going to scan " + binToTargets.size +
-    " target bins out of a total of " + totalPossibleBins)
+  if (!isSaturated)
+    logger.info("With " + guides.indexedGuides.size + " guides, and allowing " +
+      mMismatch + " mismatch(es), we're going to scan " + binToTargets.size +
+      " target bins out of a total of " + totalPossibleBins)
 }
 
 

@@ -8,38 +8,41 @@ import crispr.ResultsAggregator
 import scoring.ScoringManager
 import standards.ParameterPack
 import targetio.{TargetInput, TargetOutput}
+import scopt.options._
 
 /**
   * Given a results bed file from off-target discovery, annotate it with scores using established scoring schemes
   */
-class ScoreResults(args: Array[String]) extends LazyLogging {
+class ScoreResults extends LazyLogging with Module {
 
-  // parse the command line arguments
-  val parser = new ScoreBaseOptions()
+  def runWithOptions(args: Seq[String]) {
+    // parse the command line arguments
+    val parser = new ScoreBaseOptions()
 
-  parser.parse(args, ScoreConfig()) map {
-    config => {
+    parser.parse(args, ScoreConfig()) map {
+      config => {
 
-      // get our settings
-      val params = ParameterPack.nameToParameterPack(config.enzyme)
+        // get our settings
+        val params = ParameterPack.nameToParameterPack(config.enzyme)
 
-      // make ourselves a bit encoder
-      val bitEnc = new BitEncoding(params)
+        // make ourselves a bit encoder
+        val bitEnc = new BitEncoding(params)
 
-      // load up the scored sites into a container
-      val posEncoderAndOffTargets = TargetInput.inputBedToTargetArray(new File(config.inputBED),bitEnc, 2000)
+        // load up the scored sites into a container
+        val posEncoderAndOffTargets = TargetInput.inputBedToTargetArray(new File(config.inputBED), bitEnc, 2000)
 
-      // get a scoring manager
-      val scoringManager = new ScoringManager(bitEnc,posEncoderAndOffTargets._1,config.scoringMetrics,args)
+        // get a scoring manager
+        val scoringManager = new ScoringManager(bitEnc, posEncoderAndOffTargets._1, config.scoringMetrics, args.toArray)
 
-      // score all the sites
-      val newGuides = scoringManager.scoreGuides(posEncoderAndOffTargets._2)
+        // score all the sites
+        val newGuides = scoringManager.scoreGuides(posEncoderAndOffTargets._2)
 
-      val results = new ResultsAggregator(newGuides)
+        val results = new ResultsAggregator(newGuides)
 
-      // output a new data file with the scored results
-      TargetOutput.output(config.outputBED,results,true,false,bitEnc,posEncoderAndOffTargets._1, scoringManager.scoringAnnotations)
+        // output a new data file with the scored results
+        TargetOutput.output(config.outputBED, results, true, false, bitEnc, posEncoderAndOffTargets._1, scoringManager.scoringAnnotations)
 
+      }
     }
   }
 }
@@ -55,7 +58,7 @@ case class ScoreConfig(analysisType: Option[String] = None,
                        scoringMetrics: Seq[String] = Seq())
 
 
-class ScoreBaseOptions extends scopt.OptionParser[ScoreConfig]("DiscoverOTSites") {
+class ScoreBaseOptions extends OptionParser[ScoreConfig]("DiscoverOTSites") {
   // *********************************** Inputs *******************************************************
   opt[String]("analysis") required() valueName ("<string>") action {
     (x, c) => c.copy(analysisType = Some(x))

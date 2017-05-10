@@ -57,5 +57,17 @@ class UtilsTest extends FlatSpec with Matchers {
     (longAgain(1))   should be (0x0l)
     (longAgain(2))  should be (0x1l)
   }
+
+  "Utils" should "find the longest homopolymer run correctly" in {
+    val seq1 = Utils.longestHomopolymerRun("AAAAATTCC")
+    val seq2 = Utils.longestHomopolymerRun("ACTGACGT")
+    val seq3 = Utils.longestHomopolymerRun("AACCTTGG")
+    val seq4 = Utils.longestHomopolymerRun("AATTTTTGG")
+
+    (seq1) should be (5)
+    (seq2) should be (1)
+    (seq3) should be (2)
+    (seq4) should be (5)
+  }
 }
 

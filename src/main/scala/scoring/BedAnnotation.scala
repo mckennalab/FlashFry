@@ -5,6 +5,7 @@ import java.io.File
 import bitcoding.{BitEncoding, BitPosition, PositionInformation}
 import crispr.CRISPRSiteOT
 import modules.{DiscoverConfig, OffTargetBaseOptions}
+import scopt.options.OptionParser
 import standards.ParameterPack
 import utils.BEDFile
 
@@ -124,7 +125,7 @@ class BedAnnotation() extends ScoreModel {
 case class BedConfig(inputBed: String = "",
                           useInGenomeLocations: Boolean = false)
 
-class BedAnnotationOptions extends scopt.OptionParser[BedConfig]("DiscoverOTSites") {
+class BedAnnotationOptions extends OptionParser[BedConfig]("DiscoverOTSites") {
   opt[String]("inputBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with")
   opt[Unit]("useInGenomeLocations") valueName ("<string>") action { (x, c) => c.copy(useInGenomeLocations = true) } text ("Try to find our genome location by using matching zero-mismatch in-genome targets")
 }

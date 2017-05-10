@@ -2,9 +2,9 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
-import modules.{BuildOffTargetDatabase, GenerateRandomFasta, OffTargetDiscovery, ScoreResults}
+import modules._
 import org.slf4j._
-import scopt._
+import scopt.options._
 
 /**
  * created by aaronmck on 12/16/14
@@ -35,7 +35,7 @@ import scopt._
  */
 object Main extends App {
   // parse the command line arguments
-  val parser = new scopt.OptionParser[Config]("FlashFry") {
+  val parser = new scopt.options.PeelParser[Config]("FlashFry") {
     head("FlashFry", "1.2")
     override def errorOnUnknownArgument = false
 
@@ -51,23 +51,26 @@ object Main extends App {
 
   val logger = LoggerFactory.getLogger("Main")
 
-  parser.parse(args, Config()) map {
-    config => {
+  parser.peel(args, Config()) map {
+    case(config, remainingArgs) => {
 
       val initialTime = System.nanoTime()
 
       config.analysisType.get match {
         case "index" => {
-          new BuildOffTargetDatabase(args)
+          (new BuildOffTargetDatabase()).runWithOptions(args)
         }
         case "discover" => {
-          new OffTargetDiscovery(args)
+          (new OffTargetDiscovery()).runWithOptions(args)
         }
         case "random" => {
-          new GenerateRandomFasta(args)
+          (new GenerateRandomFasta()).runWithOptions(args)
         }
         case "score" => {
-          new ScoreResults(args)
+          (new ScoreResults()).runWithOptions(args)
+        }
+        case "dump" => {
+          (new DumpDatabase()).runWithOptions(args)
         }
         case _ => {
           throw new IllegalStateException("")

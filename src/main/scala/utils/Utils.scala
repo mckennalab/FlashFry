@@ -55,7 +55,51 @@ object Utils extends LazyLogging {
 
   def reverseCompString(str: String): String = compString(str).reverse
 
+  def baseToIndex(base: Char): Int = base match {
+    case 'A' => 0
+    case 'a' => 0
+    case 'C' => 1
+    case 'c' => 1
+    case 'G' => 2
+    case 'g' => 2
+    case 'T' => 3
+    case 't' => 3
+    case _ => 4
+  }
 
+  /**
+    * the entropy of a base sequence (non ACGT bases removed from the calculation)
+    * @param sequence the sequence
+    * @return the entropy
+    */
+  def sequenceEntropy(sequence: String): Double = {
+    if (sequence.size == 0) return 0.0
+    val probs = Array.fill[Double](4)(0.0)
+    sequence.map{base => baseToIndex(base)}.filter(b => b < 4).foreach{ind => probs(ind) += 1.0}
+    -1.0 * probs.map{prob => if (prob == 0) 0 else prob/probs.sum * (math.log(prob/probs.sum)/math.log(2.0))}.sum
+  }
+
+  /**
+    * find the longest string of bases within a string (case sensitive)
+    * @param sequence the string of bases
+    * @return the longest run of bases in the string
+    */
+  def longestHomopolymerRun(sequence: String): Int = {
+    var longestRun = 0
+    var currentRun = 1
+    var index = 1
+    while (index < sequence.length) {
+      if (sequence(index -1) == sequence(index))
+        currentRun += 1
+      else
+        currentRun = 1
+
+      if (currentRun > longestRun)
+        longestRun = currentRun
+      index += 1
+    }
+    longestRun
+  }
 
   /**
     * convert a long array to a byte array - just to hide the uglyness of block conversion
@@ -97,7 +141,7 @@ object Utils extends LazyLogging {
   }
 
   /**
-    * Custom version of assert, that we can remove later for performace reasons.
+    * Custom version of assert, that we can remove later for performance reasons.
     * The strategy is to richly decorate our code in assertion checks, for testing
     * and sample runs, but produce a high-speed production version later
     *

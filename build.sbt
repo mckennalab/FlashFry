@@ -24,14 +24,18 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.12" % "2.4.14"
 
-libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0"
+// libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0"
 
 //  libraryDependencies += "com.aparapi" % "aparapi" % "1.3.4"
 //  javacOptions += "-g"
 //  javaOptions += "–Dcom.amd.aparapi.enableExecutionModeReporting=true"
 
-
 // set the main class for the main 'run' task
+
+// save some time in non-testing builds by killing asserts
+//
+// scalacOptions ++= Seq("-Xelide-below", sys.props.getOrElse("elide.below", "2500"))
+
 mainClass in (Compile, packageBin) := Some("main.scala.Main")
 
 mainClass in (Compile, run) := Some("main.scala.Main")

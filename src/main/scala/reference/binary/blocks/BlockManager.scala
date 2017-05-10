@@ -3,25 +3,28 @@ package reference.binary.blocks
 import bitcoding.{BinAndMask, BitEncoding}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, GuideIndex, ResultsAggregator}
+import reference.CRISPRSite
 import reference.binary.{BlockDescriptor, TargetPos}
 import reference.binary.blocks.BlockManager.{compareIndexedBlock, compareLinearBlock}
 import reference.traverser.Traverser.{allComparisons, allTargets, allTargetsAndPositions}
 import utils.{BaseCombinationGenerator, Utils}
 
-import scala.annotation._, elidable._
+import scala.annotation._
+import elidable._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
   * This class handles determining the correct structure of a retrieved block from our off-target database,
   * and handles comparisons between a guide and that block. We allow block files to have interleaved blocks
-  * of index and linear traversals in any combination
+  * of index and linear traversals in any combination.
   */
 class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU: Boolean = true) extends LazyLogging {
 
-  // setup a bunch of things we'll only want to create once
+  // our filter for index blocks
   var combinedLongFilter = bitEncoding.compBitmaskForBin(offset + width)
 
+  // convert the current bin width to bin comparisons for the indexed blocks
   val blockDescriptorLookup = (new BaseCombinationGenerator(width)).map { case (bin) => {
     BinToLongComp(bin, bitEncoding.binToLongComparitor(bin, offset))
   }
@@ -54,11 +57,45 @@ class BlockManager(offset: Int, width: Int = 4, bitEncoding: BitEncoding, useGPU
       case 1 => {
         // we have a linear block, return a linear traversal over that block
         BlockManager.compareLinearBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-          numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin)
+          guides, aggregator, bitEncoding, maxMismatches, bin)
       }
       case 2 => {
+        // an index block
         BlockManager.compareIndexedBlock(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
-          numberOfTargets, guides, aggregator, bitEncoding, maxMismatches, bin, blockDescriptorLookup, useGPU)
+          guides, aggregator, bitEncoding, maxMismatches, bin, blockDescriptorLookup, useGPU)
+      }
+      case _ => {
+        throw new IllegalStateException("Invalid bin type, unknown value: " + firstLong)
+      }
+    }
+
+  }
+
+  /**
+    * get all the guides from an encoded block
+    *
+    * @param blockOfTargetsAndPositions the block of targets and positions
+    * @param numberOfTargets            the number of targets within the block
+    * @param bin                        the sequence of this parent bin
+    * @return an array of arrays. Each sub array corresponds one-to-one to the guide list, and individual lists can be empty
+    */
+
+  def decodeToTargets(blockOfTargetsAndPositions: Array[Long],
+                   numberOfTargets: Int,
+                   bitEncoding: BitEncoding,
+                   bin: BinAndMask): Array[CRISPRHit] = {
+
+    // check the block type, and choose the right block conversion
+    val firstLong = blockOfTargetsAndPositions(0)
+
+    firstLong match {
+      case 1 => {
+        BlockManager.linearBlockToGuides(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+          bitEncoding)
+      }
+      case 2 => {
+        BlockManager.indexedBlockToGuides(blockOfTargetsAndPositions.slice(1, blockOfTargetsAndPositions.size),
+          bitEncoding, bin, blockDescriptorLookup)
       }
       case _ => {
         throw new IllegalStateException("Invalid bin type, unknown value: " + firstLong)
@@ -78,7 +115,6 @@ object BlockManager extends LazyLogging {
     * compare an indexed block, which has a set lookup table at the top of the block
     *
     * @param blockOfTargetsAndPositions the array of targets
-    * @param numberOfTargets            the number of targets encoded in the block
     * @param guides                     the array guides
     * @param bitEncoding                how to encode values
     * @param maxMismatches              the maximum number of mismatches
@@ -87,7 +123,6 @@ object BlockManager extends LazyLogging {
     *
     */
   def compareIndexedBlock(blockOfTargetsAndPositions: Array[Long],
-                          numberOfTargets: Int,
                           guides: Array[GuideIndex],
                           aggregator: ResultsAggregator,
                           bitEncoding: BitEncoding,
@@ -102,7 +137,7 @@ object BlockManager extends LazyLogging {
     var lastPos = 0
     var lastSize = 0
 
-    // one more while loop speed-up: we get a 2-3X improvement here by switching to a while loop
+    // one more while-loop speed-up: we get a 2-3X improvement here
     var blockIndex = 0
     while (blockIndex < blockDescriptorLookup.size) {
       val blkDesc = blockDescriptorLookup(blockIndex)
@@ -139,7 +174,7 @@ object BlockManager extends LazyLogging {
         val newGuides = newGuidesBuilder.result()
 
         if (newGuides.size > 0) {
-          BlockManager.compareLinearBlock(blockSlice, numberOfTargets, newGuides.toArray, aggregator, bitEncoding, maxMismatches, parentBin)
+          BlockManager.compareLinearBlock(blockSlice, newGuides.toArray, aggregator, bitEncoding, maxMismatches, parentBin)
         }
       }
 
@@ -157,7 +192,6 @@ object BlockManager extends LazyLogging {
     * @return an mapping from a potential guide to it's discovered off target sequences
     */
   def compareLinearBlock(blockOfTargetsAndPositions: Array[Long],
-                         numberOfTargets: Int,
                          guides: Array[GuideIndex],
                          aggregator: ResultsAggregator,
                          bitEncoding: BitEncoding,
@@ -201,6 +235,102 @@ object BlockManager extends LazyLogging {
     }
   }
 
+  /**
+    * compare an indexed block, which has a set lookup table at the top of the block
+    *
+    * @param blockOfTargetsAndPositions the array of targets
+    * @param numberOfTargets            the number of targets encoded in the block
+    * @param bitEncoding                how to encode values
+    * @param parentBin                  the parent bin sequence
+    * @param blockDescriptorLookup      a description of the underlying bin structure
+    *
+    */
+  def indexedBlockToGuides(blockOfTargetsAndPositions: Array[Long],
+                           bitEncoding: BitEncoding,
+                           parentBin: BinAndMask,
+                           blockDescriptorLookup: Array[BinToLongComp]): Array[CRISPRHit] = {
+
+
+    val returnGuides = new ArrayBuffer[CRISPRHit]()
+
+    val slicedBlock = blockOfTargetsAndPositions.slice(0, blockDescriptorLookup.size)
+    var lastPos = 0
+    var lastSize = 0
+
+    // one more while-loop speed-up: we get a 2-3X improvement here
+    var blockIndex = 0
+    while (blockIndex < blockDescriptorLookup.size) {
+      val blkDesc = blockDescriptorLookup(blockIndex)
+      val positionAndSize = slicedBlock(blockIndex)
+
+      val pos = (positionAndSize >> 32).toInt
+      val size = ((positionAndSize << 32) >> 32).toInt
+
+      if (lastPos != 0 && pos >= 0)
+        assert(pos == lastPos + lastSize, "the last position: " + lastPos + " plus it's size: " + lastSize + " does not equal the current pos: " + pos)
+
+      lastPos = math.max(0, pos)
+      lastSize = size
+
+      // make sure we even need to check -- if this is set to -1 (or a better rule, < 0), don't split and run
+      if (pos >= 0 && size > 0) {
+
+        val blockSlice = blockOfTargetsAndPositions.slice(blockDescriptorLookup.size + pos, blockDescriptorLookup.size + pos + size)
+
+        returnGuides ++= BlockManager.linearBlockToGuides(blockSlice, bitEncoding)
+
+      }
+
+      blockIndex += 1
+    }
+
+    returnGuides.toArray
+  }
+
+  /**
+    * convert a encoded linear block to CRISPRHit objects
+    *
+    * @param blockOfTargetsAndPositions the block of longs
+    * @param numberOfTargets            the number of targets within the block
+    * @param bitEncoding                the encoding scheme for these longs
+    * @return an array of CRISPR hits
+    */
+  def linearBlockToGuides(blockOfTargetsAndPositions: Array[Long],
+                          bitEncoding: BitEncoding): Array[CRISPRHit] = {
+
+    // we aim to be as fast as possible here, so while loops over foreach's, etc
+    var offset = 0
+    var currentTarget = 0l
+    var targetIndex = 0
+
+    val returnGuides = new ArrayBuffer[CRISPRHit]()
+
+    // process each target in the block
+    while (offset < blockOfTargetsAndPositions.size) {
+      targetIndex += 1
+      allTargets += 1
+
+      assert(offset < blockOfTargetsAndPositions.size, "we were about to fetch the " + targetIndex + " target and failed because " + offset + " is  >= to total block " + blockOfTargetsAndPositions.size)
+
+      val currentTarget = blockOfTargetsAndPositions(offset)
+      val count = bitEncoding.getCount(currentTarget)
+
+      assert(count > 0, "Encoded position count should be greater than zero: " + bitEncoding.bitDecodeString(currentTarget).toStr + " targets seen " + allTargets)
+
+      require(blockOfTargetsAndPositions.size >= offset + count,
+        "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size)
+
+      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
+
+      allTargetsAndPositions += positions.size
+      returnGuides += new CRISPRHit(currentTarget, positions)
+
+      offset += count + 1
+    }
+
+    returnGuides.toArray
+
+  }
 
   /**
     * create an indexed block from a set of targets
