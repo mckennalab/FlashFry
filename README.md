@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/aaronmck/DeepFry.svg?branch=master)](https://travis-ci.org/aaronmck/DeepFry)
-[![codecov](https://codecov.io/gh/aaronmck/DeepFry/branch/master/graph/badge.svg)](https://codecov.io/gh/aaronmck/DeepFry)
+[![Build Status](https://travis-ci.org/aaronmck/FlashFry.svg?branch=master)](https://travis-ci.org/aaronmck/FlashFry)
+[![codecov](https://codecov.io/gh/aaronmck/DeepFry/branch/master/graph/badge.svg)](https://codecov.io/gh/aaronmck/FlashFry)
 
 FlashFry
 =======
