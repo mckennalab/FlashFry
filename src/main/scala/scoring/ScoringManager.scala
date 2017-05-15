@@ -29,15 +29,13 @@ class ScoringManager(bitEncoder: BitEncoding, posEncoder: BitPosition, scoringMe
   }}
 
 
-  def scoreGuides(guides: Array[CRISPRSiteOT]): Array[CRISPRSiteOT] = {
-    var newGuides = guides
+  def scoreGuides(guides: Array[CRISPRSiteOT]) {
 
     scoringModels.foreach {
       model => {
-        newGuides = model.scoreGuides(newGuides, bitEncoder, posEncoder)
+        model.scoreGuides(guides, bitEncoder, posEncoder)
       }
     }
-    guides
   }
 }
 

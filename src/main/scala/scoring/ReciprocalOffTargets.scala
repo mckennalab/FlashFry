@@ -27,7 +27,7 @@ class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
     * @param guides the guide with it's off-targets
     * @return a score (as a string)
     */
-  override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition): Array[CRISPRSiteOT] = {
+  override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition) {
     guides.foreach{guide1 => {
       guides.foreach{guide2 => {
         if (bitEnc.mismatches(guide1.longEncoding,guide2.longEncoding) <= maximumMismatch) {
