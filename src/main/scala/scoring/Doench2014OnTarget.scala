@@ -54,10 +54,11 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
   /**
     * parse out any command line arguments that are optional or required for this scoring metric
     *
-    * @param Args the command line arguments
+    * @param args the command line arguments
     */
-  override def parseScoringParameters(Args: Array[String]): Unit = {
+  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
     // we have no specific parameters to parse out here
+    args
   }
 
   /**

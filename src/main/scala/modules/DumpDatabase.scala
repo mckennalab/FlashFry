@@ -18,7 +18,7 @@ import standards.ParameterPack
 
 import scala.collection.mutable
 import scala.io.Source
-import scopt.options._
+import scopt._
 
 /**
   * Created by aaronmck on 4/27/17.
@@ -30,17 +30,14 @@ class DumpDatabase extends LazyLogging with Module {
     val parser = new DatabaseDumpBaseOptions()
 
     parser.parse(remainingOptions, DatabaseDumpConfig()) map {
-      config => {
+      case(config,remainingParameters) => {
         val formatter = java.text.NumberFormat.getIntegerInstance
-
-        // get our enzyme's (cas9, cpf1) settings
-        val params = ParameterPack.nameToParameterPack(config.enzyme)
 
         // load up their input file, and scan for any potential targets
         logger.info("Reading the header....")
         val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
 
-        DumpAllGuides.toFile(new File(config.binaryOTFile),header,params,header.bitCoder,header.bitPosition,config.outputFile)
+        DumpAllGuides.toFile(new File(config.binaryOTFile),header,header.inputParameterPack,header.bitCoder,header.bitPosition,config.outputFile)
       }
     }
   }
@@ -66,7 +63,6 @@ class DatabaseDumpBaseOptions extends OptionParser[DatabaseDumpConfig]("Discover
   // *********************************** Inputs *******************************************************
   opt[String]("binaryOTFile") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
   opt[String]("outputFile") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
-  opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
 
   // some general command-line setup stuff
   note("match off-targets for the specified guides to the genome of interest\n")

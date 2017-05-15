@@ -132,8 +132,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
     *
     * @param Args the command line arguments
     */
-  override def parseScoringParameters(Args: Array[String]): Unit = {
+  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
     // we don't have any command line args
+    args
   }
 
   /**

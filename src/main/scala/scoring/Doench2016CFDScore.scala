@@ -67,9 +67,9 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
   /**
     * parse out any command line arguments that are optional or required for this scoring metric
     *
-    * @param Args the command line arguments
+    * @param args the command line arguments
     */
-  override def parseScoringParameters(Args: Array[String]) {}
+  override def parseScoringParameters(args: Seq[String]): Seq[String] = {args}
 
   /**
     * set the bit encoder for this scoring metric

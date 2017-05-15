@@ -15,7 +15,7 @@ import utils.RandoCRISPR
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
-import scopt.options._
+import scopt._
 
 /**
   * Given the enyzme of interest, generate a series of random target sequences that pass our filtering criteria
@@ -44,7 +44,7 @@ class GenerateRandomFasta extends LazyLogging with Module {
     }
 
     parser.parse(remainingOptions, RanomdFastaConfig()) map {
-      config => {
+      case(config,remainingParameters) => {
 
         // get our enzyme's (cas9, cpf1) settings
         val params = ParameterPack.nameToParameterPack(config.enzyme)

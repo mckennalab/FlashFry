@@ -101,6 +101,7 @@ object BinaryHeader extends LazyLogging {
 
     // get the enzyme type
     val enzymeType = Enzyme.indexToParameterPack(inputText.next.toLong)
+    logger.info("Loading header: enzyme type is " + enzymeType.enzyme)
 
     // now process the bins
     val binCount = inputText.next.toLong

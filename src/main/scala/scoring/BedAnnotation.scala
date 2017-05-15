@@ -5,7 +5,7 @@ import java.io.File
 import bitcoding.{BitEncoding, BitPosition, PositionInformation}
 import crispr.CRISPRSiteOT
 import modules.{DiscoverConfig, OffTargetBaseOptions}
-import scopt.options.OptionParser
+import scopt.{OptionParser, PeelParser}
 import standards.ParameterPack
 import utils.BEDFile
 
@@ -96,18 +96,20 @@ class BedAnnotation() extends ScoreModel {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Array[String]): Unit = {
+  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
     val parser = new BedAnnotationOptions()
 
-    parser.parse(args, BedConfig()) map {
-      config => {
-        //inputBedFile: File, useInGenomeLocations: Boolean = false
+    val remaining = parser.parse(args, BedConfig()) map {
+      case(config,remainingParameters) => {
         require((new File(config.inputBed)).exists(), "The input bed file doesn't exist: " + config.inputBed)
         inputBed = Some(new File(config.inputBed))
 
         if (config.useInGenomeLocations) mUseGLocation = true
+
+        remainingParameters
       }
     }
+    remaining.getOrElse(Seq[String]())
   }
 
   /**
@@ -125,7 +127,7 @@ class BedAnnotation() extends ScoreModel {
 case class BedConfig(inputBed: String = "",
                           useInGenomeLocations: Boolean = false)
 
-class BedAnnotationOptions extends OptionParser[BedConfig]("DiscoverOTSites") {
-  opt[String]("inputBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with")
+class BedAnnotationOptions extends PeelParser[BedConfig]("") {
+  opt[String]("inputAnnotationBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with")
   opt[Unit]("useInGenomeLocations") valueName ("<string>") action { (x, c) => c.copy(useInGenomeLocations = true) } text ("Try to find our genome location by using matching zero-mismatch in-genome targets")
 }

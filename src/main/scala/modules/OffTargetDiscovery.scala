@@ -17,7 +17,7 @@ import standards.ParameterPack
 
 import scala.collection.mutable
 import scala.io.Source
-import scopt.options._
+import scopt._
 
 /**
   * Scan a fasta file for targets and tally their off-targets against the genome
@@ -29,18 +29,15 @@ class OffTargetDiscovery extends LazyLogging with Module {
     val parser = new OffTargetBaseOptions()
 
     parser.parse(remainingOptions, DiscoverConfig()) map {
-      config => {
+      case(config,remainingParameters) => {
         val formatter = java.text.NumberFormat.getIntegerInstance
-
-        // get our enzyme's (cas9, cpf1) settings
-        val params = ParameterPack.nameToParameterPack(config.enzyme)
-
-        // load up their input file, and scan for any potential targets
-        val guideHits = new GuideMemoryStorage()
-        val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, params, config.flankingSequence)
 
         logger.info("Reading the header....")
         val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
+
+        // load up their input file, and scan for any potential targets
+        val guideHits = new GuideMemoryStorage()
+        val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, header.inputParameterPack, config.flankingSequence)
 
         // transform our targets into a list for off-target collection
         logger.info("Setting up the guide recording....")
@@ -64,27 +61,27 @@ class OffTargetDiscovery extends LazyLogging with Module {
             val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
             guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
             logger.info("Starting linear traversal")
-            LinearTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+            LinearTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
           }
           case (fl, sat, threads) if (!fl & !sat & threads == 1) => {
             logger.info("Starting seek traversal")
             val traversal = traversalFactory.get.iterator
             guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
-            SeekTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+            SeekTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
           }
           case (fl, sat, threads) if (!fl & !sat & threads > 1) => {
             logger.info("Starting parallel traversal")
             ParallelTraverser.numberOfThreads = threads
             val traversal = traversalFactory.get.iterator
             guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
-            ParallelTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+            ParallelTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
           }
           case (fl, sat, threads) if (!fl & threads > 1) => {
             logger.info("Starting parallel linear traversal")
             val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
             guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
             ParallelTraverser.numberOfThreads = threads
-            ParallelTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, params, header.bitCoder, header.bitPosition)
+            ParallelTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
           }
           case (fl, sat, threads) => {
             throw new IllegalStateException("We don't have a run type when --forceLinear=" + fl + ", binSaturation=" + sat + ", and --numberOfThreads=" + threads)
@@ -114,7 +111,6 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           inputFasta: String = "",
                           binaryOTFile: String = "",
                           outputFile: String = "",
-                          enzyme: String = "cas9",
                           maxMismatch: Int = 4,
                           includePositionOutputInformation: Boolean = false,
                           markTargetsWithExactGenomeHits: Boolean = false,
@@ -133,17 +129,15 @@ class OffTargetBaseOptions extends OptionParser[DiscoverConfig]("DiscoverOTSites
   } text ("The run type: one of: discovery, score")
 
   // *********************************** Inputs *******************************************************
-  opt[String]("inputFasta") required() valueName ("<string>") action { (x, c) => c.copy(inputFasta = x) } text ("the reference file to scan for putitive targets")
-  opt[String]("binaryOTFile") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
-  opt[String]("outputFile") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
-  opt[Unit]("positionalOTOutput") valueName ("<string>") action { (x, c) => c.copy(includePositionOutputInformation = true) } text ("include the position information of off-target hits")
+  opt[String]("fasta") required() valueName ("<string>") action { (x, c) => c.copy(inputFasta = x) } text ("the reference file to scan for putitive targets")
+  opt[String]("database") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
+  opt[String]("output") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
+  opt[Unit]("positionOutput") valueName ("<string>") action { (x, c) => c.copy(includePositionOutputInformation = true) } text ("include the position information of off-target hits")
   opt[Unit]("forceLinear") valueName ("<string>") action { (x, c) => c.copy(forceLinear = true) } text ("force the run to use a linear traversal of the bins; really only good for testing")
   opt[Unit]("markExactGenomeHits") valueName ("<string>") action { (x, c) => c.copy(markTargetsWithExactGenomeHits = true) } text ("should we add a column to indicate that a target has a exact genome hit")
   opt[Int]("maxMismatch") valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("the maximum number of mismatches we allow")
   opt[Int]("flankingSequence") valueName ("<int>") action { (x, c) => c.copy(flankingSequence = x) } text ("number of bases we should save on each side of the target, used in some scoring schemes (default is 10 on each side)")
   opt[Int]("maximumOffTargets") valueName ("<int>") action { (x, c) => c.copy(maximumOffTargets = x) } text ("the maximum number of off-targets for a guide, after which we stop adding new off-targets")
-  // opt[Int]("numberOfThreads") valueName ("<int>") action { (x, c) => c.copy(numberOfThreads = x) } text ("the number of threads to use")
-  opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
 
   // some general command-line setup stuff
   note("match off-targets for the specified guides to the genome of interest\n")

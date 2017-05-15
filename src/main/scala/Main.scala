@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import modules._
 import org.slf4j._
-import scopt.options._
+import scopt._
 
 /**
  * created by aaronmck on 12/16/14
@@ -35,9 +35,8 @@ import scopt.options._
  */
 object Main extends App {
   // parse the command line arguments
-  val parser = new scopt.options.PeelParser[Config]("FlashFry") {
+  val parser = new PeelParser[Config]("FlashFry") {
     head("FlashFry", "1.2")
-    override def errorOnUnknownArgument = false
 
     // *********************************** Inputs *******************************************************
     opt[String]("analysis") required() valueName ("<string>") action {
@@ -51,7 +50,7 @@ object Main extends App {
 
   val logger = LoggerFactory.getLogger("Main")
 
-  parser.peel(args, Config()) map {
+  parser.parse(args, Config()) map {
     case(config, remainingArgs) => {
 
       val initialTime = System.nanoTime()

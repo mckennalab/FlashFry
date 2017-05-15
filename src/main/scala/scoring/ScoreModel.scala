@@ -3,6 +3,7 @@ package scoring
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.CRISPRSiteOT
 import standards.ParameterPack
+import com.typesafe.scalalogging.LazyLogging
 
 /**
   * our trait object for scoring guides -- any method that implements this trait can be used to
@@ -53,7 +54,7 @@ trait ScoreModel {
     *
     * @param args the command line arguments
     */
-  def parseScoringParameters(args: Array[String])
+  def parseScoringParameters(args: Seq[String]): Seq[String]
 
   /**
     * set the bit encoder for this scoring metric
@@ -66,7 +67,7 @@ trait ScoreModel {
 
 // sometimes it's easier to define scores over a single guide, not the collection of guides --
 // this abstract class automates scoring each
-abstract class SingleGuideScoreModel extends ScoreModel {
+abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
   /**
     * score an individual guide
     *
@@ -86,8 +87,10 @@ abstract class SingleGuideScoreModel extends ScoreModel {
     * @return a score (as a string)
     */
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition): Array[CRISPRSiteOT] = {
-    guides.map { hit => {
-
+    guides.zipWithIndex.map { case(hit,index) => {
+      if ((index + 1) % 1000 == 0) {
+        logger.info("For scoing metric " + this.scoreName() + " we're scoring our " + index + " guide")
+      }
       hit.namedAnnotations(this.scoreName()) = Array[String](scoreGuide(hit).toString)
       hit
     }

@@ -9,7 +9,7 @@ import utils.BaseCombinationGenerator
 import reference.binary.DatabaseWriter
 import reference.{ReferenceDictReader, ReferenceEncoder}
 import standards.ParameterPack
-import scopt.options._
+import scopt._
 
 /**
   * "give me a genome, and I'll give you ALL the potential off-targets, encoded into a binary representation" -this class
@@ -38,7 +38,7 @@ class BuildOffTargetDatabase extends LazyLogging {
 
     // discover off-targets
     parser.parse(remainingOptions, TallyConfig()) map {
-      config => {
+      case(config,remainingParameters) => {
         // setup a decent sized iterator over bases patterns for finding sites
         val binGenerator = BaseCombinationGenerator(6)
 
@@ -60,7 +60,6 @@ class BuildOffTargetDatabase extends LazyLogging {
 
         // then process this total file into a binary file
         DatabaseWriter.writeToBinnedFileSet(binToFile, binGenerator.width, config.output, encoders._1, encoders._2, searchBinGenerator, params)
-
 
       }
     }

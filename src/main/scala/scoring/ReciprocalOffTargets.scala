@@ -5,8 +5,8 @@ import standards.ParameterPack
 
 /**
   * You sometimes don't want targets within your scan to have reciprocal off-targets: where one guide
-  * is a really good off-target for another guide in your results. This may lead to drop-out of a whole
-  * region, which can be really confusing.
+  * is a really close off-target for another guide in your results. This may lead to drop-out of a whole
+  * region, which can be really confusing when looking at functional effects.
   */
 class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
   /**
@@ -60,7 +60,7 @@ class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Array[String]): Unit = {}
+  override def parseScoringParameters(args: Seq[String]): Seq[String] = {args}
 
   /**
     * set the bit encoder for this scoring metric

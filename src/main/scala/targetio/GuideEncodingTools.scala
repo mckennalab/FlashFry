@@ -108,36 +108,43 @@ object GuideEncodingTools {
     */
   def bedLineToCRISPRSiteOT(line: String, bitEnc: BitEncoding, bitPosition: BitPosition, overflowValue: Int): CRISPRSiteOT = {
     val sp = line.split("\t")
-    assert(sp.size >= 7 || sp.size >= 8, "CRISPRSiteOT bed files must have either 7 or 8 columns")
-    assert(sp(5) == "FWD" || sp(5) == "REV", "CRISPRSiteOT bed files must have FWD or REV in the 5th column")
-    assert(sp(6).toInt >= 0, "CRISPRSiteOT bed files must have a positive or zero number of off-targets")
+    assert(sp.size >= 7 || sp.size >= 8, "CRISPRSiteOT bed files must have either 7 or 8 columns, not " + sp.size)
+    assert(sp(5) == forward || sp(5) == reverse, "CRISPRSiteOT bed files must have FWD or REV in the 5th column, not " + sp(5))
+    assert(sp(6).toInt >= 0, "CRISPRSiteOT bed files must have a positive or zero number of off-targets, not " + sp(6).toInt)
 
     val hasOffTargets = sp.size == 8
 
-    val site = CRISPRSite(sp(0), sp(3), sp(5) == "FWD", sp(1).toInt, None) // TODO: FIX THE LAST PARAMETER
+    val site = CRISPRSite(sp(0), sp(3), sp(5) == forward, sp(1).toInt, None) // TODO: FIX THE LAST PARAMETER
     val ot = new CRISPRSiteOT(site, bitEnc.bitEncodeString(sp(3)), 0)
 
     if (hasOffTargets) {
       sp(7).split(offTargetSeperator).foreach { token => {
 
-        val targetAndPositions = token.split(positionListTerminatorFront)
-        assert(targetAndPositions.size == 2, "We need each off-target to split into two strings based on " + positionListTerminatorFront + ", this token didn't: " + token)
 
-        val offTargetSeq = targetAndPositions(0).split(withinOffTargetSeperator)(0)
-        val offTargetCount = targetAndPositions(0).split(withinOffTargetSeperator)(1).toInt
-        val offTargetMismatches = targetAndPositions(0).split(withinOffTargetSeperator)(2).toInt
+        val offTargetSeq = token.split(withinOffTargetSeperator)(0)
+        val offTargetCount = token.split(withinOffTargetSeperator)(1).toInt
+        val offTargetMismatches = token.split(withinOffTargetSeperator)(2).toInt
 
-        val positions = targetAndPositions(1).stripSuffix(positionListTerminatorBack).split(positionListSeperator).map { positionEncoded => {
-          bitPosition.encode(positionEncoded.split(contigSeperator)(0),
-            positionEncoded.split(contigSeperator)(1).split(strandSeperator)(0).toInt,
-            offTargetSeq.size,
-            positionEncoded.split(strandSeperator)(1) == "F")
+        // we're encoding positional information
+        if (token contains positionListTerminatorFront) {
+          val targetAndPositions = token.split(positionListTerminatorFront)
+
+          val positions = targetAndPositions(1).stripSuffix(positionListTerminatorBack).split(positionListSeperator).map { positionEncoded => {
+            bitPosition.encode(positionEncoded.split(contigSeperator)(0),
+              positionEncoded.split(contigSeperator)(1).split(strandSeperator)(0).toInt,
+              offTargetSeq.size,
+              positionEncoded.split(strandSeperator)(1) == "F")
+          }
+          }
+
+          assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
+          val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
+          ot.addOT(otHit)
+        } else {
+          assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
+          val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), Array[Long]())
+          ot.addOT(otHit)
         }
-        }
-
-        assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-        val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
-        ot.addOT(otHit)
       }
       }
     }
