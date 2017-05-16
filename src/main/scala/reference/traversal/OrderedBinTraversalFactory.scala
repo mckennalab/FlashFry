@@ -138,7 +138,7 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
       val binPropSeen = index.toDouble / totalPossibleBins.toDouble
       logger.info("Comparing guides against bin prefix " + binArray(index)._2 + " the " + index + "th bin prefix we've looked at, total bin saturation = " + currentBinSaturation + ", proportion of bins seen = " + binPropSeen)
       if (currentBinSaturation >= upperBinProportionToJustSearchAll || (currentBinSaturation / binPropSeen >= 0.4 && index > 1000)) {
-        logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal ( saturation = " + currentBinSaturation + ", proportion = " + (currentBinSaturation / binPropSeen) + " )")
+        logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal ( saturation = " + currentBinSaturation + ", proportion = " + math.min(1.0,currentBinSaturation / binPropSeen) + " )")
         index = binArray.size
         isSaturated = true
       }

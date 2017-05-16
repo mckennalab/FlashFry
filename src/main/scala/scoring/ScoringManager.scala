@@ -58,7 +58,7 @@ object ScoringManager {
         new BedAnnotation()
       }
       case "dangerous" => {
-        new BedAnnotation()
+        new DangerousSequences()
       }
       case _ => {
         throw new IllegalArgumentException("Unknown scoring metric: " + name)

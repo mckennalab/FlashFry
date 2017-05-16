@@ -72,13 +72,21 @@ object GuideEncodingTools {
         val otDecoded = bitEncoder.bitDecodeString(ot.sequence)
         val positions = ot.coordinates.map { otPos => {
           val decoded = bitPosition.decode(otPos)
-          decoded.contig + GuideEncodingTools.contigSeperator + decoded.start + GuideEncodingTools.strandSeperator + (if (decoded.forwardStrand) GuideEncodingTools.positionForward else GuideEncodingTools.positionReverse)
+          decoded.contig + GuideEncodingTools.contigSeperator + decoded.start + GuideEncodingTools.strandSeperator +
+            (if (decoded.forwardStrand) GuideEncodingTools.positionForward else GuideEncodingTools.positionReverse)
         }
-        }.mkString(positionListSeperator)
-        otDecoded.str + withinOffTargetSeperator +
-          otDecoded.count + withinOffTargetSeperator +
-          bitEncoder.mismatches(guide.longEncoding, ot.sequence) + positionListTerminatorFront +
-          positions + positionListTerminatorBack
+        } // .mkString(positionListSeperator)
+
+        if (positions.size == 0) {
+          otDecoded.str + withinOffTargetSeperator +
+            otDecoded.count + withinOffTargetSeperator +
+            bitEncoder.mismatches(guide.longEncoding, ot.sequence)
+        } else {
+          otDecoded.str + withinOffTargetSeperator +
+            otDecoded.count + withinOffTargetSeperator +
+            bitEncoder.mismatches(guide.longEncoding, ot.sequence) + positionListTerminatorFront +
+            positions.mkString(positionListSeperator) + positionListTerminatorBack
+        }
       }
       }.mkString(offTargetSeperator)
 
@@ -115,7 +123,7 @@ object GuideEncodingTools {
     val hasOffTargets = sp.size == 8
 
     val site = CRISPRSite(sp(0), sp(3), sp(5) == forward, sp(1).toInt, None) // TODO: FIX THE LAST PARAMETER
-    val ot = new CRISPRSiteOT(site, bitEnc.bitEncodeString(sp(3)), 0)
+    val ot = new CRISPRSiteOT(site, bitEnc.bitEncodeString(sp(3)), overflowValue)
 
     if (hasOffTargets) {
       sp(7).split(offTargetSeperator).foreach { token => {

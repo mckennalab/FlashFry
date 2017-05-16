@@ -11,9 +11,12 @@ import utils.Utils
   * - TTTT (or longer): could prematurely terminate pol3 transcription
   * - GC > 80% or less than 20%: hard to close
   * - palindromic guides: hard to clone in / PCR? Not implemented yet
+  * - is the site within the genome?
   *
   */
 class DangerousSequences extends SingleGuideScoreModel {
+  var bitEncoder : Option[BitEncoding] = None
+
   /**
     * score an individual guide
     *
@@ -23,16 +26,23 @@ class DangerousSequences extends SingleGuideScoreModel {
   override def scoreGuide(guide: CRISPRSiteOT): String = {
     var problems = Array[String]()
 
-    if (math.abs(Utils.gcContent(guide.target.bases) - 0.5) < .2)
+    if (Utils.gcContent(guide.target.bases) < .2 || Utils.gcContent(guide.target.bases) > .8)
       problems :+= "GC_" + Utils.gcContent(guide.target.bases)
 
     if (guide.target.bases.contains("TTTT"))
-      problems :+= "PolyT" + Utils.gcContent(guide.target.bases)
+      problems :+= "PolyT"
+
+    if (guide.offTargets.size > 0) {
+      val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) 1 else 0}.sum
+      if (inGenomeCount > 0) problems :+= "IN_GENOME=" + inGenomeCount
+    }
 
     if (problems.size == 0)
       "NONE"
     else
       problems.mkString(",")
+
+
   }
 
   /**
@@ -75,5 +85,5 @@ class DangerousSequences extends SingleGuideScoreModel {
     *
     * @param bitEncoding
     */
-  override def bitEncoder(bitEncoding: BitEncoding): Unit = {}
+  override def bitEncoder(bitEncoding: BitEncoding): Unit = {this.bitEncoder = Some(bitEncoding)}
 }

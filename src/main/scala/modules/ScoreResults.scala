@@ -39,6 +39,7 @@ class ScoreResults extends LazyLogging with Module {
         logger.info("Scoring all guides...")
         scoringManager.scoreGuides(posEncoderAndOffTargets._2)
 
+        logger.info("Aggregating results...")
         val results = new ResultsAggregator(posEncoderAndOffTargets._2)
 
         // output a new data file with the scored results

@@ -44,9 +44,10 @@ class OffTargetDiscovery extends LazyLogging with Module {
         val guideOTs = guideHits.guideHits.map {
           guide => new CRISPRSiteOT(guide, header.bitCoder.bitEncodeString(StringCount(guide.bases, 1)), config.maximumOffTargets)
         }.toArray
+
+        logger.info("Precomputing traversal over bins....")
         val guideStorage = new ResultsAggregator(guideOTs)
 
-        logger.info("Determine how many bins we'll traverse....")
         var traversalFactory: Option[OrderedBinTraversalFactory] = None
 
         if (!config.forceLinear)
