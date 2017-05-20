@@ -9,18 +9,18 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 Quickstart
 =======
 
-* get the jar file: link here
-* get the sample data:
-* untar the sample data: 
-* run database creation (should take a few minutes):
+- get the jar file: link here
+- get the sample data:
+- untar the sample data: 
+- run database creation (should take a few minutes):
 
-  `mkdir tmp; java -jar FlashFry-assembly-1.2.jar --analysis index --tmpLocation ./tmp --database chr22_cas9ngg_database --reference chr22.fa.gz --enzyme spcas9ngg`
+`mkdir tmp; java -jar FlashFry-assembly-1.2.jar --analysis index --tmpLocation ./tmp --database chr22_cas9ngg_database --reference chr22.fa.gz --enzyme spcas9ngg`
 
-* discover targets and their potential off-target in the test data (takes a few seconds):
+- discover targets and their potential off-target in the test data (takes a few seconds):
 
 `java -jar FlashFry-assembly-1.2.jar --analysis discover --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output`
 
-* score the discovered sites:
+- score the discovered sites:
 
 `java -jar FlashFry-assembly-1.2.jar --analysis score --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output`
 
