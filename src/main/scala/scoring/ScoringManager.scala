@@ -3,6 +3,7 @@ package scoring
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
+import reference.binary.BinaryHeader
 
 /**
   * create the scoring metrics, and then run each scoring metric on the guide and their off-targets
@@ -29,11 +30,16 @@ class ScoringManager(bitEncoder: BitEncoding, posEncoder: BitPosition, scoringMe
   }}
 
 
-  def scoreGuides(guides: Array[CRISPRSiteOT]) {
+  def scoreGuides(guides: Array[CRISPRSiteOT], maxMismatch: Int, header: BinaryHeader) {
 
+    // TODO: probably don't modify the underlying object!
+    logger.info("Filtering guides...")
+    guides.foreach{ g=> g.filterOffTargets(maxMismatch,bitEncoder)}
+
+    logger.info("Scoring guides...")
     scoringModels.foreach {
       model => {
-        model.scoreGuides(guides, bitEncoder, posEncoder)
+        model.scoreGuides(guides, bitEncoder, posEncoder, header.parameterPack)
       }
     }
   }
@@ -59,6 +65,9 @@ object ScoringManager {
       }
       case "dangerous" => {
         new DangerousSequences()
+      }
+      case "minot" => {
+        new ClosestHit()
       }
       case _ => {
         throw new IllegalArgumentException("Unknown scoring metric: " + name)

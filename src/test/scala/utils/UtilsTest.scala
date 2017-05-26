@@ -69,5 +69,11 @@ class UtilsTest extends FlatSpec with Matchers {
     (seq3) should be (2)
     (seq4) should be (5)
   }
+
+  "Utils" should "find the entropy correctly" in {
+    val seq1 = Utils.sequenceEntropy("AAAAATTCC")
+
+    (seq1) should be (1.435521 +- 0.01)
+  }
 }
 

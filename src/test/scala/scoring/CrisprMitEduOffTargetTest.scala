@@ -81,7 +81,7 @@ class CrisprMitEduOffTargetTest extends FlatSpec with Matchers {
   "CrisprMitEduOffTargetTest" should "correctly score according to the MIT scoring model" in {
     val mit = new CrisprMitEduOffTarget()
     mit.bitEncoder(bitEncoder)
-    (mit.score_crispr(crisprOT)) should be (97.0 +- 1.0) // they report 97, not sure what direction it was rounded, or how. we get 96.4 or so
+    (mit.score_crispr(crisprOT)) should be (97.0 +- 1.0) // they report 97, not sure how it was rounded. we get 96.4 or so
 
   }
 }

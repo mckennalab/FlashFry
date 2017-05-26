@@ -43,6 +43,12 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
   }
 
   def compare(that: CRISPRSiteOT): Int = (target.bases) compare (that.target.bases)
+
+  def filterOffTargets(maxMismatch: Int, bitEnc: BitEncoding): Unit = {
+    var toRemove = Array[CRISPRHit]()
+    offTargets.toArray.foreach{ot => if (bitEnc.mismatches(ot.sequence,encoding) > maxMismatch) toRemove :+= ot}
+    offTargets --= toRemove
+  }
 }
 
 class CRISPRHit(sq: Long, coord: Array[Long]) {

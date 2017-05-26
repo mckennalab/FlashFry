@@ -29,7 +29,7 @@ trait ScoreModel {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  def scoreGuides(guide: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition)
+  def scoreGuides(guide: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack)
 
   /**
     * are we valid over the enzyme of interest?
@@ -86,12 +86,14 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
     * @param posEnc the position encoding
     * @return a score (as a string)
     */
-  override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition) {
+  override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     guides.zipWithIndex.foreach { case(hit,index) => {
       if ((index + 1) % 1000 == 0) {
         logger.info("For scoing metric " + this.scoreName() + " we're scoring our " + index + " guide")
       }
-      hit.namedAnnotations(this.scoreName()) = Array[String](scoreGuide(hit).toString)
+
+      if (this.validOverGuideSequence(pack, hit))
+        hit.namedAnnotations(this.scoreName()) = Array[String](scoreGuide(hit).toString)
     }
     }
   }

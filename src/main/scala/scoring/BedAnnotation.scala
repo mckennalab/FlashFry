@@ -36,7 +36,7 @@ class BedAnnotation() extends ScoreModel {
     * @param guides the guides with off-targets
     * @return a score (as a string)
     */
-  override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition) {
+  override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     // make a mapping of positions to guides -- if useInGenomeLocations is set, try to find any 0 mismatch candidates
     val positionToGuide = new mutable.HashMap[PositionInformation, CRISPRSiteOT]()
 

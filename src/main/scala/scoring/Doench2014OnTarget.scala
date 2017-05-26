@@ -34,7 +34,7 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     * @return a score (as a string)
     */
   def scoreGuide(guide: CRISPRSiteOT): String = {
-    require(validOverGuideSequence(Cas9ParameterPack,guide), "We're not a valid score over this guide")
+    require(validOverGuideSequence(Cas9ParameterPack,guide), "We're not a valid score over this guide: " + guide.target.sequenceContext)
 
     val guidePos = guide.target.sequenceContext.get.indexOf(guide.target.bases)
     (calc_score(guide.target.sequenceContext.get.slice(guidePos - Doench2014OnTarget.contextInFront, guidePos + guide.target.bases.length + Doench2014OnTarget.contextBehind))).toString
@@ -46,7 +46,7 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = enzyme.enzyme match {
+  override def validOverScoreModel(pack: ParameterPack): Boolean = pack.enzyme match {
     case _ : SpCAS9.type => true
     case _ => false
   }
@@ -76,8 +76,8 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    if (enzyme.enzyme != SpCAS9) return false
+  override def validOverGuideSequence(pack: ParameterPack, guide: CRISPRSiteOT): Boolean = {
+    if (pack.enzyme != SpCAS9) return false
     if (!guide.target.sequenceContext.isDefined) return false
 
     // find the guide within the context, and determine if we have enough flanking sequence for the scoring metric

@@ -30,6 +30,10 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
     val crispr = CRISPRSite("test", "AAAAGGGTTTGGGATATAGCTGG", true, 0, Some("GGTTGTCAGCTAAAAGGGTTTGGGATATAGCTGGCCTCCCTGGGCCC"))
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("AAAAGGGTTTGGGATATAGCTGG", 1)),1000)
     otListLong.foreach{ot => otHit.addOT(new CRISPRHit(ot,Array[Long](0l)))}
-    (dScore.scoreGuide(otHit).toDouble) should be(7.51176486888e-16 +- 1e-16)
+
+    // so the answer here depends on how we approach CFD scores -- right now it's set to the max, but the commented out
+    // value is correct if we choose the product of scores
+    // (dScore.scoreGuide(otHit).toDouble) should be(7.51176486888e-16 +- 1e-16)
+    (dScore.scoreGuide(otHit).toDouble) should be(0.2461688848806369 +- 1e-16)
   }
 }

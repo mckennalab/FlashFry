@@ -30,7 +30,7 @@ class BuildOffTargetDatabase extends LazyLogging {
 
       // *********************************** Inputs *******************************************************
       opt[String]("reference") required() valueName ("<string>") action { (x, c) => c.copy(reference = x) } text ("the reference file")
-      opt[String]("targetio") required() valueName ("<string>") action { (x, c) => c.copy(output = x) } text ("the output file")
+      opt[String]("database") required() valueName ("<string>") action { (x, c) => c.copy(output = x) } text ("the output file")
       opt[String]("tmpLocation") required() valueName ("<string>") action { (x, c) => c.copy(tmp = x) } text ("the output file")
       opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
       opt[Int]("binSize") valueName ("<int>") action { (x, c) => c.copy(binSize = x) } text ("how many bins (and subsequent open files) should we use when sorting our genome")

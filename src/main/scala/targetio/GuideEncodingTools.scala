@@ -31,7 +31,6 @@ object GuideEncodingTools {
   val positionListTerminatorBack = ">"
   val positionListSeperator = "\\|"
 
-
   /**
     * create a bed file representation of a crispr guide and it's off-target sites
     *
@@ -54,6 +53,7 @@ object GuideEncodingTools {
     targetString.append(guide.target.position + GuideEncodingTools.sep)
     targetString.append((guide.target.position + guide.target.bases.size) + GuideEncodingTools.sep)
     targetString.append(guide.target.bases + GuideEncodingTools.sep)
+    targetString.append(guide.target.sequenceContext.getOrElse("NONE") + GuideEncodingTools.sep)
     targetString.append((if (guide.full) GuideEncodingTools.overflow else GuideEncodingTools.targetOK) + GuideEncodingTools.sep)
     targetString.append((if (guide.target.forwardStrand) GuideEncodingTools.forward else GuideEncodingTools.reverse) + GuideEncodingTools.sep)
 
@@ -109,24 +109,38 @@ object GuideEncodingTools {
   /**
     * validate and convert a line in a BED file to a CRISPRSiteOT
     *
+    * column positions:
+    * - 1 - chromosome
+    * - 2 - start
+    * - 3 - stop
+    * - 4 - guide
+    * - 5 - sequence context
+    * - 6 - did we overflow
+    * - 7 - direction of target
+    * - * - start of any annotations (from 0 to * annotations)
+    * - 8 + |*| - number of off-targets, after any annotationed scores
+    * - 9 + |*| - off-target sequences, and optionally their positions, after any annotated scores
+    *
     * @param line        the text line
     * @param bitEnc      the bit encoder
     * @param bitPosition the position encoder
     * @return the CRISPRSiteOT represented by this line
     */
-  def bedLineToCRISPRSiteOT(line: String, bitEnc: BitEncoding, bitPosition: BitPosition, overflowValue: Int): CRISPRSiteOT = {
+  def bedLineToCRISPRSiteOT(line: String, bitEnc: BitEncoding, bitPosition: BitPosition, overflowValue: Int, scoringAnnotations: Array[String]): CRISPRSiteOT = {
     val sp = line.split("\t")
-    assert(sp.size >= 7 || sp.size >= 8, "CRISPRSiteOT bed files must have either 7 or 8 columns, not " + sp.size)
+    assert(sp.size >= 8 + scoringAnnotations.size || sp.size >= 9 + scoringAnnotations.size , "CRISPRSiteOT bed files must have either 7 or 8 columns, not " + sp.size)
     assert(sp(5) == forward || sp(5) == reverse, "CRISPRSiteOT bed files must have FWD or REV in the 5th column, not " + sp(5))
-    assert(sp(6).toInt >= 0, "CRISPRSiteOT bed files must have a positive or zero number of off-targets, not " + sp(6).toInt)
+    assert(sp(6 + scoringAnnotations.size ).toInt >= 0, "CRISPRSiteOT bed files must have a positive or zero number of off-targets, not " + sp(6).toInt)
 
-    val hasOffTargets = sp.size == 8
+    val hasOffTargets = sp.size == 9 + scoringAnnotations.size
 
-    val site = CRISPRSite(sp(0), sp(3), sp(5) == forward, sp(1).toInt, None) // TODO: FIX THE LAST PARAMETER
-    val ot = new CRISPRSiteOT(site, bitEnc.bitEncodeString(sp(3)), overflowValue)
+    val site = CRISPRSite(sp(0), sp(3), sp(5) == forward, sp(1).toInt, if (sp(4) == "NONE") None else Some(sp(4)))
+    val ot = new CRISPRSiteOT(site, bitEnc.bitEncodeString(sp(3)), if (sp(5) == "OK") sp(7+ scoringAnnotations.size ).toInt + 1 else sp(7+ scoringAnnotations.size ).toInt - 1)
+
+    (0 until scoringAnnotations.size).foreach {anIndex => ot.namedAnnotations(scoringAnnotations(anIndex)) = Array[String](sp(7 + anIndex))}
 
     if (hasOffTargets) {
-      sp(7).split(offTargetSeperator).foreach { token => {
+      sp(8 + scoringAnnotations.size ).split(offTargetSeperator).foreach { token => {
 
 
         val offTargetSeq = token.split(withinOffTargetSeperator)(0)

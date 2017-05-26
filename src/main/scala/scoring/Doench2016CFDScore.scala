@@ -32,16 +32,23 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
     assert(bitCode.isDefined, "Our bitEncoder has not been set")
 
     val bases = guide.target.bases
-    var totalScore = Doench2016CFDScore.pamLookup(bases.slice(bases.length - 2,bases.length))
+    var pam = Doench2016CFDScore.pamLookup(bases.slice(bases.length - 2,bases.length))
+    var totalScore = 0.0
+
     //println("Score = " + totalScore)
     guide.offTargets.foreach{ ot => {
 
+      // find the maximum CFD score over our off-targets
       val otScore = bitCode.get.bitDecodeString(ot.sequence)
-      totalScore *= scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
-      //println("Score = " + totalScore)
 
+      // scale the score from 0 to 100
+      val candidateScore = 100.0 * scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
+      //totalScore = math.max(candidateScore, scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
+      totalScore += candidateScore
     }}
-    totalScore.toString
+
+    //totalScore.toString
+    (100.0 * (1.0 / (1.0 + (pam * totalScore)))).toString
   }
 
   /**

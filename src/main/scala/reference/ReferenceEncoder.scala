@@ -94,6 +94,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
   var targetCount = 0
 
   override def addLine(line: String): Unit = currentBuffer += line
+
   def getTotal: Int = targetCount
 
   override def reset(contig: String): Unit = {
@@ -102,12 +103,15 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
 
     if (currentContig.isDefined) {
       // check forward
-      (params.fwdRegex findAllIn contigBuffer).matchData.foreach { fwdMatch => {
-        val subStr = contigBuffer.slice(fwdMatch.start, fwdMatch.end)
-        if (!subStr.contains("N")) {
-          val context = contigBuffer.slice(math.max(0, fwdMatch.start - flankingSequence), fwdMatch.end + flankingSequence)
+      (params.fwdRegex findAllMatchIn contigBuffer).foreach { fwdMatch => {
+        val start = fwdMatch.start
+        val end = fwdMatch.start + params.totalScanLength
+        println("contig: " + contigBuffer + " --> " + start + " end " + end)
+        val subStr = contigBuffer.slice(start,end)
 
-          var site = CRISPRSite(currentContig.get, subStr, true, fwdMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
+        if (!subStr.contains("N")) {
+          val context = contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence)
+          var site = CRISPRSite(currentContig.get, subStr, true, start, Some(context))
           binWriter.addHit(site)
           targetCount += 1
         }
@@ -115,13 +119,17 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
       }
 
       // check reverse
-      (params.revRegex findAllIn contigBuffer).matchData.foreach { revMatch => {
-        val subStr = Utils.reverseCompString(contigBuffer.slice(revMatch.start, revMatch.end))
-        if (!subStr.contains("N")) {
-          val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, revMatch.start - flankingSequence), revMatch.end + flankingSequence))
+      (params.revRegex findAllMatchIn contigBuffer).foreach { revMatch => {
+        val start = revMatch.start
+        val end = revMatch.start + params.totalScanLength
 
-          var site = CRISPRSite(currentContig.get, subStr, false, revMatch.start, if (context.size == subStr.size + (flankingSequence * 2)) Some(context) else None)
+        val subStr = Utils.reverseCompString(contigBuffer.slice(start,end))
+
+        if (!subStr.contains("N")) {
+          val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence))
+          var site = CRISPRSite(currentContig.get, subStr, true, start, Some(context))
           binWriter.addHit(site)
+          targetCount += 1
         }
       }
       }
@@ -233,34 +241,34 @@ case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) 
     var ret = Array[CRISPRSite]()
 
     if (!params.fivePrimePam) {
-      params.pam.zip(revCompPams).foreach { case(pm,rcp) => {
+      params.pam.zip(revCompPams).foreach { case (pm, rcp) => {
         if (str.endsWith(pm))
           ret :+= CRISPRSite(contig, str, true, currentPos - params.totalScanLength, None)
         if (str.startsWith(rcp))
           ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
-        }}
-        ret
       }
-      else
-      {
-        params.pam.zip(revCompPams).foreach { case(pm,rcp) => {
-          if (str.startsWith(pm))
-            ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), None)
-          if (str.endsWith(rcp))
-            ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
-        }}
-        ret
       }
+      ret
     }
-
-
-    // create a target string from the buffer
-    def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString +
-      stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
-
-    override def close(): Unit
-
-    =
-    {} // do nothing
+    else {
+      params.pam.zip(revCompPams).foreach { case (pm, rcp) => {
+        if (str.startsWith(pm))
+          ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), None)
+        if (str.endsWith(rcp))
+          ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
+      }
+      }
+      ret
+    }
   }
+
+
+  // create a target string from the buffer
+  def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString +
+    stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
+
+  override def close(): Unit
+
+  = {} // do nothing
+}
 

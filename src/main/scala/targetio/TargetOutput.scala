@@ -4,6 +4,7 @@ import java.io.PrintWriter
 
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.{CRISPRSiteOT, ResultsAggregator}
+import utils.Utils
 
 /**
   * handle outputing the target list, in a style the user requests
@@ -19,8 +20,8 @@ object TargetOutput {
              activeAnnotations: Array[String]
             ) {
 
-    // create a output file
-    val output = new PrintWriter(outputFile)
+    // create a output file -- gzip if the file ends with gz
+    val output = if (outputFile endsWith ".gz") new PrintWriter(Utils.gos(outputFile)) else new PrintWriter(outputFile)
 
     // output the positional contig information
     (1 until bitPosition.nextSeqId).foreach { pos => {

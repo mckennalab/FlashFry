@@ -52,7 +52,7 @@ object BinaryHeader extends LazyLogging {
     writer.write(BinaryConstants.version.toString + "\n")
 
     // our enzyme type
-    writer.write(header.parameterPack.enzyme.index.toString + "\n")
+    writer.write(ParameterPack.parameterPackToIndex(header.parameterPack) + "\n")
 
     // the number of bins is the 4^binSize
     writer.write(pow(4, header.binGenerator.width).toLong.toString + "\n")
@@ -100,7 +100,7 @@ object BinaryHeader extends LazyLogging {
     assert(inputText.next.toLong == BinaryConstants.version, "Binary file " + filename + " doesn't have the correct version, expecting " + BinaryConstants.version)
 
     // get the enzyme type
-    val enzymeType = Enzyme.indexToParameterPack(inputText.next.toLong)
+    val enzymeType = ParameterPack.indexToParameterPack(inputText.next.toInt)
     logger.info("Loading header: enzyme type is " + enzymeType.enzyme)
 
     // now process the bins
