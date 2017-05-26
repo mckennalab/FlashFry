@@ -2,8 +2,8 @@
 [![codecov](https://codecov.io/gh/aaronmck/DeepFry/branch/master/graph/badge.svg)](https://codecov.io/gh/aaronmck/FlashFry)
 [![Join the chat at https://gitter.im/FlashFry/Lobby](https://badges.gitter.im/FlashFry/Lobby.svg)](https://gitter.im/FlashFry/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-FlashFry
-=======
+
+!FlashFry_logo](https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png)
 
 FlashFry is a fast and flexible command-line tool for characterizing large numbers of CRISPR guide sequences. 
 
@@ -15,15 +15,21 @@ Quickstart
 - untar the sample data: 
 - run database creation (should take a few minutes):
 
-`mkdir tmp; java -jar FlashFry-assembly-1.2.jar --analysis index --tmpLocation ./tmp --database chr22_cas9ngg_database --reference chr22.fa.gz --enzyme spcas9ngg`
+```bash
+mkdir tmp; java -jar FlashFry-assembly-1.2.jar --analysis index --tmpLocation ./tmp --database chr22_cas9ngg_database --reference chr22.fa.gz --enzyme spcas9ngg
+```
 
 - discover targets and their potential off-target in the test data (takes a few seconds):
 
-`java -jar FlashFry-assembly-1.2.jar --analysis discover --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output`
+```bash
+java -jar FlashFry-assembly-1.2.jar --analysis discover --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output
+```
 
 - score the discovered sites:
 
-`java -jar FlashFry-assembly-1.2.jar --analysis score --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output`
+```bash
+java -jar FlashFry-assembly-1.2.jar --analysis score --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output
+```
 
 
 
