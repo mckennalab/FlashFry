@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/aaronmck/FlashFry.svg?branch=master)](https://travis-ci.org/aaronmck/FlashFry)
 [![codecov](https://codecov.io/gh/aaronmck/DeepFry/branch/master/graph/badge.svg)](https://codecov.io/gh/aaronmck/FlashFry)
+[![Join the chat at https://gitter.im/FlashFry/Lobby](https://badges.gitter.im/FlashFry/Lobby.svg)](https://gitter.im/FlashFry/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 FlashFry
 =======
