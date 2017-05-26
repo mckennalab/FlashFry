@@ -9,18 +9,27 @@
 
 FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. 
 
-## Quickstart
+Sections:
+- [Quickstart](#quickstart)
+- [General documentation](#documentation)
+- [FAQ](#faq)
 
-get the jar file:
+
+# Quickstart
+
+From the UNIX or Mac command line (will take some adjustment on Windows), download the latest release version of the FlashFry jar file:
 
 ```shell
+wget https://github.com/aaronmck/FlashFry/releases/download/1.2.0/FlashFry-assembly-1.2.jar
 ```
-download and untar the sample data for human chromosome 22:
+download and then un-gzip the sample data for human chromosome 22:
 
 ```shell
+wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quickstart_data.tar.gz
+tar xf quickstart_data.tar.gz
 ```
 
-run database creation (should take a few minutes):
+then run the database creation step (this should take a few minutes, takes ~137 seconds on my laptop):
 
 ```shell
 mkdir tmp
@@ -42,18 +51,18 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --output EMX1.output
 ```
 
-score the discovered sites:
+finally score the discovered sites:
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --analysis score \
- --database chr22_cas9ngg_database \
- --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
- --output EMX1.output
+ --input EMX1.output \
+ --output EMX1.output.scored \
+ --scoringMetrics doench2014ontarget,doench2016cdf,dangerous,crisprmit \
+ --database chr22_cas9ngg_database
 ```
 
-Getting started - a more detailed description
-=======
+# Documentation
 
 There are three main steps to running FlashFry.
 
@@ -64,8 +73,7 @@ There are three main steps to running FlashFry.
 3) Lastly, you can score this annotated output file.
 
 
-FAQ
-=======
+# FAQ
 
 Why seperate the off-target discovery and scoring parts of FlashFry?
 
