@@ -7,15 +7,20 @@
 <img src="https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png" width="500">
 </p>
 
-FlashFry is a fast and flexible command-line tool for characterizing large numbers of CRISPR guide sequences. 
+FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. 
 
-Quickstart
-=======
+## Quickstart
 
-- get the jar file: link here
-- get the sample data:
-- untar the sample data: 
-- run database creation (should take a few minutes):
+get the jar file:
+
+```shell
+```
+download and untar the sample data for human chromosome 22:
+
+```shell
+```
+
+run database creation (should take a few minutes):
 
 ```shell
 mkdir tmp
@@ -27,7 +32,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --enzyme spcas9ngg
 ```
 
-- discover targets and their potential off-target in the test data (takes a few seconds):
+discover candidate targets and their potential off-target in the test data (takes a few seconds):
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.2.jar \
@@ -37,7 +42,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --output EMX1.output
 ```
 
-- score the discovered sites:
+score the discovered sites:
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.2.jar \
@@ -66,7 +71,7 @@ Why seperate the off-target discovery and scoring parts of FlashFry?
 
 Off-target discovery can have high computational costs for large putitive target sets. To avoid having to do this step every time you'd like to switch scoring metrics, we thought it was best to split the two stages up.
 
-Why the does the output file look the way it does? (aka I don't like it)
+Why the does the output file look the way it does?
 
 We wanted the output to work with common analysis tools such as BEDTools. This meant a format like encoded specific details into specific columns, as well as leaving off the traditional header in favor of listing column details in the header section
 
