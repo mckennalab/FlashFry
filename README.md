@@ -15,7 +15,7 @@ Sections:
 - [FAQ](#FAQ)
 
 
-# Quickstart
+#Quickstart
 
 From the UNIX or Mac command line (will take some adjustment on Windows), download the latest release version of the FlashFry jar file:
 
@@ -61,7 +61,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --output EMX1.output
 ```
 
-# Documentation
+#Documentation
 
 There are three main steps to running FlashFry.
 
@@ -72,7 +72,7 @@ There are three main steps to running FlashFry.
 3) Lastly, you can score this annotated output file.
 
 
-# FAQ
+#FAQ
 
 Why seperate the off-target discovery and scoring parts of FlashFry?
 
