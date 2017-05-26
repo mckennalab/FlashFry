@@ -17,25 +17,35 @@ Quickstart
 - untar the sample data: 
 - run database creation (should take a few minutes):
 
-```bash
-mkdir tmp; java -jar FlashFry-assembly-1.2.jar --analysis index --tmpLocation ./tmp --database chr22_cas9ngg_database --reference chr22.fa.gz --enzyme spcas9ngg
+```shell
+mkdir tmp
+java -Xmx4g -jar FlashFry-assembly-1.2.jar \
+ --analysis index \
+ --tmpLocation ./tmp \
+ --database chr22_cas9ngg_database \
+ --reference chr22.fa.gz \
+ --enzyme spcas9ngg
 ```
 
 - discover targets and their potential off-target in the test data (takes a few seconds):
 
-```bash
-java -jar FlashFry-assembly-1.2.jar --analysis discover --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output
+```shell
+java -Xmx4g -jar FlashFry-assembly-1.2.jar \
+ --analysis discover \
+ --database chr22_cas9ngg_database \
+ --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
+ --output EMX1.output
 ```
 
 - score the discovered sites:
 
-```bash
-java -jar FlashFry-assembly-1.2.jar --analysis score --database chr22_cas9ngg_database --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta --output EMX1.output
+```shell
+java -Xmx4g -jar FlashFry-assembly-1.2.jar \
+ --analysis score \
+ --database chr22_cas9ngg_database \
+ --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
+ --output EMX1.output
 ```
-
-
-
-
 
 Getting started - a more detailed description
 =======
