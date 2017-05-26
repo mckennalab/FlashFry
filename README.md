@@ -29,7 +29,7 @@ wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quicks
 tar xf quickstart_data.tar.gz
 ```
 
-then run database creation (this should take a few minutes):
+then run the database creation step (this should take a few minutes, takes ~137 seconds on my laptop):
 
 ```shell
 mkdir tmp
@@ -51,14 +51,15 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --output EMX1.output
 ```
 
-score the discovered sites:
+finally score the discovered sites:
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --analysis score \
- --database chr22_cas9ngg_database \
- --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
- --output EMX1.output
+ --input EMX1.output \
+ --output EMX1.output.scored \
+ --scoringMetrics doench2014ontarget,doench2016cdf,dangerous,crisprmit \
+ --database chr22_cas9ngg_database
 ```
 
 # Documentation
