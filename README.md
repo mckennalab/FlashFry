@@ -14,10 +14,13 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 get the jar file:
 
 ```shell
+wget https://github.com/aaronmck/FlashFry/releases/download/1.2.0/FlashFry-assembly-1.2.jar
 ```
 download and untar the sample data for human chromosome 22:
 
 ```shell
+wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quickstart_data.tar.gz
+tar xf quickstart_data.tar.gz
 ```
 
 run database creation (should take a few minutes):
