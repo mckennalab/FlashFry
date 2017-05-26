@@ -3,7 +3,7 @@
 [![Join the chat at https://gitter.im/FlashFry/Lobby](https://badges.gitter.im/FlashFry/Lobby.svg)](https://gitter.im/FlashFry/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
-!FlashFry_logo](https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png)
+![FlashFry_logo](https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png)
 
 FlashFry is a fast and flexible command-line tool for characterizing large numbers of CRISPR guide sequences. 
 
