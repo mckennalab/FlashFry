@@ -82,11 +82,15 @@ There are three main steps to running FlashFry.
 3) Lastly, you can score this annotated output file. This is handled by the `--analysis score` module. We've implemented a fair number of scoring metrics. For guidance on which are appropriate in which situation, please see the wonderful paper by [Maximilian Haeussler](https://www.ncbi.nlm.nih.gov/pubmed/27380939) which analyzed all of these methods in aggregate:
 
 - `hsu2013` - The Hsu et. al. method, also known as crispr.mit.edu score: [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/23873081.0)
-- `doench2014ontarget` - [pubmed](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
-- `doench2016cfd` - [pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
-- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan method [pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
+- `doench2014ontarget` - Doench 2014 on-target efficiency score [pubmed](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
+- `doench2016cfd` - The Doench 2016 cutting frequency determination score [pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
+- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target method [pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
 
-We've also implemented a some additional metrics that are useful in library creation 
+We've also implemented a some additional metrics that are useful in CRISPR library creation:
+
+- `bedannotator` - annotation your output targets with information from an associated BED file. It can find the 0 mismatch targets in the genome database and use those to infer the genomic location
+- `dangerous` - annotate targets that have dangerous sequence features, such as high or extremely low GC, polIII transcriptional terminators, or low entropy. 
+- `minot` - add a column that indicates the minimum mismatches to any off-target hit. 
 
 
 # FAQ
