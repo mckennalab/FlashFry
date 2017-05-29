@@ -75,9 +75,18 @@ There are three main steps to running FlashFry.
 | Mouse - mm10 | 2:36:53 | 4:36:03 | 2:11:35 | 
 | Drophellia melanegaster - BDGP6 | 0:6:33 | 0:10:48 | 0:5:44 |
 
+
 2) The next step is to find candidate targets within the fasta sequence of interest. The `--analysis discover` options handles this. The candidates found in the fasta are then run against the off-targets database, and an annotated output file is produced. This output file is BED-file compatible, and contains an annotated header section with the chromosomes of the database you ran against (for reference later). 
 
-3) Lastly, you can score this annotated output file. This is handled by the --analysis score module. 
+
+3) Lastly, you can score this annotated output file. This is handled by the `--analysis score` module. We've implemented a fair number of scoring metrics. For guidance on which are appropriate in which situation, please see the wonderful paper by [Maximilian Haeussler](https://www.ncbi.nlm.nih.gov/pubmed/27380939) which analyzed all of these methods in aggregate:
+
+- `hsu2013` - The Hsu et. al. method, also known as crispr.mit.edu score: [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/23873081.0)
+- `doench2014ontarget` - [pubmed](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
+- `doench2016cfd` - [pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
+- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan method [pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
+
+We've also implemented a some additional metrics that are useful in library creation 
 
 
 # FAQ
