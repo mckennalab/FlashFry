@@ -69,7 +69,7 @@ There are three main steps to running FlashFry.
 1) First, you build a database using the specified CRISPR motif against the target database. This is only done once, as the database is reuseable. You have to choose the enzyme time to use while indexing. As of writing this includes the Cas9s with 23 bp targets: SpCas9 (NAG or NGG), SpCas9NGG (NGG), SpCas9NAG (NAG), and Cpf1 (TTTN) with 24 basepair targets. This are adjustable in the code, or you can create your own. In writing the database temporary files are put in the --tempLocation location. This will take up a bit more space than the final database (maybe 10-20% depending on how duplicated genome targets are). Runtimes on a pretty slow drive look like:
 
 | Genome / version | Cas9 (NGG) | Cas9 (NGG/NAG) | CPF1 (TTTN) |
-| ------------- |:-------------:| -----:| -----:|
+| ------------- |-------------:| -----:| -----:|
 | Caenorhabditis elegans - 235 | 0:3:21 | 0:6:03 | 0:5:35 | 
 | Human - hg38 | 3:19:29 | 5:24:55 | 2:50:59 | 
 | Mouse - mm10 | 2:36:53 | 4:36:03 | 2:11:35 | 
