@@ -42,13 +42,13 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
       val otScore = bitCode.get.bitDecodeString(ot.sequence)
 
       // scale the score from 0 to 100
-      val candidateScore = 100.0 * scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
+      val candidateScore = 100.0 * (1.0 - scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
       //totalScore = math.max(candidateScore, scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
       totalScore += candidateScore
     }}
 
-    //totalScore.toString
-    (100.0 * (1.0 / (1.0 + (pam * totalScore)))).toString
+    // take the same approach as the
+    ((100.0 * (100.0 / (100.0 + (pam + totalScore))))).toString
   }
 
   /**

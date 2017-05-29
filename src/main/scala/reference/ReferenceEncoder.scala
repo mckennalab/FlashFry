@@ -106,7 +106,6 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
       (params.fwdRegex findAllMatchIn contigBuffer).foreach { fwdMatch => {
         val start = fwdMatch.start
         val end = fwdMatch.start + params.totalScanLength
-        println("contig: " + contigBuffer + " --> " + start + " end " + end)
         val subStr = contigBuffer.slice(start,end)
 
         if (!subStr.contains("N")) {

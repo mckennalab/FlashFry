@@ -41,10 +41,10 @@ object Main extends App {
     // *********************************** Inputs *******************************************************
     opt[String]("analysis") required() valueName ("<string>") action {
       (x, c) => c.copy(analysisType = Some(x))
-    } text ("The run type: one of: discovery, score, or random")
+    } text ("The run type: one of: index (create database), discover (characterization), or score (your guides) or random (create random sequences)")
 
     // some general command-line setup stuff
-    note("Find CRISPR targets across the specified genome\n")
+    note("Find CRISPR targets across the specified genome. Specify individual analysis options for more detailed help information\n")
     help("help") text ("prints the usage information you see here")
   }
 

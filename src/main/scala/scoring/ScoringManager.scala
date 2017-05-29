@@ -49,7 +49,7 @@ object ScoringManager {
 
   def getRegisteredScoringMetric(name: String, bitEncoder: BitEncoding): ScoreModel = {
     name.toLowerCase() match {
-      case "crisprmit" => {
+      case "hsu2013" => {
         val sc = new CrisprMitEduOffTarget()
         sc.bitEncoder(bitEncoder)
         sc
@@ -57,8 +57,11 @@ object ScoringManager {
       case "doench2014ontarget" => {
         new Doench2014OnTarget()
       }
-      case "doench2016cdf" => {
+      case "doench2016cfd" => {
         new Doench2016CFDScore()
+      }
+      case "moreno2015" => {
+        new CRISPRscan()
       }
       case "bedannotator" => {
         new BedAnnotation()
