@@ -66,7 +66,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 
 There are three main steps to running FlashFry.
 
-1) First, you build a database using the specified CRISPR motif against the target database using the `--analysis index` option. This is only done once, as the database is reuseable. You have to choose the enzyme time to use while indexing. As of writing this includes the Cas9s with 23 bp targets: SpCas9 (NAG or NGG), SpCas9NGG (NGG), SpCas9NAG (NAG), and Cpf1 (TTTN) with 24 basepair targets. This are adjustable in the code, or you can create your own. In writing the database temporary files are put in the --tempLocation location. This will take up a bit more space than the final database (maybe 10-20% depending on how duplicated genome targets are). Runtimes on a pretty slow drive look like:
+1) First, you build a database using the specified CRISPR motif against the target database using the `--analysis index` option. This is only done once, as the database is reuseable. You have to choose the enzyme time to use while indexing. As of writing this includes the Cas9s with 23 bp targets: SpCas9 (NAG or NGG), SpCas9NGG (NGG), SpCas9NAG (NAG), and Cpf1 (TTTN) with 24 basepair targets. This are adjustable in the code, or you can create your own. In writing the database temporary files are put in the --tempLocation location. This will take up a bit more space than the final database (maybe 10-20% depending on how duplicated genome targets are). Runtimes on a pretty slow drive look like (formated hours:minutes:seconds):
 
 | Genome / version | Cas9 (NGG) | Cas9 (NGG/NAG) | CPF1 (TTTN) |
 | :------------- |-------------:| -----:| -----:|
