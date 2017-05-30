@@ -100,6 +100,33 @@ We've also implemented a some additional metrics that are useful in CRISPR libra
 - `minot` - add a column that indicates the minimum mismatches to any off-target hit. 
 
 
+## Binary file format
+
+The tool uses a custom binary format that compresses the genome hits for a target sequences into binary values. Values are stored as using Java's default big-endian format. The database itself contains all the packed long values in a compressed file, using htslib's block-compressed file readers and writers.  The header file sits alongside the database and provides a lookup table for the target database.
+
+The block format in the database is:
+- block type: currently 0 for linear, 1 for sub-indexed (long)
+- if indexed, for the set index size, a series of long values that describe the size and location of sub-indexes
+- After any header, a series of targets, with X position encodings, set by the count number in the target encoding
+
+The header format:
+- 64 bit magic value (long)
+- 64 bit version number (long)
+- 64 bit internal enzyme number (long, see StandardScanParameters.scala for the enumerated enzymes)
+- 64 bit number of bins (long)
+
+- for the number of bins in the header:
+  - 64 bit offset of this block in the file (long)
+  - 64 bit size of this block in the file (in uncompressed bytes, long)
+  - 64 bit number of targets contained within the bin (int)
+
+- for each contig in the input reference file:
+  - the contig name, followed by a '=' and it's index position in the reference
+
+For lookup we perform something like the following:
+![FlashFrySearch](https://raw.githubusercontent.com/aaronmck/DeepFry/master/images/document_format.png)
+
+
 # FAQ
 
 Why seperate the off-target discovery and scoring parts of FlashFry?
