@@ -30,9 +30,11 @@ import utils.Utils
   *
   * Our current list:
   * - TTTT (or longer): could prematurely terminate pol3 transcription
-  * - GC > 80% or less than 20%: hard to close
+  * - GC > 75% or less than 15%: high GC guides have been shown to generate additional off-targets, and high/low GC can make cloning harder
+  * - How many times does this guide perfectly match a genome location
+  *
+  * TODO: Checks that could be implemented in the future:
   * - palindromic guides: hard to clone in / PCR? Not implemented yet
-  * - is the site within the genome?
   *
   */
 class DangerousSequences extends SingleGuideScoreModel {
@@ -47,7 +49,7 @@ class DangerousSequences extends SingleGuideScoreModel {
   override def scoreGuide(guide: CRISPRSiteOT): String = {
     var problems = Array[String]()
 
-    if (Utils.gcContent(guide.target.bases) < .2 || Utils.gcContent(guide.target.bases) > .8)
+    if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
       problems :+= "GC_" + Utils.gcContent(guide.target.bases)
 
     if (guide.target.bases.contains("TTTT"))

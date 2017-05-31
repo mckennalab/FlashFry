@@ -56,7 +56,6 @@ class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
         }
       }}
     }}
-    guides
   }
 
   /**

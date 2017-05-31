@@ -53,23 +53,35 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
     assert(bitCode.isDefined, "Our bitEncoder has not been set")
 
     val bases = guide.target.bases
-    var pam = Doench2016CFDScore.pamLookup(bases.slice(bases.length - 2,bases.length))
     var totalScore = 0.0
 
-    //println("Score = " + totalScore)
     guide.offTargets.foreach{ ot => {
 
       // find the maximum CFD score over our off-targets
       val otScore = bitCode.get.bitDecodeString(ot.sequence)
 
-      // scale the score from 0 to 100
-      val candidateScore = 100.0 * (1.0 - scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
-      //totalScore = math.max(candidateScore, scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
-      totalScore += candidateScore
+      // Alternate approach commented out: scale the score from 0 to 100
+      //1st alternative: val candidateScore = 100.0 * (1.0 - scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
+      //totalScore += candidateScore
+      var pam = Doench2016CFDScore.pamLookup(otScore.str.slice(otScore.str.length - 2,otScore.str.length))
+
+      val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
+      //println("GUIDE SCORE " + otScore.str + " " + (pam * candidateScore) + " pam " + pam + " pam seq " + otScore.str.slice(otScore.str.length - 2,otScore.str.length))
+      totalScore = math.max(totalScore, pam * scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
+
+      //val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
+      //totalScore *= candidateScore
     }}
 
-    // take the same approach as the
-    ((100.0 * (100.0 / (100.0 + (pam + totalScore))))).toString
+    // take the same approach as the crispr.mit.edu folks?
+    // ((100.0 * (100.0 / (100.0 + (pam + totalScore))))).toString
+    //(pam * totalScore).toString
+
+    // guided by CRISPOR paper -- thresholding at 0.023
+    if (totalScore >= 0.023)
+      (totalScore).toString
+    else
+      "0.0"
   }
 
   /**
@@ -125,10 +137,11 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
         val key = "r" + gBase + ":d" + specialReverseCompBase(otBase) + "," + (index + 1)
         //println("key = " + key)
         assert(Doench2016CFDScore.mmLookup contains key,"Missing key " + key + " in mm Lookup table")
+        // println(key + "-> " + Doench2016CFDScore.mmLookup(key) + " score " + score)
         score *= Doench2016CFDScore.mmLookup(key)
       }
     }}
-
+    // println("Final " + score)
     score
   }
 

@@ -64,7 +64,7 @@ class LinearTraversal(binGenerator: BaseCombinationGenerator,
     * @param guide a guide that no longer should be considered for off-target sequences
     */
   override def overflowGuide(guide: GuideIndex) {
-    logger.warn("Overflowing guide " + guide)
+    //logger.warn("Overflowing guide " + guide)
     val guidesToUseBuilder = new mutable.ArrayBuffer[GuideIndex]()
     var guidesIndex = 0
     while (guidesIndex < guidesToUse.size) {

@@ -39,7 +39,6 @@ class UtilsTest extends FlatSpec with Matchers {
     val longValueArray = Array[Long](0x0BCDEFABCDEFABCDl,0x0l,0x1l)
 
     val byteArray = Utils.longArrayToByteArray(longValueArray)
-    println("asdfasdf " + byteArray.map{byte => byte.toShort.toString}.mkString(" "))
 
     (byteArray.size) should be (8 * 3)
     (byteArray(7))   should be (0x0B)

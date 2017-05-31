@@ -137,7 +137,6 @@ object SingleGuideScoreModel {
 
     val guidePos = guideRegex.findAllIn(guide.target.sequenceContext.get).matchData.toArray
 
-    println("guide =====" + guide.target.bases + " size " + guidePos.size)
     guidePos.size match {
       case n if n <= 0 => return -1 // we have no matches, return negitive one
       case 1 => return guidePos(0).start
