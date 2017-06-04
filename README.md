@@ -11,6 +11,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 
 Sections:
 - [Quickstart](#quickstart)
+- [Command line options](#options)
 - [General documentation](#documentation)
 - [FAQ](#faq)
 
@@ -61,6 +62,9 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
  --scoringMetrics doench2014ontarget,doench2016cdf,dangerous,crisprmit \
  --database chr22_cas9ngg_database
 ```
+# Options
+
+
 
 # Documentation
 
@@ -137,3 +141,6 @@ Why the does the output file look the way it does?
 
 We wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off the traditional header line in favor of listing column details in the header section. It should be 
 
+How much memory should I give FlashFry?
+
+The memory requirements of FlashFly are determined by the number guides you're looking at and the number of off-targets you allow per guide candidate. The first factor is controlled by the size of the region you're looking at, and the second is controlled by the `--maximumOffTargets` parameter in the discovery phase. Generally with < 100K guides and `--maximumOffTargets` set to 2000 you'll be able to run with 4g of memory or less (such a memory limit is set in the JVM with the `-Xmx4g` command line parameter, right after `java`). You may have to increase this number with higher guide counts, higher mismatch thresholds, or if you want to retain more off-targets.
