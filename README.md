@@ -64,6 +64,29 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 ```
 # Options
 
+Command line options for each module is listed below:
+
+### --analysis discover
+
+- fasta (required) - the input fasta file you'd like to discover target sequences in
+- database (required) - the database of off-target sequences for the genome of interest
+- output (required) - the output file
+- positionOutput (optional, default to false) - should we output positional information along with the off-target sequences? This can make really, really large files
+- forceLinear (optional, default to false) - this forces FlashFry to perform a linear traversal instead of a precomputed bin traversal of the database. The only reason to use this is the case where you have a large number of guides (>10K or so), in which case it saves the time it takes FlashFry to realize it needs to do a linear traversal anyway. 
+- maxMismatch (optional, default to 4) - the mismatch threshold to consider for off-target discovery
+- flankingSequence (optional, default to 10) - how much sequence context to preserve up and downstream of the target. This sequence context is used by on-target metrics.
+- maximumOffTargets (optional, default to 2000) - the number of off-targets to store before marking a candidate with the "OVERFLOW" tag. Lower values here speed up search and keep memory requirements low, higher values do the opposite. I'd recommend keeping this at the default for initial searches, and only raising it if you don't get a rich enough candidate list or you're doing this for methods development.
+
+### --analysis discover
+
+- `input (required)` - the input file produced by the `discover` module
+- `output (required)` - the scored output file
+- `database (required)` - the database of off-target sequences for the genome of interest
+- `maxMismatch (required)` - the maximum number of mismatches in off-targets to consider. This is a way to filter down the mismatch list considered in the `discover` module output (say you ran that with 5 mismatches considered in `discover`, but now you only want to consider 3)
+- `scoringMetrics (required)` - which scoring metrics to apply. The following are supported:
+
+add here
+
 
 
 # Documentation
