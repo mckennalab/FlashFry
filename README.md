@@ -11,8 +11,8 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 
 Sections:
 - [Quickstart](#quickstart)
-- [Command line options](#command line options)
-- [On and off-target scoring](#scoring methods)
+- [Command line options](#command)
+- [On and off-target scoring](#scoring)
 - [General documentation](#documentation)
 - [FAQ](#faq)
 
