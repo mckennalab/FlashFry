@@ -19,7 +19,7 @@ Sections:
 
 # Quickstart
 
-From the UNIX or Mac command line (will take some adjustment on Windows), download the latest release version of the FlashFry jar file:
+From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
 wget https://github.com/aaronmck/FlashFry/releases/download/1.2.0/FlashFry-assembly-1.2.jar
