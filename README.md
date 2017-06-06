@@ -13,7 +13,7 @@ Sections:
 - [Quickstart](#quickstart)
 - [Command line options](#command-line-options)
 - [On and off-target scoring](#scoring-methods)
-- [General documentation](#documentation)
+- [General documentation](#general-documentation)
 - [FAQ](#faq)
 
 
@@ -107,7 +107,7 @@ The following scoring options can be supplied to the `--scoringMetrics` command 
 - reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
 
 
-# Documentation
+# General Documentation
 
 FlashFry requires the Java virtual machine (JVM) to run. This is on almost every system imaginable these days, so it's probably already on your machine. We've tested it with both Oracle's Java as well as using the open JVM. Other requirements include:
 
