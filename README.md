@@ -99,10 +99,10 @@ The following scoring options can be supplied to the `--scoringMetrics` command 
  Additional command line options: 
      - `inputAnnotationBed`: the bed file to pull annotation information from.
      - `transformPositions`: The bedannotator module will attempt to assign annotations by transforming the candidates within the target region into the cordinate space specified. Say if you pulled your region from the 1Mb superenhancer region in front of the human MYC gene, you would specify `chr8:127000000-128000000` here, and the bed annotator would transform each candidate guide into this coordinate space using the start and stop of the input file as offsets into this space. 
-- `dangerous` - annotate sequences that would be difficult to work with. Currently this includes:
-      - IN_GENOME=X : The number of times a perfect match target for this guide sequence is seen within the genome of interest. 
-      - GC_X : flagging sequences that have a high (>75%) or low (<25%) GC content
-      - PolyT : guide sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
+- `dangerous` - annotate sequences that would be difficult to work with. Currently this includes: 
+     - IN_GENOME=X : The number of times a perfect match target for this guide sequence is seen within the genome of interest. 
+     - GC_X : flagging sequences that have a high (>75%) or low (<25%) GC content
+     - PolyT : guide sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
 - `minot` - a convenience score: what's the minimum distance to the target within the off-target set? encodes both the distance and the number of off-targets at that distance
 - reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
 
