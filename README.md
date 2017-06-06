@@ -11,7 +11,8 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 
 Sections:
 - [Quickstart](#quickstart)
-- [Command line options](#options)
+- [Command line options](#command line options)
+- [On and off-target scoring](#scoring methods)
 - [General documentation](#documentation)
 - [FAQ](#faq)
 
@@ -77,25 +78,33 @@ Command line options for each module is listed below:
 - `flankingSequence (optional, default to 10)` - how much sequence context to preserve up and downstream of the target. This sequence context is used by on-target metrics.
 - `maximumOffTargets (optional, default to 2000)` - the number of off-targets to store before marking a candidate with the "OVERFLOW" tag. Lower values here speed up search and keep memory requirements low, higher values do the opposite. I'd recommend keeping this at the default for initial searches, and only raising it if you don't get a rich enough candidate list or you're doing this for methods development.
 
-### --analysis discover
+### --analysis score
 
 - `input (required)` - the input file produced by the `discover` module
 - `output (required)` - the scored output file
 - `database (required)` - the database of off-target sequences for the genome of interest
 - `maxMismatch (required)` - the maximum number of mismatches in off-targets to consider. This is a way to filter down the mismatch list considered in the `discover` module output (say you ran that with 5 mismatches considered in `discover`, but now you only want to consider 3)
-- `scoringMetrics (required)` - which scoring metrics to apply. The following are supported:
+- `scoringMetrics (required)` - which scoring metrics to apply. See below for the supported scoring options.
 
- - `hsu2013` - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score.
- - `doench2014ontarget` - on target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
- - `doench2016cfd` - The Doench 2016 cutting frequency determination score [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
- - `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target method [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
- - `bedannotator` - annotate the scored output file with associated annotations from a BED file.
- - `dangerous` - annotate sequences that would be difficult to work with. Currently this includes:
+#scoring methods
+
+The following scoring options can be supplied to the `--scoringMetrics` command line parameter. Some of these have command line options of their own, documented below:
+
+- `hsu2013` - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score.
+ 
+- `doench2014ontarget` - on target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
+- `doench2016cfd` - The Doench 2016 cutting frequency determination score [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
+- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target method [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
+- `bedannotator` - annotate the scored output file with associated annotations from a BED file.
+      Additional command line options: 
+      - `inputAnnotationBed`: the bed file to pull annotation information from.
+      - `transformPositions`: The bedannotator module will attempt to assign annotations by transforming the candidates within the target region into the cordinate space specified. Say if you pulled your region from the 1Mb superenhancer region in front of the human MYC gene, you would specify `chr8:127000000-128000000` here, and the bed annotator would transform each candidate guide into this coordinate space using the start and stop of the input file as offsets into this space. 
+- `dangerous` - annotate sequences that would be difficult to work with. Currently this includes:
       - IN_GENOME=X: The number of times a perfect match target for this guide sequence is seen within the genome of interest. 
       - GC_X: flagging sequences that have a high (>75%) or low (<25%) GC content
       - PolyT: guide sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
-  - `minot` - a convenience score: what's the minimum distance to the target within the off-target set? encodes both the distance and the number of off-targets at that distance
-  - reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
+- `minot` - a convenience score: what's the minimum distance to the target within the off-target set? encodes both the distance and the number of off-targets at that distance
+- reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
 
 
 # Documentation
