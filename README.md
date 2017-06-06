@@ -68,14 +68,14 @@ Command line options for each module is listed below:
 
 ### --analysis discover
 
-- fasta (required) - the input fasta file you'd like to discover target sequences in
-- database (required) - the database of off-target sequences for the genome of interest
-- output (required) - the output file
-- positionOutput (optional, default to false) - should we output positional information along with the off-target sequences? This can make really, really large files
-- forceLinear (optional, default to false) - this forces FlashFry to perform a linear traversal instead of a precomputed bin traversal of the database. The only reason to use this is the case where you have a large number of guides (>10K or so), in which case it saves the time it takes FlashFry to realize it needs to do a linear traversal anyway. 
-- maxMismatch (optional, default to 4) - the mismatch threshold to consider for off-target discovery
-- flankingSequence (optional, default to 10) - how much sequence context to preserve up and downstream of the target. This sequence context is used by on-target metrics.
-- maximumOffTargets (optional, default to 2000) - the number of off-targets to store before marking a candidate with the "OVERFLOW" tag. Lower values here speed up search and keep memory requirements low, higher values do the opposite. I'd recommend keeping this at the default for initial searches, and only raising it if you don't get a rich enough candidate list or you're doing this for methods development.
+- `fasta (required)` - the input fasta file you'd like to discover target sequences in
+- `database (required)` - the database of off-target sequences for the genome of interest
+- `output (required)` - the output file
+- `positionOutput (optional, default to false)` - should we output positional information along with the off-target sequences? This can make really, really large files
+- `forceLinear (optional, default to false)` - this forces FlashFry to perform a linear traversal instead of a precomputed bin traversal of the database. The only reason to use this is the case where you have a large number of guides (>10K or so), in which case it saves the time it takes FlashFry to realize it needs to do a linear traversal anyway. 
+- `maxMismatch (optional, default to 4)` - the mismatch threshold to consider for off-target discovery
+- `flankingSequence (optional, default to 10)` - how much sequence context to preserve up and downstream of the target. This sequence context is used by on-target metrics.
+- `maximumOffTargets (optional, default to 2000)` - the number of off-targets to store before marking a candidate with the "OVERFLOW" tag. Lower values here speed up search and keep memory requirements low, higher values do the opposite. I'd recommend keeping this at the default for initial searches, and only raising it if you don't get a rich enough candidate list or you're doing this for methods development.
 
 ### --analysis discover
 
@@ -85,8 +85,17 @@ Command line options for each module is listed below:
 - `maxMismatch (required)` - the maximum number of mismatches in off-targets to consider. This is a way to filter down the mismatch list considered in the `discover` module output (say you ran that with 5 mismatches considered in `discover`, but now you only want to consider 3)
 - `scoringMetrics (required)` - which scoring metrics to apply. The following are supported:
 
-add here
-
+ - `hsu2013` - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score.
+ - `doench2014ontarget` - on target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
+ - `doench2016cfd` - The Doench 2016 cutting frequency determination score [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
+ - `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target method [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
+ - `bedannotator` - annotate the scored output file with associated annotations from a BED file.
+ - `dangerous` - annotate sequences that would be difficult to work with. Currently this includes:
+      - IN_GENOME=X: The number of times a perfect match target for this guide sequence is seen within the genome of interest. 
+      - GC_X: flagging sequences that have a high (>75%) or low (<25%) GC content
+      - PolyT: guide sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
+  - `minot` - a convenience score: what's the minimum distance to the target within the off-target set? encodes both the distance and the number of off-targets at that distance
+  - reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
 
 
 # Documentation
