@@ -65,7 +65,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 ```
 # Command line options
 
-Modules are chosen using the `--analysis` option. Three options are currently supported, `index`, `discover`, and `score`. The first `index` creates an off-target database from the reference genome of interest. `discover` takes a candidate region of interest as a fasta file and discovers CRISPR guide candidates. Lastly `score` produces on and off-target activity scores using schemes developed by the genomics community. Each modules options are listed below:
+Modules are chosen using the `--analysis` option. Three options are currently supported, `index`, `discover`, and `score`. The first, `index` creates an off-target database from the reference genome of interest. `discover` takes a candidate region of interest as a fasta file and discovers CRISPR guide candidates. Lastly `score` produces on and off-target activity scores using schemes developed by the genomics community. Each modules options are listed below:
 
 ### --analysis index
 
