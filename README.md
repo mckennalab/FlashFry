@@ -35,7 +35,7 @@ then run the database creation step (this should take a few minutes, takes ~137 
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.2.jar \
+java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -46,7 +46,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 discover candidate targets and their potential off-target in the test data (takes a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.2.jar \
+java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
@@ -56,7 +56,7 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 finally score the discovered sites:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.2.jar \
+java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
