@@ -22,7 +22,7 @@ Sections:
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.2.0/FlashFry-assembly-1.3.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.3.0/FlashFry-assembly-1.3.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
