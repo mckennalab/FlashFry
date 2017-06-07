@@ -43,7 +43,7 @@ java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --enzyme spcas9ngg
 ```
 
-discover candidate targets and their potential off-target in the test data (takes a few seconds). This is using the EMX1 guide with some random sequence flanking the target sequence:
+discover candidate targets and their potential off-target in the test data (takes a few seconds). This is using the EMX1 target with some random sequence flanking the target sequence:
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.3.jar \
