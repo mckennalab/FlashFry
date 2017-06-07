@@ -60,7 +60,7 @@ java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
- --scoringMetrics doench2014ontarget,doench2016cfd,dangerous,crisprmit \
+ --scoringMetrics doench2014ontarget,doench2016cfd,dangerous,hsu2013 \
  --database chr22_cas9ngg_database
 ```
 # Command line options
