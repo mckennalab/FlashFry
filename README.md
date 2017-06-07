@@ -65,7 +65,18 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 ```
 # Command line options
 
-Command line options for each module is listed below:
+Modules are chosen using the `--analysis` option. Three options are currently supported, `index`, `discover`, and `score`. The first `index` creates an off-target database from the reference genome of interest. `discover` takes a candidate region of interest as a fasta file and discovers CRISPR guide candidates. Lastly `score` produces on and off-target activity scores using schemes developed by the genomics community. Each modules options are listed below:
+
+### --analysis index
+
+- `reference (required)` - the input fasta reference file you'd like to discover off-target sequences in
+- `database (required)` - the output database file to generate
+- `enzyme (optional, default to spcas9)` - which enzyme to consider when making discovering sites in the reference. Options include:
+     - `cpf1`- 24 base targets with a 5' TTTN sequence
+     - `spcas9` - 23 base targets with a 3' NRG (NAG/NGG) sequence
+     - `spcas9ngg` - 23 base targets with a 3' NGG sequence
+     - `spcas9nag` - 23 base targets with a 3' NAG sequence
+- `binSize (optional, default to 7)` - what bin size should we use when indexing the fasta file. Originally this had a bigger effect on search speed, but now individual bins can have their own lookup tables, reducing the importance of this parameter. 
 
 ### --analysis discover
 
