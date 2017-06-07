@@ -24,15 +24,16 @@ package crispr
 import bitcoding.BitEncoding
 import reference.CRISPRSite
 
+import com.typesafe.scalalogging.LazyLogging
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
   * store off-target hits associated with a specific CRISPR target
   */
-class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Ordered[CRISPRSiteOT] {
-  val target = tgt
-  val offTargets = new ArrayBuffer[CRISPRHit]
+class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Ordered[CRISPRSiteOT] with LazyLogging {
+  var target = tgt
+  var offTargets = new ArrayBuffer[CRISPRHit]
   val longEncoding = encoding
   var currentTotal = 0
 
@@ -42,7 +43,7 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
   def full = currentTotal >= overflow
 
   def addOT(offTarget: CRISPRHit) = {
-    assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide: " + encoding)
+    assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide: " + encoding + " overflow value: " + overflow + " current size " + currentTotal)
     offTargets += offTarget
     currentTotal += 1
   }
@@ -65,10 +66,15 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
 
   def compare(that: CRISPRSiteOT): Int = (target.bases) compare (that.target.bases)
 
+  /**
+    * filter down the off-target list by a maximal off-target distance
+     * @param maxMismatch the maximum number of mismatches allowed, otherwise we drop the off-target hit
+    * @param bitEnc the bit encoder to use
+    */
   def filterOffTargets(maxMismatch: Int, bitEnc: BitEncoding): Unit = {
-    var toRemove = Array[CRISPRHit]()
-    offTargets.toArray.foreach{ot => if (bitEnc.mismatches(ot.sequence,encoding) > maxMismatch) toRemove :+= ot}
-    offTargets --= toRemove
+    var toKeep = new ArrayBuffer[CRISPRHit]()
+    offTargets.toArray.foreach{ot => if (bitEnc.mismatches(ot.sequence,encoding) <= maxMismatch) toKeep += ot}
+    offTargets = toKeep
   }
 }
 

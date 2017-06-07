@@ -45,7 +45,7 @@ class ClosestHit extends SingleGuideScoreModel {
 
     if (guide.offTargets.size > 0) {
       guide.offTargets.foreach { ot =>
-        if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) < closest) {
+        if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) < closest && bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) > 0) {
           closest = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
           count = 1
         } else if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) == closest)

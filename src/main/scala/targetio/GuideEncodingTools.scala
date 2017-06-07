@@ -158,7 +158,7 @@ object GuideEncodingTools {
     * @param bitPosition the position encoder
     * @return the CRISPRSiteOT represented by this line
     */
-  def bedLineToCRISPRSiteOT(line: String, bitEnc: BitEncoding, bitPosition: BitPosition, overflowValue: Int, scoringAnnotations: Array[String]): CRISPRSiteOT = {
+  def bedLineToCRISPRSiteOT(line: String, bitEnc: BitEncoding, bitPosition: BitPosition, overflowValue: Int, scoringAnnotations: Array[String], maximumOffTargetCount: Int = 10): CRISPRSiteOT = {
     val sp = line.split("\t")
     assert(sp.size >= setColumnCount + scoringAnnotations.size, "CRISPRSiteOT bed files must have " + setColumnCount + " columns plus the number of annotated scores, not " + sp.size)
     assert(sp(orientationPos) == forward || sp(orientationPos) == reverse, "CRISPRSiteOT bed files must have FWD or REV in the 5th column, not " + sp(orientationPos))
@@ -169,7 +169,8 @@ object GuideEncodingTools {
       if (sp(overflowPos) == "OK")
         (sp((setColumnCount - 1) + scoringAnnotations.size).toInt + 1)
       else
-        sp((setColumnCount - 1) + scoringAnnotations.size).toInt - 1)
+        (-1)) // We have to set this to a negative value. If the guide overflowed we will never know about sites that weren't recorded
+              // and so the 'OK' threshold can't be achivable by filtering OTs
 
     (0 until scoringAnnotations.size).foreach { anIndex => ot.namedAnnotations(scoringAnnotations(anIndex)) = Array[String](sp(7 + anIndex)) }
 
@@ -179,28 +180,32 @@ object GuideEncodingTools {
       val offTargetCount = token.split(withinOffTargetSeperator)(1).toInt
       val offTargetMismatches = token.split(withinOffTargetSeperator)(2).toInt
 
-      // we're encoding positional information
-      if (token contains positionListTerminatorFront) {
-        val targetAndPositions = token.split(positionListTerminatorFront)
+      if (offTargetMismatches <= maximumOffTargetCount) {
 
-        val positions = targetAndPositions(1).stripSuffix(positionListTerminatorBack).split(positionListSeperator).map { positionEncoded => {
-          bitPosition.encode(positionEncoded.split(contigSeperator)(0),
-            positionEncoded.split(contigSeperator)(1).split(strandSeperator)(0).toInt,
-            offTargetSeq.size,
-            positionEncoded.split(strandSeperator)(1) == "F")
-        }
-        }
+        // we're encoding positional information
+        if (token contains positionListTerminatorFront) {
+          val targetAndPositions = token.split(positionListTerminatorFront)
 
-        assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-        val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
-        ot.addOT(otHit)
-      } else {
-        assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-        val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), Array[Long]())
-        ot.addOT(otHit)
+          val positions = targetAndPositions(1).stripSuffix(positionListTerminatorBack).split(positionListSeperator).map { positionEncoded => {
+            bitPosition.encode(positionEncoded.split(contigSeperator)(0),
+              positionEncoded.split(contigSeperator)(1).split(strandSeperator)(0).toInt,
+              offTargetSeq.size,
+              positionEncoded.split(strandSeperator)(1) == "F")
+          }
+          }
+
+          assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
+          val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
+          if (!ot.full)
+            ot.addOT(otHit)
+        } else {
+          assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
+          val otHit = new CRISPRHit(bitEnc.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), Array[Long]())
+          if (!ot.full)
+            ot.addOT(otHit)
+        }
       }
-    }
-    }
+    }}
     ot
   }
 }

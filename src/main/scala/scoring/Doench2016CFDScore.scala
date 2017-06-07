@@ -60,15 +60,19 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
       // find the maximum CFD score over our off-targets
       val otScore = bitCode.get.bitDecodeString(ot.sequence)
 
-      // Alternate approach commented out: scale the score from 0 to 100
-      //1st alternative: val candidateScore = 100.0 * (1.0 - scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
-      //totalScore += candidateScore
-      var pam = Doench2016CFDScore.pamLookup(otScore.str.slice(otScore.str.length - 2,otScore.str.length))
+      // we exclude any on-targets that are listed as off-targets
+      // since we're only dealing with Cas9 we can slice the first 20 bases
+      if (otScore.str.slice(0,20) != guide.target.bases.slice(0,20)) {
 
-      val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
-      //println("GUIDE SCORE " + otScore.str + " " + (pam * candidateScore) + " pam " + pam + " pam seq " + otScore.str.slice(otScore.str.length - 2,otScore.str.length))
-      totalScore = math.max(totalScore, pam * scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
+        // Alternate approach commented out: scale the score from 0 to 100
+        //1st alternative: val candidateScore = 100.0 * (1.0 - scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
+        //totalScore += candidateScore
+        var pam = Doench2016CFDScore.pamLookup(otScore.str.slice(otScore.str.length - 2, otScore.str.length))
 
+        val candidateScore = scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20))
+        //println("GUIDE SCORE " + otScore.str + " " + (pam * candidateScore) + " pam " + pam + " pam seq " + otScore.str.slice(otScore.str.length - 2,otScore.str.length))
+        totalScore = math.max(totalScore, pam * scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20)))
+      }
       //val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
       //totalScore *= candidateScore
     }}

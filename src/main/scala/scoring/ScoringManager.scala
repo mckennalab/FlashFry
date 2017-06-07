@@ -53,10 +53,6 @@ class ScoringManager(bitEncoder: BitEncoding, posEncoder: BitPosition, scoringMe
 
   def scoreGuides(guides: Array[CRISPRSiteOT], maxMismatch: Int, header: BinaryHeader) {
 
-    // TODO: probably don't modify the underlying object!
-    logger.info("Filtering guides...")
-    guides.foreach{ g=> g.filterOffTargets(maxMismatch,bitEncoder)}
-
     logger.info("Scoring guides...")
     scoringModels.foreach {
       model => {
@@ -92,6 +88,9 @@ object ScoringManager {
       }
       case "minot" => {
         new ClosestHit()
+      }
+      case "reciprocalofftargets" => {
+        new ReciprocalOffTargets()
       }
       case _ => {
         throw new IllegalArgumentException("Unknown scoring metric: " + name)

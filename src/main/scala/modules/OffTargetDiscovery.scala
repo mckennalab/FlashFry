@@ -61,24 +61,28 @@ class OffTargetDiscovery extends LazyLogging with Module {
         val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, header.inputParameterPack, config.flankingSequence)
 
         // transform our targets into a list for off-target collection
-        logger.info("Setting up the guide recording....")
+        logger.info("Setting up the guide recording for our " + guideHits.guideHits.size + " candidate guides....")
         val guideOTs = guideHits.guideHits.map {
           guide => new CRISPRSiteOT(guide, header.bitCoder.bitEncodeString(StringCount(guide.bases, 1)), config.maximumOffTargets)
         }.toArray
 
-        logger.info("Precomputing traversal over bins....")
+
         val guideStorage = new ResultsAggregator(guideOTs)
 
         var traversalFactory: Option[OrderedBinTraversalFactory] = None
 
+        logger.info("Precomputing traversal over bins....")
         if (!config.forceLinear)
           traversalFactory = Some(new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage))
 
         logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
 
-        val isTraversalSaturdated = if (traversalFactory.isDefined) traversalFactory.get.saturated else false
+        val isTraversalSaturated = if (traversalFactory.isDefined) traversalFactory.get.saturated else false
 
-        (config.forceLinear, isTraversalSaturdated, config.numberOfThreads) match {
+        /*
+        handle the various configurations -- forced linear traversal, saturated traversal, multithreaded (not supported currently)
+         */
+        (config.forceLinear, isTraversalSaturated, config.numberOfThreads) match {
           case (fl, sat, threads) if ((fl | sat) & threads == 1) => {
             val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
             guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)

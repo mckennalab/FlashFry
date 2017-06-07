@@ -20,8 +20,11 @@
  */
 
 package scoring
+import java.io.File
+
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.CRISPRSiteOT
+import scopt.PeelParser
 import standards.ParameterPack
 
 /**
@@ -29,7 +32,9 @@ import standards.ParameterPack
   * is a really close off-target for another guide in your results. This may lead to drop-out of a whole
   * region, which can be really confusing when looking at functional effects.
   */
-class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
+class ReciprocalOffTargets() extends ScoreModel {
+  var maxMismatch = 1
+
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
     */
@@ -51,7 +56,7 @@ class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     guides.foreach{guide1 => {
       guides.foreach{guide2 => {
-        if (bitEnc.mismatches(guide1.longEncoding,guide2.longEncoding) <= maximumMismatch) {
+        if (bitEnc.mismatches(guide1.longEncoding,guide2.longEncoding) <= maxMismatch) {
           guide1.namedAnnotations(scoreName) = guide1.namedAnnotations.getOrElse(scoreName,Array[String]()) :+ guide2.target.bases
         }
       }}
@@ -80,7 +85,17 @@ class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = {args}
+  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
+    val parser = new ROTOptions()
+
+    val remaining = parser.parse(args, ROTConfig()) map {
+      case(config,remainingParameters) => {
+        maxMismatch = config.maxMismatch
+        remainingParameters
+      }
+    }
+    remaining.getOrElse(Seq[String]())
+  }
 
   /**
     * set the bit encoder for this scoring metric
@@ -88,4 +103,15 @@ class ReciprocalOffTargets(maximumMismatch: Int = 2) extends ScoreModel {
     * @param bitEncoding
     */
   override def bitEncoder(bitEncoding: BitEncoding): Unit = {}
+}
+
+
+/*
+ * the configuration class, it stores the user's arguments from the command line, set defaults here
+ */
+case class ROTConfig(maxMismatch: Int = 2)
+
+class ROTOptions extends PeelParser[ROTConfig]("") {
+  opt[Int]("maxReciprocalMismatch") required() valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("the maximum number of mismatches between two targets with the region to be highlighted in the output")
+
 }

@@ -71,20 +71,12 @@ class BitPosition extends LazyLogging {
     val size             = ((encoding & BitPosition.sizeMask) >> BitPosition.shiftToIntSize).toInt
     val forwardStrand    = ((encoding & BitPosition.strandMask) >> BitPosition.shiftToIntStrand).toInt == 0
 
-    PositionInformation(contig,start,size,forwardStrand)
+    PositionInformationImpl(contig,start,size,forwardStrand)
   }
 
 }
 
-// everything you might want to know about a target's position in the genome
-case class PositionInformation(contig: String, start: Int, length: Int, forwardStrand: Boolean) {
 
-  def overlap(oContig: String, startPos: Int, endPos: Int): Boolean = {
-    if (contig != oContig) return false
-    if (((start + length) < startPos) || (endPos < startPos)) return false
-    true
-  }
-}
 
 
 object BitPosition {

@@ -51,8 +51,7 @@ object TargetInput {
       else if (ln.startsWith("# annotation:"))
         annotations(ln.split(":")(1)) = ln.split(":")(3).toInt
       else {
-        val guide = GuideEncodingTools.bedLineToCRISPRSiteOT(ln, bitEnc, posEncoder, overflowVal, annotations.toArray.sortBy(ki => ki._2).map{i => i._1})
-
+        val guide = GuideEncodingTools.bedLineToCRISPRSiteOT(ln, bitEnc, posEncoder, overflowVal, annotations.toArray.sortBy(ki => ki._2).map{i => i._1}, maxOTMismatch)
         guides += guide
       }
     }}
