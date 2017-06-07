@@ -12,8 +12,8 @@ trait PositionInformation {
 
   def overlap(oContig: String, startPos: Int, endPos: Int): Boolean = {
     if (contig != oContig) return false
-    (start < startPos && startPos < (start + length) && (start < (startPos + endPos)) ||
-      start >= startPos && start < (startPos + endPos) && (startPos < (start + length)))
+    (start < startPos && startPos < (start + length) && (start < (endPos)) ||
+      start >= startPos && start < (endPos) && (startPos < (start + length)))
   }
 
   def overlap(pInfo: PositionInformation): Boolean = {

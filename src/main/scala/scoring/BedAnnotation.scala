@@ -40,9 +40,9 @@ import scala.util.matching.Regex
   *
   **/
 class BedAnnotation() extends ScoreModel {
-  var inputBed: Option[File] = None
+  var inputBed: Option[Array[File]] = None
   val invervalRegex: Regex = """([\w\d]+):(\d+)-(\d+)""".r
-  var mappingInterval: Option[Tuple3[String,Int,Int]] = None
+  var mappingInterval: Option[Tuple3[String, Int, Int]] = None
 
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
@@ -52,7 +52,7 @@ class BedAnnotation() extends ScoreModel {
   /**
     * @return the description of method for the header of the output file
     */
-  override def scoreDescription(): String = "Annotated with overlaps to bed file " + inputBed.get.getAbsolutePath
+  override def scoreDescription(): String = "Annotated with overlaps to bed file " + inputBed.get.map{bd => bd.getAbsolutePath}.mkString(",")
 
   /**
     * load up the BED file and annotate each guide with information from any intersecting annotations
@@ -65,22 +65,25 @@ class BedAnnotation() extends ScoreModel {
     if (mappingInterval.isDefined) {
       val interval = mappingInterval.get
 
-      guides.foreach{guide => {
+      guides.foreach { guide => {
         val oldTarget = guide.target
         val newTarget = CRISPRSite(interval._1, oldTarget.bases, oldTarget.forwardStrand, oldTarget.position + interval._2, oldTarget.sequenceContext)
         guide.target = newTarget
-      }}
+      }
+      }
     }
 
-    (new BEDFile(inputBed.get)).foreach(bedEntry => {
-      bedEntry.map { entry => {
-        guides.foreach{guide => {
-          if (guide.target.overlap(entry.contig, entry.start, entry.stop))
-            guide.namedAnnotations(scoreName()) = guide.namedAnnotations.getOrElse(scoreName(), Array[String]()) :+ entry.name
+    inputBed.get.foreach{ bedObj => {
+      (new BEDFile(bedObj)).foreach(bedEntry => {
+        bedEntry.map { entry => {
+          guides.foreach { guide => {
+            if (guide.target.overlap(entry.contig, entry.start, entry.stop))
+              guide.namedAnnotations(scoreName()) = guide.namedAnnotations.getOrElse(scoreName(), Array[String]()) :+ entry.name
+          }}
         }}
-      }
-      }
-    })
+      })
+    }
+    }
   }
 
   /**
@@ -106,8 +109,8 @@ class BedAnnotation() extends ScoreModel {
     *
     * inputBedFile         the bed file to annotate with
     * useInGenomeLocations sometimes we don't encode an input fasta with the appropriate contig info (so it doesn't have)
-    *                             the real genome positions - if this parameter is set lookup any 0 mismatch hits and put their
-    *                             annotation info onto the guide. A way to recover genomic info
+    * the real genome positions - if this parameter is set lookup any 0 mismatch hits and put their
+    * annotation info onto the guide. A way to recover genomic info
     *
     * @param args the command line arguments
     */
@@ -115,13 +118,19 @@ class BedAnnotation() extends ScoreModel {
     val parser = new BedAnnotationOptions()
 
     val remaining = parser.parse(args, BedConfig()) map {
-      case(config,remainingParameters) => {
-        require((new File(config.inputBed)).exists(), "The input bed file doesn't exist: " + config.inputBed)
-        inputBed = Some(new File(config.inputBed))
+      case (config, remainingParameters) => {
+        config.inputBed.split(",").foreach { bedFile => {
+          require((new File(bedFile)).exists(), "The input bed file doesn't exist: " + config.inputBed)
+          if (!inputBed.isDefined)
+            inputBed = Some(Array[File](new File(bedFile)))
+          else
+            inputBed = Some(inputBed.get :+ new File(bedFile))
 
-        if (config.genomeTransform != "NONE")
-          parseOutInterval(config.genomeTransform)
+          if (config.genomeTransform != "NONE")
+            parseOutInterval(config.genomeTransform)
 
+        }
+        }
         remainingParameters
       }
     }
@@ -149,7 +158,7 @@ class BedAnnotation() extends ScoreModel {
  * the configuration class, it stores the user's arguments from the command line, set defaults here
  */
 case class BedConfig(inputBed: String = "",
-                          genomeTransform: String = "NONE")
+                     genomeTransform: String = "NONE")
 
 class BedAnnotationOptions extends PeelParser[BedConfig]("") {
   opt[String]("inputAnnotationBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with")

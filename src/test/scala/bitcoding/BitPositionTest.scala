@@ -71,8 +71,9 @@ class BitPositionTest extends FlatSpec with Matchers {
     // the bit positions is embedded completely within the range
     (decode.overlap("chr2",10,130)) should be (true)
 
-    // they overlap by one base on the low end of the bit positions
-    (decode.overlap("chr2",90,100)) should be (true)
+    // check overlap by one base on the low end of the bit positions
+    (decode.overlap("chr2",90,100)) should be (false)
+    (decode.overlap("chr2",90,101)) should be (true)
 
     // they overlap by one base on the high end of the bit positions
     (decode.overlap("chr2",122,200)) should be (true)
