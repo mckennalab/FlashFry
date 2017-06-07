@@ -9,7 +9,7 @@
 
 FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. 
 
-Sections:
+### Sections:
 - [Quickstart](#quickstart)
 - [Command line options](#command-line-options)
 - [On and off-target scoring](#scoring-methods)
