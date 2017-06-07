@@ -41,8 +41,8 @@ class BuildOffTargetDatabase extends LazyLogging {
 
   def runWithOptions(remainingOptions: Seq[String]) {
     // parse the command line arguments
-    val parser = new OptionParser[TallyConfig]("Tally") {
-      head("TallyScores", "1.0")
+    val parser = new OptionParser[TallyConfig]("index") {
+      head("index", "1.3")
 
       // *********************************** Inputs *******************************************************
       opt[String]("analysis") required() valueName ("<string>") action {
@@ -53,7 +53,7 @@ class BuildOffTargetDatabase extends LazyLogging {
       opt[String]("reference") required() valueName ("<string>") action { (x, c) => c.copy(reference = x) } text ("the reference file")
       opt[String]("database") required() valueName ("<string>") action { (x, c) => c.copy(output = x) } text ("the output file")
       opt[String]("tmpLocation") required() valueName ("<string>") action { (x, c) => c.copy(tmp = x) } text ("the output file")
-      opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
+      opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, spcas9, spcas9ngg)")
       opt[Int]("binSize") valueName ("<int>") action { (x, c) => c.copy(binSize = x) } text ("how many bins (and subsequent open files) should we use when sorting our genome")
     }
 

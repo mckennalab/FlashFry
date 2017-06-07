@@ -146,8 +146,8 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           numberOfThreads: Int = 1)
 
 
-class OffTargetBaseOptions extends OptionParser[DiscoverConfig]("DiscoverOTSites") {
-  head("DiscoverOTSites", "1.0")
+class OffTargetBaseOptions extends OptionParser[DiscoverConfig]("discover") {
+  head("discover", "1.3")
 
   // *********************************** Inputs *******************************************************
   opt[String]("analysis") required() valueName ("<string>") action {

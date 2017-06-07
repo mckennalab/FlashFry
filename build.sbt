@@ -1,6 +1,6 @@
 name := "FlashFry"
 
-version := "1.2"
+version := "1.3"
 
 scalaVersion := "2.12.1"
 
@@ -25,19 +25,8 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.12" % "2.4.14"
 
 startYear := Some(2015)
+
 headerLicense := Some(HeaderLicense.MIT("2015", "Aaron McKenna"))
-
-// libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0"
-
-//  libraryDependencies += "com.aparapi" % "aparapi" % "1.3.4"
-//  javacOptions += "-g"
-//  javaOptions += "–Dcom.amd.aparapi.enableExecutionModeReporting=true"
-
-// set the main class for the main 'run' task
-
-// save some time in non-testing builds by killing asserts
-//
-// scalacOptions ++= Seq("-Xelide-below", sys.props.getOrElse("elide.below", "2500"))
 
 mainClass in (Compile, packageBin) := Some("main.scala.Main")
 

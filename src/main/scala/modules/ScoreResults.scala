@@ -84,7 +84,7 @@ case class ScoreConfig(inputBED: String = "",
                        scoringMetrics: Seq[String] = Seq())
 
 
-class ScoreBaseOptions extends PeelParser[ScoreConfig]("DiscoverOTSites") {
+class ScoreBaseOptions extends PeelParser[ScoreConfig]("score") {
   // *********************************** Inputs *******************************************************
   opt[String]("input") required() valueName ("<string>") action { (x, c) => c.copy(inputBED = x) } text ("the reference file to scan for putitive targets")
   opt[String]("output") required() valueName ("<string>") action { (x, c) => c.copy(outputBED = x) } text ("the output file (in bed format)")
