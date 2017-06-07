@@ -65,7 +65,18 @@ java -Xmx4g -jar FlashFry-assembly-1.2.jar \
 ```
 # Command line options
 
-Command line options for each module is listed below:
+Modules are chosen using the `--analysis` option. Three options are currently supported, `index`, `discover`, and `score`. The first, `index` creates an off-target database from the reference genome of interest. `discover` takes a candidate region of interest as a fasta file and discovers CRISPR guide candidates. Lastly `score` produces on and off-target activity scores using schemes developed by the genomics community. Each modules options are listed below:
+
+### --analysis index
+
+- `reference (required)` - the input fasta reference file you'd like to discover off-target sequences in
+- `database (required)` - the output database file to generate
+- `enzyme (optional, default to spcas9)` - which enzyme to consider when making discovering sites in the reference. Options include:
+     - `cpf1`- 24 base targets with a 5' TTTN sequence
+     - `spcas9` - 23 base targets with a 3' NRG (NAG/NGG) sequence
+     - `spcas9ngg` - 23 base targets with a 3' NGG sequence
+     - `spcas9nag` - 23 base targets with a 3' NAG sequence
+- `binSize (optional, default to 7)` - what bin size should we use when indexing the fasta file. Originally this had a bigger effect on search speed, but now individual bins can have their own lookup tables, reducing the importance of this parameter. 
 
 ### --analysis discover
 
@@ -174,22 +185,22 @@ For lookup we perform something like the following:
 
 # FAQ
 
-Why seperate the off-target discovery and scoring parts of FlashFry?
+#### Why seperate the off-target discovery and scoring parts of FlashFry?
 
 Off-target discovery can have high computational costs for large putitive target sets (say 10,000 to 100,000s of candidate guides). To avoid having to do this step every time you'd like to switch scoring metrics, we thought it was best to split the two stages up.
 
-Why the does the output file look the way it does?
+#### Why the does the output file look the way it does?
 
 We wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off the traditional header line in favor of listing column details in the header section. It should be 
 
-How much memory should I give FlashFry?
+#### How much memory should I give FlashFry?
 
 The memory requirements of FlashFly are determined by the number guides you're looking at and the number of off-targets you allow per guide candidate. The first factor is controlled by the size of the region you're looking at, and the second is controlled by the `--maximumOffTargets` parameter in the discovery phase. Generally with < 100K guides and `--maximumOffTargets` set to 2000 you'll be able to run with 4g of memory or less (such a memory limit is set in the JVM with the `-Xmx4g` command line parameter, right after `java`). You may have to increase this number with higher guide counts, higher mismatch thresholds, or if you want to retain more off-targets.
 
-Why are some scores NA?
+#### Why are some scores NA?
 
 If the scoring metric is unable to produce a score for the specified guide it will output NA. This commonly happens when there isn't enough sequence context on either side of a guide for the on-target scoring. 
 
-How do we score the CFD from Doench 2016?
+#### How do we score the CFD from Doench 2016?
 
 The CFD scores how likely a guide is to cut a specific off-target, with 1 being an exact match, and 0 being no activity. It's a little unclear of the best way to combine this over a set of off-targets. For instance if a guide edits one off-target site with a score or 0.8 and another off-target with a score of 0.2, what score do we use for the guide? We currently list the highest score -- the score from the off-target that's the most likely to be edited. It would be possible to use an aggregation score similiar to the crispr.mit.edu, where all off-targets downweight the overall score.
