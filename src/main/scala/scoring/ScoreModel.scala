@@ -43,6 +43,11 @@ trait ScoreModel {
   def scoreDescription(): String
 
   /**
+    * @return get a listing of the header columns for this score metric
+    */
+  def headerColumns(): Array[String]
+
+  /**
     * score an array of guides. We provide all the guides at once because some metrics
     * look at reciprocal off-targets, or are better suited to traverse an input file once
     * while considering all guides (like BED annotation)
@@ -95,7 +100,7 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  def scoreGuide(guide: CRISPRSiteOT): String
+  def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]]
 
   /**
     * score an array of guides. We provide all the guides at once because some metrics
@@ -113,8 +118,12 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
         logger.info("For scoing metric " + this.scoreName() + " we're scoring our " + index + " guide")
       }
 
-      if (this.validOverGuideSequence(pack, hit))
-        hit.namedAnnotations(this.scoreName()) = Array[String](scoreGuide(hit).toString)
+      if (this.validOverGuideSequence(pack, hit)) {
+        val scores = scoreGuide(hit)
+        this.headerColumns().zip(scores).foreach{ case(col,scores) =>
+          hit.namedAnnotations(col) = scores
+        }
+      }
     }
     }
   }
@@ -131,24 +140,7 @@ object SingleGuideScoreModel {
   def findGuideSequenceWithinContext(guide: CRISPRSiteOT): Int = {
     if (!guide.target.sequenceContext.isDefined) return -1
 
-    // find the guide within the context, and determine if we have enough flanking
-    // sequence for the scoring metric. We need to look ahead to catch embedded instances of the guide
-    val guideRegex = ("""(?=""" + guide.target.bases + """)""").r
-
-    val guidePos = guideRegex.findAllIn(guide.target.sequenceContext.get).matchData.toArray
-
-    guidePos.size match {
-      case n if n <= 0 => return -1 // we have no matches, return negitive one
-      case 1 => return guidePos(0).start
-      case n if n > 1 => {
-        // here we need to figure out which instance to pick as the guide. Our goal will be to
-        // pick the target most centered in the window
-        val distanceToCenter = guidePos.map { tgt =>
-          math.abs((tgt.start + (guide.target.bases.size / 2.0)) - guide.target.sequenceContext.get.size / 2.0)
-        }
-        val minIndex = distanceToCenter.zipWithIndex.min._2
-        return guidePos(minIndex).start
-      }
-    }
+    val guideLen = guide.target.bases.size
+    (guide.target.sequenceContext.get.size - guideLen) / 2
   }
 }

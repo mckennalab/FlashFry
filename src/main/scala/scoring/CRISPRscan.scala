@@ -60,9 +60,9 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  def scoreGuide(guide: CRISPRSiteOT): String = {
+  def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     require(validOverGuideSequence(Cas9ParameterPack, guide), "We're not a valid score over this guide")
-    (calcScore(guide)).toString
+    Array[Array[String]](Array[String]((calcScore(guide)).toString))
   }
 
   /**
@@ -115,6 +115,11 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging {
 
     enoughContextOnTheLeft & enoughContextOnTheRight
   }
+
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("Moreno-Mateos2015OnTarget")
 }
 
 

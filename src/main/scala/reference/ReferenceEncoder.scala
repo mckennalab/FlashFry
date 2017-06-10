@@ -107,8 +107,7 @@ trait CRISPRDiscovery {
   * @param params           the parameters to look for
   * @param flankingSequence pull out X bases on either side of the putitive target
   */
-case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, flankingSequence: Int)
-  extends LazyLogging with CRISPRDiscovery {
+case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, flankingSequence: Int) extends LazyLogging with CRISPRDiscovery {
 
   val currentBuffer = mutable.ArrayBuilder.make[String]()
   var currentContig: Option[String] = None
@@ -123,6 +122,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
     val contigBuffer = currentBuffer.result().mkString("")
 
     if (currentContig.isDefined) {
+
       // check forward
       (params.fwdRegex findAllMatchIn contigBuffer).foreach { fwdMatch => {
         val start = fwdMatch.start
@@ -147,7 +147,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
 
         if (!subStr.contains("N")) {
           val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence))
-          var site = CRISPRSite(currentContig.get, subStr, true, start, Some(context))
+          var site = CRISPRSite(currentContig.get, subStr, false, start, Some(context))
           binWriter.addHit(site)
           targetCount += 1
         }

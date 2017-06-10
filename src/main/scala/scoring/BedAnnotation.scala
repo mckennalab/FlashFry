@@ -41,6 +41,8 @@ import scala.util.matching.Regex
   **/
 class BedAnnotation() extends ScoreModel {
   var inputBed: Option[Array[File]] = None
+  var inputBedNames: Option[Array[String]] = None
+
   val invervalRegex: Regex = """([\w\d]+):(\d+)-(\d+)""".r
   var mappingInterval: Option[Tuple3[String, Int, Int]] = None
 
@@ -73,12 +75,12 @@ class BedAnnotation() extends ScoreModel {
       }
     }
 
-    inputBed.get.foreach{ bedObj => {
+    inputBed.get.zip(inputBedNames.get).foreach{ case(bedObj, bedName) => {
       (new BEDFile(bedObj)).foreach(bedEntry => {
         bedEntry.map { entry => {
           guides.foreach { guide => {
             if (guide.target.overlap(entry.contig, entry.start, entry.stop))
-              guide.namedAnnotations(scoreName()) = guide.namedAnnotations.getOrElse(scoreName(), Array[String]()) :+ entry.name
+              guide.namedAnnotations(bedName) = guide.namedAnnotations.getOrElse(bedName, Array[String]()) :+ entry.name
           }}
         }}
       })
@@ -120,12 +122,18 @@ class BedAnnotation() extends ScoreModel {
     val remaining = parser.parse(args, BedConfig()) map {
       case (config, remainingParameters) => {
         config.inputBed.split(",").foreach { bedFile => {
-          require((new File(bedFile)).exists(), "The input bed file doesn't exist: " + config.inputBed)
-          if (!inputBed.isDefined)
-            inputBed = Some(Array[File](new File(bedFile)))
-          else
-            inputBed = Some(inputBed.get :+ new File(bedFile))
+          assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
+          val nameAndFile = bedFile.split(":")
+          assert(nameAndFile.size == 2, "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
 
+          require((new File(nameAndFile(1))).exists(), "The input bed file doesn't exist for name file pair: " + config.inputBed)
+          if (!inputBed.isDefined) {
+            inputBed = Some(Array[File](new File(nameAndFile(1))))
+            inputBedNames = Some(Array[String](nameAndFile(0)))
+          } else {
+            inputBed = Some(inputBed.get :+ new File(nameAndFile(1)))
+            inputBedNames = Some(inputBedNames.get :+ nameAndFile(0))
+          }
           if (config.genomeTransform != "NONE")
             parseOutInterval(config.genomeTransform)
 
@@ -137,6 +145,10 @@ class BedAnnotation() extends ScoreModel {
     remaining.getOrElse(Seq[String]())
   }
 
+  /**
+    * store the specified interval to adjustment to the fasta positions
+    * @param interval
+    */
   def parseOutInterval(interval: String) {
     val matches = invervalRegex.findAllMatchIn(interval).toArray
     assert(matches.size == 1, "The interval " + interval + " didn't parse into a single interval")
@@ -151,6 +163,11 @@ class BedAnnotation() extends ScoreModel {
     * @param bitEncoding
     */
   override def bitEncoder(bitEncoding: BitEncoding): Unit = {} // we don't need one
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+
+  override def headerColumns(): Array[String] = inputBedNames.getOrElse(Array[String]())
 }
 
 
@@ -161,6 +178,6 @@ case class BedConfig(inputBed: String = "",
                      genomeTransform: String = "NONE")
 
 class BedAnnotationOptions extends PeelParser[BedConfig]("") {
-  opt[String]("inputAnnotationBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with")
+  opt[String]("inputAnnotationBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with, and an associated name (name:bedfile)")
   opt[String]("transformPositions") valueName ("<string>") action { (x, c) => c.copy(genomeTransform = x) } text ("Try to find our genome location by using matching zero-mismatch in-genome targets")
 }

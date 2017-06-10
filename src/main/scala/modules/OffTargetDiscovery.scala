@@ -27,7 +27,6 @@ import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
 import utils.BaseCombinationGenerator
-import targetio.TargetOutput
 import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
 import reference.{CRISPRSite, ReferenceEncoder}
 import reference.binary.BinaryHeader
@@ -39,6 +38,8 @@ import standards.ParameterPack
 import scala.collection.mutable
 import scala.io.Source
 import scopt._
+import scoring.ScoreModel
+import targetio.TabDelimitedOutput
 
 /**
   * Scan a fasta file for targets and tally their off-targets against the genome
@@ -65,7 +66,6 @@ class OffTargetDiscovery extends LazyLogging with Module {
         val guideOTs = guideHits.guideHits.map {
           guide => new CRISPRSiteOT(guide, header.bitCoder.bitEncodeString(StringCount(guide.bases, 1)), config.maximumOffTargets)
         }.toArray
-
 
         val guideStorage = new ResultsAggregator(guideOTs)
 
@@ -118,13 +118,17 @@ class OffTargetDiscovery extends LazyLogging with Module {
         logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
 
         // now output the scores per site
-        TargetOutput.output(config.outputFile,
-          guideStorage,
-          config.includePositionOutputInformation,
-          config.markTargetsWithExactGenomeHits,
+        val output = new TabDelimitedOutput(new File(config.outputFile),
           header.bitCoder,
           header.bitPosition,
-          Array[String]())
+          Array[ScoreModel](),
+          true,
+          config.includePositionOutputInformation)
+
+        guideStorage.wrappedGuides.foreach{gd => {
+          output.write(gd.otSite)
+        }}
+        output.close()
       }
     }
   }

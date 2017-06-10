@@ -26,7 +26,7 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("CGCGCGGCCCCAGTTCTGCGCAG", 1)),1000)
     otListLong.foreach{ot => otHit.addOT(new CRISPRHit(ot,Array[Long](0l)))}
 
-    (dScore.scoreGuide(otHit).toDouble) should be(0.0 +- 0.001) //0.016806722683753505, but reduced to zero by CRISPOR rules
+    (dScore.scoreGuide(otHit)(0)(0).toDouble) should be(0.0 +- 0.001) //0.016806722683753505, but reduced to zero by CRISPOR rules
   }
 
 
@@ -42,7 +42,7 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("AAAAGGGTTTGGGATATAGCTGG", 1)),1000)
     otListLong.foreach{ot => otHit.addOT(new CRISPRHit(ot,Array[Long](0l)))}
 
-    (dScore.scoreGuide(otHit).toDouble) should be(0.5238095242619047 +- 0.001)
+    (dScore.scoreGuide(otHit)(0)(0).toDouble) should be(0.5238095242619047 +- 0.001)
   }
 
   "Doench2016CFDScore" should "correctly a second guide correctly according to the python code" in {
@@ -70,7 +70,7 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("CGCGCGGCCCCAGTTCTGCGCAG", 1)),1000)
     otListLong2.foreach{ot => otHit.addOT(new CRISPRHit(ot,Array[Long](0l)))}
 
-    (dScore.scoreGuide(otHit).toDouble) should be(0.30252100830756307 +- 0.001)
+    (dScore.scoreGuide(otHit)(0)(0).toDouble) should be(0.30252100830756307 +- 0.001)
   }
 
 }

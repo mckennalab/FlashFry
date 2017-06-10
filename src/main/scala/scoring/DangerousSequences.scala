@@ -46,26 +46,24 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  override def scoreGuide(guide: CRISPRSiteOT): String = {
-    var problems = Array[String]()
+  override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
+
+
+    var problems = Array.fill[String](3)("NONE")
 
     if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
-      problems :+= "GC_" + Utils.gcContent(guide.target.bases)
+      problems(0) = "GC_" + Utils.gcContent(guide.target.bases)
 
     if (guide.target.bases.contains("TTTT"))
-      problems :+= "PolyT"
+      problems(1) = "PolyT"
 
     if (guide.offTargets.size > 0) {
       val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) 1 else 0}.sum
-      if (inGenomeCount > 0) problems :+= "IN_GENOME=" + inGenomeCount
+      if (inGenomeCount > 0)
+        problems(2) = "IN_GENOME=" + inGenomeCount
     }
 
-    if (problems.size == 0)
-      "NONE"
-    else
-      problems.mkString(",")
-
-
+    problems.map{prob => Array[String](prob)}
   }
 
   /**
@@ -109,4 +107,9 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @param bitEncoding
     */
   override def bitEncoder(bitEncoding: BitEncoding): Unit = {this.bitEncoder = Some(bitEncoding)}
+
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("dangerous_GC","dangerous_polyT","dangerous_in_genome")
 }

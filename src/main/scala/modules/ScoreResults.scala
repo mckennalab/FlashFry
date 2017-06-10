@@ -27,10 +27,10 @@ import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.ResultsAggregator
 import reference.binary.BinaryHeader
-import scoring.ScoringManager
+import scoring.{ScoreModel, ScoringManager}
 import standards.ParameterPack
-import targetio.{TargetInput, TargetOutput}
 import scopt._
+import targetio.{TabDelimitedInput, TabDelimitedOutput}
 
 /**
   * Given a results bed file from off-target discovery, annotate it with scores using established scoring schemes
@@ -52,21 +52,33 @@ class ScoreResults extends LazyLogging with Module {
 
         // load up the scored sites into a container
         logger.info("Loading input BED file into CRISPR objects.. ")
-        val posEncoderAndOffTargets = TargetInput.inputBedToTargetArray(new File(config.inputBED), bitEnc, 2000, config.maxMismatch)
+        val guides = (new TabDelimitedInput(new File(config.inputBED),bitEnc,header.bitPosition,config.maxMismatch)).guides.toArray
 
         // get a scoring manager
-        val scoringManager = new ScoringManager(bitEnc, posEncoderAndOffTargets._1, config.scoringMetrics, args.toArray)
+        val scoringManager = new ScoringManager(bitEnc, header.bitPosition, config.scoringMetrics, args.toArray)
 
         // score all the sites
         logger.info("Scoring all guides...")
-        scoringManager.scoreGuides(posEncoderAndOffTargets._2, config.maxMismatch, header)
+        scoringManager.scoreGuides(guides, config.maxMismatch, header)
 
         logger.info("Aggregating results...")
-        val results = new ResultsAggregator(posEncoderAndOffTargets._2)
+        val results = new ResultsAggregator(guides)
 
         // output a new data file with the scored results
         logger.info("Writing annotated guides to the output file...")
-        TargetOutput.output(config.outputBED, results, true, false, bitEnc, posEncoderAndOffTargets._1, scoringManager.scoringAnnotations)
+
+        // now output the scores per site
+        val output = new TabDelimitedOutput(new File(config.outputBED),
+          header.bitCoder,
+          header.bitPosition,
+          scoringManager.scoringModels.toArray,
+          config.includeOTs,
+          true)
+
+        results.wrappedGuides.foreach{gd => {
+          output.write(gd.otSite)
+        }}
+        output.close()
 
       }
     }
@@ -81,7 +93,8 @@ case class ScoreConfig(inputBED: String = "",
                        outputBED: String = "",
                        binaryOTFile: String = "",
                        maxMismatch: Int = Int.MaxValue,
-                       scoringMetrics: Seq[String] = Seq())
+                       scoringMetrics: Seq[String] = Seq(),
+                        includeOTs: Boolean = false)
 
 
 class ScoreBaseOptions extends PeelParser[ScoreConfig]("score") {
@@ -91,6 +104,7 @@ class ScoreBaseOptions extends PeelParser[ScoreConfig]("score") {
   opt[Seq[String]]("scoringMetrics") required() valueName("<scoringMethod1>,<scoringMethod1>...") action{ (x,c) => c.copy(scoringMetrics = x) } text ("scoring methods to include")
   opt[Int]("maxMismatch") valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("only consider off-targets that have a maximum mismatch the guide of X")
   opt[String]("database") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
+  opt[Unit]("includeOTs") valueName ("<string>") action { (x, c) => c.copy(includeOTs = true) } text ("include the off-target hits")
 
   // some general command-line setup stuff
   note("match off-targets for the specified guides to the genome of interest\n")

@@ -39,7 +39,7 @@ class ClosestHit extends SingleGuideScoreModel {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  override def scoreGuide(guide: CRISPRSiteOT): String = {
+  override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     var closest = Int.MaxValue
     var count = 0
 
@@ -54,9 +54,9 @@ class ClosestHit extends SingleGuideScoreModel {
     }
 
     if (closest == Int.MaxValue)
-      "MIN_MISMATCH=UNK,0"
+      Array[Array[String]](Array[String]("UNK"),Array[String]("0"))
     else
-      "MIN_MISMATCH=" + closest + "," + count
+      Array[Array[String]](Array[String](closest.toString),Array[String](count.toString))
   }
 
   /**
@@ -100,4 +100,9 @@ class ClosestHit extends SingleGuideScoreModel {
     * @param bitEncoding
     */
   override def bitEncoder(bitEncoding: BitEncoding): Unit = {this.bitEncoder = Some(bitEncoding)}
+
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("closestInGneome")
 }

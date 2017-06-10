@@ -28,13 +28,13 @@ class ScoreModelTest extends FlatSpec with Matchers {
 
   "Scoring model" should "find the position of a guide correctly 2" in {
     val guideSeq = "GTCAGCTGCCCCCACCTCCCTGG"
-    val leftFlank = ""
-    val rightFlank = "AAAAAA"
+    val leftFlank = "GGTTA"
+    val rightFlank = "AAAAA"
 
     val crispr = CRISPRSite("test", guideSeq, true, 0, Some(leftFlank + guideSeq + rightFlank))
     val cOT = new CRISPRSiteOT(crispr,bitEnc.bitEncodeString(guideSeq),2000)
 
-    (SingleGuideScoreModel.findGuideSequenceWithinContext(cOT)) should be(0)
+    (SingleGuideScoreModel.findGuideSequenceWithinContext(cOT)) should be(5)
 
   }
 
@@ -47,6 +47,14 @@ class ScoreModelTest extends FlatSpec with Matchers {
     val cOT = new CRISPRSiteOT(crispr,bitEnc.bitEncodeString(guideSeq),2000)
 
     (SingleGuideScoreModel.findGuideSequenceWithinContext(cOT)) should be(10)
+  }
 
+  "Scoring model" should "find the correct position of a real problematic guide" in {
+    val guideSeq = "GAGAGAGAGAGAGAGAGAGAGAG"
+
+    val crispr = CRISPRSite("test", guideSeq, true, 0, Some("TGGAGAGAGAGAGAGAGAGAGAGAGAGAGAGATGG"))
+    val cOT = new CRISPRSiteOT(crispr,bitEnc.bitEncodeString(guideSeq),2000)
+
+    (SingleGuideScoreModel.findGuideSequenceWithinContext(cOT)) should be(6)
   }
 }

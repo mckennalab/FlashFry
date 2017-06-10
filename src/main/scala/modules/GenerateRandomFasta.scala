@@ -27,7 +27,6 @@ import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage}
 import utils.BaseCombinationGenerator
-import targetio.TargetOutput
 import reference.traverser.SeekTraverser
 import reference.{CRISPRSite, ReferenceEncoder}
 import standards.ParameterPack

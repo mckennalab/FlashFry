@@ -53,9 +53,9 @@ class ScoringManager(bitEncoder: BitEncoding, posEncoder: BitPosition, scoringMe
 
   def scoreGuides(guides: Array[CRISPRSiteOT], maxMismatch: Int, header: BinaryHeader) {
 
-    logger.info("Scoring guides...")
     scoringModels.foreach {
       model => {
+        logger.info("Scoring with model " + model.scoreName())
         model.scoreGuides(guides, bitEncoder, posEncoder, header.parameterPack)
       }
     }

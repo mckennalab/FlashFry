@@ -28,7 +28,7 @@ class CRISPRScanTest extends FlatSpec with Matchers {
 
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("GGTGGCGCTGCTGGATGGACGGG", 1)),1000)
 
-    (mmScore.scoreGuide(otHit).toDouble) should be(77.0 +- 0.5)
+    (mmScore.scoreGuide(otHit)(0)(0).toDouble) should be(77.0 +- 0.5)
 
   }
 
@@ -38,7 +38,7 @@ class CRISPRScanTest extends FlatSpec with Matchers {
 
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("GGTGGGGCTGAAAGATGGACGGG", 1)),1000)
 
-    (mmScore.scoreGuide(otHit).toDouble) should be(68.0 +- 0.5)
+    (mmScore.scoreGuide(otHit)(0)(0).toDouble) should be(68.0 +- 0.5)
 
   }
 

@@ -49,9 +49,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
   // has to be setup before we do anything -- check with asserts
   var bitEncoder: Option[BitEncoding] = None
 
-  override def scoreName(): String = "MITOffTarget"
+  override def scoreName(): String = "Hsu2013"
 
-  def scoreGuide(cRISPRHit: CRISPRSiteOT): String = score_crispr(cRISPRHit).toString
+  def scoreGuide(cRISPRHit: CRISPRSiteOT): Array[Array[String]] = Array[Array[String]](Array[String](score_crispr(cRISPRHit).toString))
 
   /**
     * @return the description of method for the header of the output file
@@ -174,4 +174,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = validOverScoreModel(enzyme)
+
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("Hsu2013")
 }

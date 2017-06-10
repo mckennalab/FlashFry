@@ -48,7 +48,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  def scoreGuide(guide: CRISPRSiteOT): String = {
+  def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     assert(guide.target.bases.size == 23, "We saw an unexpected guide size of " + guide.target.bases.size)
     assert(bitCode.isDefined, "Our bitEncoder has not been set")
 
@@ -83,9 +83,9 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
 
     // guided by CRISPOR paper -- thresholding at 0.023
     if (totalScore >= 0.023)
-      (totalScore).toString
+      Array[Array[String]](Array[String]((totalScore).toString))
     else
-      "0.0"
+      Array[Array[String]](Array[String]("0.0"))
   }
 
   /**
@@ -148,6 +148,12 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
     // println("Final " + score)
     score
   }
+
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("Doench2016CDFScore")
+
 
   def specialReverseCompBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'U') 'A' else c
 }

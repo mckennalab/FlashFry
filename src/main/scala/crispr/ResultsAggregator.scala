@@ -25,12 +25,16 @@ import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Sorting
 
 /**
   * we spent a lot of time in various search functions mapping guides stored as Long values
   * back to their intended sequence -- this class aims to make that as simple and fast as possible
   */
 class ResultsAggregator(guides: Array[CRISPRSiteOT]) extends LazyLogging {
+
+  // presort the guides
+  Sorting.quickSort(guides)
 
   var wrappedGuides = Array[IndexedCRISPROT]()
   var indexedGuides = Array[GuideIndex]()

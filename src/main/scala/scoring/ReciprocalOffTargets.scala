@@ -103,6 +103,11 @@ class ReciprocalOffTargets() extends ScoreModel {
     * @param bitEncoding
     */
   override def bitEncoder(bitEncoding: BitEncoding): Unit = {}
+
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("ReciprocalOffTargets")
 }
 
 

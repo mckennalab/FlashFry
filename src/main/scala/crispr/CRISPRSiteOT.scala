@@ -21,10 +21,10 @@
 
 package crispr
 
-import bitcoding.BitEncoding
+import bitcoding.{BitEncoding, BitPosition}
 import reference.CRISPRSite
-
 import com.typesafe.scalalogging.LazyLogging
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -64,7 +64,7 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
     }
   }
 
-  def compare(that: CRISPRSiteOT): Int = (target.bases) compare (that.target.bases)
+  def compare(that: CRISPRSiteOT): Int = (target.start) compare (that.target.start)
 
   /**
     * filter down the off-target list by a maximal off-target distance
@@ -78,7 +78,4 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
   }
 }
 
-class CRISPRHit(sq: Long, coord: Array[Long]) {
-  val sequence = sq
-  val coordinates = coord
-}
+

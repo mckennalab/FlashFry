@@ -89,7 +89,7 @@ object DatabaseWriter extends LazyLogging {
 
       blockStream.write(Utils.longArrayToByteArray(encodedBlock))
 
-      // save the start of the block, he block size uncompressed in bytes, and the number of targets
+      // save the start of the block, the block size uncompressed in bytes, and the number of targets
       compressedBlockInfo(bin) = BlockOffset(oldPos,encodedBlock.size * bytesInLong, nextBlock.size)
 
       if ((index + 1 ) % 1000 == 0) logger.info("Writing bin " + bin + " our " + index + " bin")

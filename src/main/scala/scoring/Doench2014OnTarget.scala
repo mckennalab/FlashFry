@@ -54,17 +54,18 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     * @param guide the guide with it's off-targets
     * @return a score (as a string)
     */
-  def scoreGuide(guide: CRISPRSiteOT): String = {
-    require(validOverGuideSequence(Cas9ParameterPack,guide), "We're not a valid score over this guide: " + guide.target.sequenceContext)
+  def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
+    require(validOverGuideSequence(Cas9ParameterPack,guide), "We're not a valid score over this guide: " + guide.target.bases)
 
-    val guidePos = guide.target.sequenceContext.get.indexOf(guide.target.bases)
-    (calc_score(guide.target.sequenceContext.get.slice(guidePos - Doench2014OnTarget.contextInFront, guidePos + guide.target.bases.length + Doench2014OnTarget.contextBehind))).toString
+    val guidePos = SingleGuideScoreModel.findGuideSequenceWithinContext(guide)
+    val guideSeq = guide.target.sequenceContext.get.slice(guidePos - Doench2014OnTarget.contextInFront, guidePos + guide.target.bases.length + Doench2014OnTarget.contextBehind)
+    assert(guideSeq.size == 30,"Sequence length is " + guideSeq.size + " not 30; guidePos = " + guidePos + " sliced from " + (guidePos - Doench2014OnTarget.contextInFront) + " to " + (guidePos + guide.target.bases.length + Doench2014OnTarget.contextBehind) + " guide: " + guide.target.bases + " sc: " + guide.target.sequenceContext.get)
+    Array[Array[String]](Array[String](calc_score(guideSeq).toString))
   }
 
   /**
     * this method is valid for Cas9
     *
-    * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
   override def validOverScoreModel(pack: ParameterPack): Boolean = pack.enzyme match {
@@ -150,7 +151,10 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     return final_score
   }
 
-
+  /**
+    * @return get a listing of the header columns for this score metric
+    */
+  override def headerColumns(): Array[String] = Array[String]("Doench2014OnTarget")
 }
 
 // constants they use in the paper
