@@ -191,11 +191,11 @@ Off-target discovery can have high computational costs for large putitive target
 
 #### Why the does the output file look the way it does?
 
-We wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off a traditional header line in favor of listing column details in the header section. Code to load results into a pandas dataframe is in the scripts directory.
+We orignially wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off a traditional header line in favor of listing column details in the header section. In the end this had limited utility, especially when we added the capability to annotate with BED files to FlashFry. 
 
 #### How much memory should I give FlashFry?
 
-The memory requirements of FlashFly are determined by the number guides you're looking at and the number of off-targets you allow per guide candidate. The first factor is controlled by the size of the region you're looking at, and the second is controlled by the `--maximumOffTargets` parameter in the discovery phase. Generally with < 100K guides and `--maximumOffTargets` set to 2000 you'll be able to run with 4g of memory or less (such a memory limit is set in the JVM with the `-Xmx4g` command line parameter, right after `java`). You may have to increase this number with higher guide counts, higher mismatch thresholds, or if you want to retain more off-targets.
+The memory requirements of FlashFly are determined by the number guides you're looking at and the number of off-targets you allow per guide candidate. The first factor is controlled by the size of the region you're looking at, and the second is controlled by the `--maximumOffTargets` parameter in the discovery phase. Generally with < 100K guides and `--maximumOffTargets` set to 2000 you'll be able to run with 4g of memory or less (such a memory limit is set in the JVM with the `-Xmx4g` command line parameter, right after `java`). You limit will need to increase with higher guide counts, higher mismatch thresholds, or if you want to retain more off-targets.
 
 #### Why are some scores NA?
 
@@ -203,4 +203,4 @@ If the scoring metric is unable to produce a score for the specified guide it wi
 
 #### How do we score the CFD from Doench 2016?
 
-The CFD scores describes how likely a guide is to cut a specific off-target, with 1 being an exact match, and 0 being no activity. It's a little unclear of the best way to combine this over a set of off-targets. For instance if a guide edits one off-target site with a score or 0.8 and another off-target with a score of 0.2, what score do we use for the guide? We currently list the highest score -- the score from the off-target that's the most likely to be edited. It would be possible to use an aggregation score similiar to the crispr.mit.edu, where all off-targets downweight the overall score.
+The CFD scores describes how likely a guide is to cut a specific off-target, with 1 being an exact match, and 0 being no activity. It's a little unclear of the best way to combine this over a set of off-targets. For instance if a guide edits one off-target site with a score or 0.8 and another off-target with a score of 0.2, what score do we use for the guide? We currently list the highest score -- the score from the off-target that's the most likely to be edited. It would be possible to use an aggregation score similiar to the crispr.mit.edu, where all off-targets upweight the overall score.
