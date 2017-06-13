@@ -7,7 +7,7 @@
 <img src="https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png" width="500">
 </p>
 
-FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. If you're looking to characterize a smaller number of guides or want a nice web interface we recommend [crispor.org](https://crispor.org).
+FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. If you're looking to characterize a small sequence regions or would like a nice web interface we recommend [crispor.org](https://crispor.org).
 
 #### Sections:
 - [Quickstart](#quickstart)
