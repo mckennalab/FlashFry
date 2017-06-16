@@ -22,7 +22,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.3.0/FlashFry-assembly-1.3.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.4/FlashFry-assembly-1.4.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
@@ -31,11 +31,11 @@ wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quicks
 tar xf quickstart_data.tar.gz
 ```
 
-then run the database creation step (this should take a few minutes, it takes ~137 seconds on my laptop):
+then run the database creation step (this should take a few minutes, it takes ~152 seconds on my laptop):
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.3.jar \
+java -Xmx4g -jar FlashFry-assembly-1.4.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -43,20 +43,20 @@ java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --enzyme spcas9ngg
 ```
 
-discover candidate targets and their potential off-target in the test data (takes a few seconds). This is using the EMX1 target with some random sequence flanking the target sequence:
+Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.3.jar \
+java -Xmx4g -jar FlashFry-assembly-1.4.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
  --output EMX1.output
 ```
 
-finally score the discovered sites (a few seconds):
+finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.3.jar \
+java -Xmx4g -jar FlashFry-assembly-1.4.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
