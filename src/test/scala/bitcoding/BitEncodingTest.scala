@@ -137,6 +137,19 @@ class BitEncodingTest extends FlatSpec with Matchers {
     (difference) should be (5)
   }
 
+  "A Bit Encoder" should "should compare two different strings as different by five bases even when the second pam base is degenerate" in {
+
+    val strCount =  StringCount("AAAAA CCCCC GGGGG AAAAT AAG".filter{c => c != ' '}.mkString(""),1000)
+    val strCount2 = StringCount("AAAAA CCCCC GGGGG TTTTA GGG".filter{c => c != ' '}.mkString(""),1001)
+
+    val encodeDevice = new BitEncoding(parameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    val encoding2 = encodeDevice.bitEncodeString(strCount2)
+    val difference = encodeDevice.mismatches(encoding, encoding2)
+    (difference) should be (5)
+  }
+
   "A Bit Encoder" should "compare lots of differences correctly and quickly" in {
     val encodeDevice = new BitEncoding(parameterPack)
 

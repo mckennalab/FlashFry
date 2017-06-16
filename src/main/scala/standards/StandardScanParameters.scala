@@ -91,7 +91,7 @@ case object Cas9NGGParameterPack extends ParameterPack {
 
   def totalScanLength: Int = 23
   def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
-  // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG or NAG
+  // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG
   def fivePrimePam: Boolean = false
 
   override def fwdRegex: Regex = """(\w)(?=(\w{20}GG))""".r
@@ -106,7 +106,7 @@ case object Cas9NAGParameterPack extends ParameterPack {
 
   def totalScanLength: Int = 23
   def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
-  // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG or NAG
+  // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NAG
   def fivePrimePam: Boolean = false
 
   override def fwdRegex: Regex = """(\w)(?=(\w{20}AG))""".r

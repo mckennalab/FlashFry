@@ -50,13 +50,7 @@ object ReferenceEncoder extends LazyLogging {
     val bitEncoder = new BitEncoding(params)
     val posEncoder = new BitPosition()
 
-    val cls: CRISPRDiscovery = if (flankingSequence == 0) {
-      logger.info("Running with fast circle-buffer site finder due to no flanking sequence request")
-      CRISPRCircleBuffer(binWriter, params)
-    } else {
-      logger.info("Running with simple site finder due to flanking sequence request")
-      SimpleSiteFinder(binWriter, params, flankingSequence)
-    }
+    val cls: CRISPRDiscovery = SimpleSiteFinder(binWriter, params, flankingSequence)
 
     fileToSource(reference).getLines().foreach { line => {
       if (line.startsWith(">")) {
@@ -68,9 +62,8 @@ object ReferenceEncoder extends LazyLogging {
       }
     }
     }
-    logger.info("Done looking for targets")
     cls.close()
-
+    logger.info("Done looking for targets...")
     (bitEncoder, posEncoder)
   }
 
@@ -153,7 +146,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
         }
       }
       }
-
+      logger.info("Done looking for targets on chromosome " + currentContig.getOrElse("UKNOWN") + "...")
 
     }
     // now handle the reset part -- change the contig to the the new sequence name and clear the buffer
@@ -165,130 +158,5 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
     reset("")
   }
 
-}
-
-
-/**
-  * this class finds potential CRISPR cutsites in the genome -- we use a rolling (circular)
-  * buffer to speed things up. This class is really ugly in places, but it morphed from canonical
-  * scala for speed reasons
-  *
-  * @param binWriter the output container we send hits to
-  * @param params    what kind of guide we're looking for
-  */
-case class CRISPRCircleBuffer(binWriter: GuideContainer, params: ParameterPack) extends LazyLogging with CRISPRDiscovery {
-
-  val revCompPams = params.pam.map { pm => Utils.reverseCompString(pm) }
-  val compPams = params.pam.map { pm => Utils.compString(pm) }
-  val cutSiteFromEnd = 6
-  var stack = new Array[Char](params.totalScanLength)
-  var currentPos = 0
-  var targetsFound = 0
-  var contig = "UNKNOWN"
-
-  def getTotal: Int = targetsFound
-
-  def addLine(line: String) {
-    line.foreach { chr => {
-      addBase(chr)
-    }
-    }
-  }
-
-  /**
-    * add a base to our circular buffer
-    */
-  def addBase(chr: Char) {
-    stack(currentPos % params.totalScanLength) = chr
-    currentPos += 1
-    if (currentPos >= params.totalScanLength)
-      checkCRISPR().foreach { ct => {
-        binWriter.addHit(ct)
-        targetsFound += 1
-      }
-      }
-  }
-
-  def reset(cntig: String) {
-    contig = cntig
-    currentPos = 0
-  }
-
-  /**
-    * check both ends of a string for the specified pam sequence
-    *
-    * @param pam     the pam sequence
-    * @param compPam the complement of the pam
-    * @return true if we match on either strand
-    */
-  def checkForPAM(pam: String, compPam: String): Boolean = {
-    {
-      var hits = 0
-      var bases = 0
-      while (bases < pam.size) {
-        if (stack((currentPos - params.totalScanLength + bases) % params.totalScanLength) == pam(bases))
-          hits += 1
-        bases += 1
-      }
-      hits == pam.size
-    } || {
-      var rhits = 0
-      var rbases = 1
-      while (rbases <= compPam.size) {
-        if (stack((currentPos - rbases) % params.totalScanLength) == compPam(pam.size - rbases))
-          rhits += 1
-        rbases += 1
-      }
-      rhits == pam.size
-    }
-
-  }
-
-
-  def checkCRISPR(): Array[CRISPRSite] = {
-
-    val matched =
-      if (params.fivePrimePam)
-        params.pam.zip(compPams).map { case (pm, cmp) => checkForPAM(pm, cmp) }.filter(t => t).size > 0
-      else
-        params.pam.zip(compPams).map { case (pm, cmp) => checkForPAM(cmp, pm) }.filter(t => t).size > 0
-
-    if (!matched || stack.map { base => if (base == 'A' || base == 'C' || base == 'G' || base == 'T') 0 else 1 }.sum > 0)
-      return Array[CRISPRSite]()
-
-
-    val str = toTarget()
-    var ret = Array[CRISPRSite]()
-
-    if (!params.fivePrimePam) {
-      params.pam.zip(revCompPams).foreach { case (pm, rcp) => {
-        if (str.endsWith(pm))
-          ret :+= CRISPRSite(contig, str, true, currentPos - params.totalScanLength, None)
-        if (str.startsWith(rcp))
-          ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
-      }
-      }
-      ret
-    }
-    else {
-      params.pam.zip(revCompPams).foreach { case (pm, rcp) => {
-        if (str.startsWith(pm))
-          ret :+= CRISPRSite(contig, str, true, (currentPos - params.totalScanLength), None)
-        if (str.endsWith(rcp))
-          ret :+= CRISPRSite(contig, Utils.reverseCompString(str), false, currentPos - params.totalScanLength, None)
-      }
-      }
-      ret
-    }
-  }
-
-
-  // create a target string from the buffer
-  def toTarget(): String = stack.slice(currentPos % params.totalScanLength, params.totalScanLength).mkString +
-    stack.slice(0, currentPos % params.totalScanLength).mkString.toUpperCase()
-
-  override def close(): Unit
-
-  = {} // do nothing
 }
 

@@ -36,6 +36,7 @@ import scala.io.Source
   * back into one master sorted file
   */
 case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator) extends GuideContainer {
+
   val logger = LoggerFactory.getLogger("BinWriter")
   val binToFile = new mutable.HashMap[String, File]()
   val binToWriter = new mutable.HashMap[String, PrintWriter]()
@@ -65,9 +66,8 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
       binToWriter(bin).close()
 
       // remove the files when we shut down
-      binToFile(bin).deleteOnExit()
+      //binToFile(bin).deleteOnExit()
     }}
     binToFile
   }
-
 }

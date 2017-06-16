@@ -35,7 +35,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
     */
-  override def scoreName(): String = "Doench2016CDFScore"
+  override def scoreName(): String = "Doench2016CFDScore"
 
   /**
     * @return the description of method for the header of the output file

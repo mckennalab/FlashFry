@@ -74,5 +74,11 @@ class UtilsTest extends FlatSpec with Matchers {
 
     (seq1) should be (1.435521 +- 0.01)
   }
+
+  "Utils" should "reverse comp something correctly" in {
+    val seq1 = Utils.reverseCompString("AG")
+
+    (seq1) should be ("CT")
+  }
 }
 

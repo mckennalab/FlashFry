@@ -39,7 +39,7 @@ object TabDelimitedOutput {
   val positionListTerminatorBack = ">"
   val positionListSeperator = "\\|"
 
-  val default_columns = Array[String]("contig", "start", "stop", "guide", "context", "overflow", "orientation")
+  val default_columns = Array[String]("contig", "start", "stop", "target", "context", "overflow", "orientation")
   val final_columns = Array[String]("otCount", "offTargets")
 
 
