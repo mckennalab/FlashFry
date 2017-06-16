@@ -139,7 +139,7 @@ Once you have the requirements setup, there are three main steps to running Flas
 | Drophellia melanegaster - BDGP6 | 0:6:33 | 0:10:48 | 0:5:44 |
 
 
-2) The next step is to find candidate targets within the fasta sequence of interest. The `--analysis discover` options handles this. The candidates found in the fasta are then run against the off-targets database, and an annotated output file is produced. This output file is BED-file compatible, and contains an annotated header section with the chromosomes of the database you ran against (for reference later). 
+2) The next step is to find candidate targets within the fasta sequence of interest. The `--analysis discover` options handles this. The candidates found in the fasta are then run against the off-targets database, and an annotated output file is produced. This output file is a tab-delimited text file.
 
 
 3) Lastly, you can score this annotated output file. This is handled by the `--analysis score` module. We've implemented a fair number of scoring metrics. For guidance on which are appropriate in which situation, please see the wonderful paper by [Maximilian Haeussler](https://www.ncbi.nlm.nih.gov/pubmed/27380939) which analyzed all of these methods in aggregate:
@@ -191,7 +191,7 @@ Off-target discovery can have high computational costs for large putitive target
 
 #### Why the does the output file look the way it does?
 
-We orignially wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off a traditional header line in favor of listing column details in the header section. In the end this had limited utility, especially when we added the capability to annotate with BED files to FlashFry. 
+We orignially wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off a traditional header line in favor of listing column details in the header section. In the end this had limited utility, especially when we added the capability to annotate the output with BED files directly. 
 
 #### How much memory should I give FlashFry?
 
