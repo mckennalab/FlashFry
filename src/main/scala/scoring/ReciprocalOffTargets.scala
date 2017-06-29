@@ -56,7 +56,7 @@ class ReciprocalOffTargets() extends ScoreModel {
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     guides.foreach{guide1 => {
       guides.foreach{guide2 => {
-        if (bitEnc.mismatches(guide1.longEncoding,guide2.longEncoding) <= maxMismatch) {
+        if (bitEnc.mismatches(guide1.longEncoding,guide2.longEncoding) != 0 && bitEnc.mismatches(guide1.longEncoding,guide2.longEncoding) <= maxMismatch) {
           guide1.namedAnnotations(scoreName) = guide1.namedAnnotations.getOrElse(scoreName,Array[String]()) :+ guide2.target.bases
         }
       }}

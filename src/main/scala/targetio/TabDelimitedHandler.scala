@@ -177,7 +177,7 @@ class TabDelimitedInput(inputFile: File,
 
     (0 until annotations.size).foreach(anIndex => ot.namedAnnotations(annotations(anIndex)) = Array[String](sp(7 + anIndex)))
 
-    if (withOTs) {
+    if (withOTs && (sp(sp.size - 1) contains TabDelimitedOutput.offTargetSeperator)) {
       sp(sp.size - 1).split(TabDelimitedOutput.offTargetSeperator).foreach { token => {
 
         val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeperator)(0)
