@@ -22,7 +22,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.3.0/FlashFry-assembly-1.3.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.4/FlashFry-assembly-1.4.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
@@ -31,11 +31,11 @@ wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quicks
 tar xf quickstart_data.tar.gz
 ```
 
-then run the database creation step (this should take a few minutes, it takes ~137 seconds on my laptop):
+then run the database creation step (this should take a few minutes, it takes ~152 seconds on my laptop):
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.3.jar \
+java -Xmx4g -jar FlashFry-assembly-1.4.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -43,20 +43,20 @@ java -Xmx4g -jar FlashFry-assembly-1.3.jar \
  --enzyme spcas9ngg
 ```
 
-discover candidate targets and their potential off-target in the test data (takes a few seconds). This is using the EMX1 target with some random sequence flanking the target sequence:
+Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.3.jar \
+java -Xmx4g -jar FlashFry-assembly-1.4.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
  --output EMX1.output
 ```
 
-finally score the discovered sites (a few seconds):
+finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.3.jar \
+java -Xmx4g -jar FlashFry-assembly-1.4.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
@@ -139,7 +139,7 @@ Once you have the requirements setup, there are three main steps to running Flas
 | Drophellia melanegaster - BDGP6 | 0:6:33 | 0:10:48 | 0:5:44 |
 
 
-2) The next step is to find candidate targets within the fasta sequence of interest. The `--analysis discover` options handles this. The candidates found in the fasta are then run against the off-targets database, and an annotated output file is produced. This output file is BED-file compatible, and contains an annotated header section with the chromosomes of the database you ran against (for reference later). 
+2) The next step is to find candidate targets within the fasta sequence of interest. The `--analysis discover` options handles this. The candidates found in the fasta are then run against the off-targets database, and an annotated output file is produced. This output file is a tab-delimited text file.
 
 
 3) Lastly, you can score this annotated output file. This is handled by the `--analysis score` module. We've implemented a fair number of scoring metrics. For guidance on which are appropriate in which situation, please see the wonderful paper by [Maximilian Haeussler](https://www.ncbi.nlm.nih.gov/pubmed/27380939) which analyzed all of these methods in aggregate:
@@ -191,7 +191,7 @@ Off-target discovery can have high computational costs for large putitive target
 
 #### Why the does the output file look the way it does?
 
-We orignially wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off a traditional header line in favor of listing column details in the header section. In the end this had limited utility, especially when we added the capability to annotate with BED files to FlashFry. 
+We orignially wanted the output to work with common analysis tools such as BEDTools. This meant a format that encoded specific details into BED-file columns, as well as leaving off a traditional header line in favor of listing column details in the header section. In the end this had limited utility, especially when we added the capability to annotate the output with BED files directly. 
 
 #### How much memory should I give FlashFry?
 
