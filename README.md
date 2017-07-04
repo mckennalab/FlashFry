@@ -195,7 +195,7 @@ We orignially wanted the output to work with common analysis tools such as BEDTo
 
 #### How much memory should I give FlashFry?
 
-The memory requirements of FlashFly are determined by the number guides you're looking at and the number of off-targets you allow per guide candidate. The first factor is controlled by the size of the region you're looking at, and the second is controlled by the `--maximumOffTargets` parameter in the discovery phase. Generally with < 100K guides and `--maximumOffTargets` set to 2000 you'll be able to run with 4g of memory or less (such a memory limit is set in the JVM with the `-Xmx4g` command line parameter, right after `java`). You limit will need to increase with higher guide counts, higher mismatch thresholds, or if you want to retain more off-targets.
+The memory requirements of FlashFly are determined by the number guides you're looking at and the number of off-targets you allow per guide candidate. The first factor is controlled by the size of the region you're looking at, and the second is controlled by the `--maximumOffTargets` parameter in the discovery phase. Generally with < 100K guides and `--maximumOffTargets` set to 2000 you'll be able to run with 4g of memory or less (such a memory limit is set in the JVM with the `-Xmx4g` command line parameter, right after `java`). You will need to increase this number with higher guide counts, a higher mismatch thresholds, or if you want to retain more off-targets.
 
 #### Why are some scores NA?
 
