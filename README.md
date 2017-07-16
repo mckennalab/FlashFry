@@ -201,6 +201,10 @@ The memory requirements of FlashFly are determined by the number guides you're l
 
 If the scoring metric is unable to produce a score for the specified guide it will output NA. This commonly happens when there isn't enough sequence context on either side of a guide for the on-target scoring, which can occur if the guide sits near the beginning or end of the input fasta file.
 
+#### Should I use a masked or unmasked genome to build my database?
+
+Masking a genome obscures repetitive bases by either converting them to Ns (hard-masked) or making them lowercase (soft-masked). We recommend using a unmasked or soft-masked genome. You generally want to consider repetitive content when designing guides (you'd like to know about any off-targets within the genome), and this is not possible with hard-masked genomes. 
+
 #### How do we score the CFD from Doench 2016?
 
 The CFD scores describes how likely a guide is to cut a specific off-target, with 1 being an exact match, and 0 being no activity. It's a little unclear of the best way to combine this over a set of off-targets. For instance if a guide edits one off-target site with a score or 0.8 and another off-target with a score of 0.2, what score do we use for the guide? We currently list the highest score -- the score from the off-target that's the most likely to be edited. It would be possible to use an aggregation score similiar to the crispr.mit.edu, where all off-targets upweight the overall score.
