@@ -79,9 +79,9 @@ case object Cas9ParameterPack extends ParameterPack {
   // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG or NAG
   def fivePrimePam: Boolean = false
 
-  override def fwdRegex: Regex = """(\w)(?=(\w{20}[AG]G))""".r
+  override def fwdRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}[AG]G))""".r
 
-  override def revRegex: Regex = """([C])(?=([CT]\w{21}))""".r
+  override def revRegex: Regex = """([C])(?=([CT][ACGTacgt]{21}))""".r
 }
 
 
@@ -94,9 +94,9 @@ case object Cas9NGGParameterPack extends ParameterPack {
   // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG
   def fivePrimePam: Boolean = false
 
-  override def fwdRegex: Regex = """(\w)(?=(\w{20}GG))""".r
+  override def fwdRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}GG))""".r
 
-  override def revRegex: Regex = """([C])(?=(C\w{21}))""".r
+  override def revRegex: Regex = """([C])(?=(C[ACGTacgt]{21}))""".r
 }
 
 
@@ -109,9 +109,9 @@ case object Cas9NAGParameterPack extends ParameterPack {
   // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NAG
   def fivePrimePam: Boolean = false
 
-  override def fwdRegex: Regex = """(\w)(?=(\w{20}AG))""".r
+  override def fwdRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}AG))""".r
 
-  override def revRegex: Regex = """([C])(?=(T\w{21}))""".r
+  override def revRegex: Regex = """([C])(?=(T[ACGTacgt]{21}))""".r
 }
 
 case object Cpf1ParameterPack extends ParameterPack {
@@ -122,9 +122,9 @@ case object Cpf1ParameterPack extends ParameterPack {
   def fivePrimePam: Boolean = true
 
 
-  override def fwdRegex: Regex = """(T)(?=(TT\w{21}))""".r
+  override def fwdRegex: Regex = """(T)(?=(TT[ACGTacgt]{21}))""".r
 
-  override def revRegex: Regex = """(\w)(?=(\w{20}AAA))""".r
+  override def revRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}AAA))""".r
 
 }
 

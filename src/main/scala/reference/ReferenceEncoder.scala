@@ -120,14 +120,13 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
       (params.fwdRegex findAllMatchIn contigBuffer).foreach { fwdMatch => {
         val start = fwdMatch.start
         val end = fwdMatch.start + params.totalScanLength
-        val subStr = contigBuffer.slice(start,end)
+        val subStr = contigBuffer.slice(start, end)
 
-        if (!subStr.contains("N")) {
-          val context = contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence)
-          var site = CRISPRSite(currentContig.get, subStr, true, start, Some(context))
-          binWriter.addHit(site)
-          targetCount += 1
-        }
+        val context = contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence)
+        var site = CRISPRSite(currentContig.get, subStr, true, start, Some(context))
+        binWriter.addHit(site)
+        targetCount += 1
+
       }
       }
 
@@ -136,14 +135,13 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
         val start = revMatch.start
         val end = revMatch.start + params.totalScanLength
 
-        val subStr = Utils.reverseCompString(contigBuffer.slice(start,end))
+        val subStr = Utils.reverseCompString(contigBuffer.slice(start, end))
 
-        if (!subStr.contains("N")) {
-          val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence))
-          var site = CRISPRSite(currentContig.get, subStr, false, start, Some(context))
-          binWriter.addHit(site)
-          targetCount += 1
-        }
+        val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence))
+        var site = CRISPRSite(currentContig.get, subStr, false, start, Some(context))
+        binWriter.addHit(site)
+        targetCount += 1
+
       }
       }
       logger.info("Done looking for targets on chromosome " + currentContig.getOrElse("UKNOWN") + "...")
