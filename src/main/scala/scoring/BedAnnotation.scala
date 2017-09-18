@@ -43,8 +43,8 @@ class BedAnnotation() extends ScoreModel {
   var inputBed: Option[Array[File]] = None
   var inputBedNames: Option[Array[String]] = None
 
-  val invervalRegex: Regex = """([\w\d]+):(\d+)-(\d+)""".r
-  var mappingInterval: Option[Tuple3[String, Int, Int]] = None
+  //val invervalRegex: Regex = """([\w\d]+)\t(\d+)\t(\d+)\t([\w\d]+)""".r
+  var mappingIntervals: Option[mutable.HashMap[String, Tuple4[String, Int, Int, String]]] = None
 
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
@@ -54,7 +54,7 @@ class BedAnnotation() extends ScoreModel {
   /**
     * @return the description of method for the header of the output file
     */
-  override def scoreDescription(): String = "Annotated with overlaps to bed file " + inputBed.get.map{bd => bd.getAbsolutePath}.mkString(",")
+  override def scoreDescription(): String = "Annotated with overlaps to bed file " + inputBed.get.map { bd => bd.getAbsolutePath }.mkString(",")
 
   /**
     * load up the BED file and annotate each guide with information from any intersecting annotations
@@ -64,27 +64,45 @@ class BedAnnotation() extends ScoreModel {
     */
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     // remap the intervals given the genome offset
-    if (mappingInterval.isDefined) {
-      val interval = mappingInterval.get
+    if (mappingIntervals.isDefined) {
+      mappingIntervals.map { intervals =>
+        intervals.map { interval => {
 
-      guides.foreach { guide => {
-        val oldTarget = guide.target
-        val newTarget = CRISPRSite(interval._1, oldTarget.bases, oldTarget.forwardStrand, oldTarget.position + interval._2, oldTarget.sequenceContext)
-        guide.target = newTarget
-      }
-      }
-    }
-
-    inputBed.get.zip(inputBedNames.get).foreach{ case(bedObj, bedName) => {
-      (new BEDFile(bedObj)).foreach(bedEntry => {
-        bedEntry.map { entry => {
           guides.foreach { guide => {
-            if (guide.target.overlap(entry.contig, entry.start, entry.stop))
-              guide.namedAnnotations(bedName) = guide.namedAnnotations.getOrElse(bedName, Array[String]()) :+ entry.name
-          }}
-        }}
-      })
+            // can we find a mapping of the guide position to the original position in the reference
+            val ref = guide.target.contig
+
+            if (mappingIntervals.isDefined && mappingIntervals.get.contains(ref)) {
+              val newPos = mappingIntervals.get(ref)
+
+              val oldTarget = guide.target
+              val newTarget = CRISPRSite(newPos._1, oldTarget.bases, oldTarget.forwardStrand, oldTarget.position + newPos._2, oldTarget.sequenceContext)
+              guide.target = newTarget
+            }
+
+
+          }
+          }
+        }
+        }
+      }
     }
+
+    // are there annotations that overlap it? -- this is a bit ugly, but I like the isDefined approach over the zip then map here -- probably wrong
+    if (inputBed.isDefined) {
+      inputBed.get.zip(inputBedNames.get).foreach { case (bedObj, bedName) => {
+        (new BEDFile(bedObj)).foreach(bedEntry => {
+          bedEntry.map { entry => {
+            guides.foreach { guide => {
+              if (guide.target.overlap(entry.contig, entry.start, entry.stop))
+                guide.namedAnnotations(bedName) = guide.namedAnnotations.getOrElse(bedName, Array[String]()) :+ entry.name
+            }
+            }
+          }
+          }
+        })
+      }
+      }
     }
   }
 
@@ -121,24 +139,25 @@ class BedAnnotation() extends ScoreModel {
 
     val remaining = parser.parse(args, BedConfig()) map {
       case (config, remainingParameters) => {
-        config.inputBed.split(",").foreach { bedFile => {
-          assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
-          val nameAndFile = bedFile.split(":")
-          assert(nameAndFile.size == 2, "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
+        if (config.inputBed != "NONE")
+          config.inputBed.split(",").foreach { bedFile => {
+            assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
+            val nameAndFile = bedFile.split(":")
+            assert(nameAndFile.size == 2, "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
 
-          require((new File(nameAndFile(1))).exists(), "The input bed file doesn't exist for name file pair: " + config.inputBed)
-          if (!inputBed.isDefined) {
-            inputBed = Some(Array[File](new File(nameAndFile(1))))
-            inputBedNames = Some(Array[String](nameAndFile(0)))
-          } else {
-            inputBed = Some(inputBed.get :+ new File(nameAndFile(1)))
-            inputBedNames = Some(inputBedNames.get :+ nameAndFile(0))
+            require((new File(nameAndFile(1))).exists(), "The input bed file doesn't exist for name file pair: " + config.inputBed)
+            if (!inputBed.isDefined) {
+              inputBed = Some(Array[File](new File(nameAndFile(1))))
+              inputBedNames = Some(Array[String](nameAndFile(0)))
+            } else {
+              inputBed = Some(inputBed.get :+ new File(nameAndFile(1)))
+              inputBedNames = Some(inputBedNames.get :+ nameAndFile(0))
+            }
           }
-          if (config.genomeTransform != "NONE")
-            parseOutInterval(config.genomeTransform)
+          }
+        if (config.genomeTransform != "NONE")
+          parseOutInterval(config.genomeTransform)
 
-        }
-        }
         remainingParameters
       }
     }
@@ -147,14 +166,24 @@ class BedAnnotation() extends ScoreModel {
 
   /**
     * store the specified interval to adjustment to the fasta positions
+    *
     * @param interval
     */
   def parseOutInterval(interval: String) {
-    val matches = invervalRegex.findAllMatchIn(interval).toArray
-    assert(matches.size == 1, "The interval " + interval + " didn't parse into a single interval")
-    mappingInterval = Some(matches(0).group(1),
-      matches(0).group(2).toInt,
-      matches(0).group(3).toInt)
+    val intervalMapping = new mutable.HashMap[String, Tuple4[String, Int, Int, String]]()
+
+    Source.fromFile(interval).getLines().foreach { line => {
+      val matches = line.split("\t")
+      assert(matches.size == 4, "The interval " + interval + " didn't parse into a four part interval, instead " + matches.size)
+      intervalMapping(matches(3)) =
+        (matches(0),
+          matches(1).toInt,
+          matches(2).toInt,
+          matches(3))
+    }
+    }
+
+    mappingIntervals = Some(intervalMapping)
   }
 
   /**
@@ -174,10 +203,10 @@ class BedAnnotation() extends ScoreModel {
 /*
  * the configuration class, it stores the user's arguments from the command line, set defaults here
  */
-case class BedConfig(inputBed: String = "",
+case class BedConfig(inputBed: String = "NONE",
                      genomeTransform: String = "NONE")
 
 class BedAnnotationOptions extends PeelParser[BedConfig]("") {
-  opt[String]("inputAnnotationBed") required() valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with, and an associated name (name:bedfile)")
+  opt[String]("inputAnnotationBed") valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with, and an associated name (name:bedfile)")
   opt[String]("transformPositions") valueName ("<string>") action { (x, c) => c.copy(genomeTransform = x) } text ("Try to find our genome location by using matching zero-mismatch in-genome targets")
 }

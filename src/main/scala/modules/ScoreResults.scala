@@ -51,7 +51,7 @@ class ScoreResults extends LazyLogging with Module {
         val bitEnc = new BitEncoding(header.parameterPack)
 
         // load up the scored sites into a container
-        logger.info("Loading input BED file into CRISPR objects.. ")
+        logger.info("Loading CRISPR objects.. ")
         val guides = (new TabDelimitedInput(new File(config.inputBED),bitEnc,header.bitPosition,config.maxMismatch)).guides.toArray
 
         // get a scoring manager

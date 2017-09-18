@@ -54,7 +54,7 @@ class BedAnnotationTest extends FlatSpec with Matchers {
     val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 1)),1000)
     crisprOT.addOT(new CRISPRHit(bitEncoder.bitEncodeString(StringCount("CACTAGCATCCCAGGCCGGTGGG",1)),Array[Long]()))
     val bedAnnot = new BedAnnotation()
-    bedAnnot.parseOutInterval("chr8:10000-15000")
+    bedAnnot.parseOutInterval("test_data/remap_1_to_chr8:10000-15000.bed")
 
     bedAnnot.inputBed = Some(Array[File](new File("test_data/test_overlap.bed")))
     bedAnnot.inputBedNames = Some(Array[String]("test"))
