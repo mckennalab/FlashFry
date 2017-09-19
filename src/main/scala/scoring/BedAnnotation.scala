@@ -42,6 +42,8 @@ import scala.util.matching.Regex
 class BedAnnotation() extends ScoreModel {
   var inputBed: Option[Array[File]] = None
   var inputBedNames: Option[Array[String]] = None
+  var isRemapping = false
+  val oldContigTag = "oldContig"
 
   //val invervalRegex: Regex = """([\w\d]+)\t(\d+)\t(\d+)\t([\w\d]+)""".r
   var mappingIntervals: Option[mutable.HashMap[String, Tuple4[String, Int, Int, String]]] = None
@@ -78,6 +80,7 @@ class BedAnnotation() extends ScoreModel {
               val oldTarget = guide.target
               val newTarget = CRISPRSite(newPos._1, oldTarget.bases, oldTarget.forwardStrand, oldTarget.position + newPos._2, oldTarget.sequenceContext)
               guide.target = newTarget
+              guide.namedAnnotations(oldContigTag) = guide.namedAnnotations.getOrElse(oldContigTag, Array[String]()) :+ ref
             }
 
 
@@ -155,8 +158,10 @@ class BedAnnotation() extends ScoreModel {
             }
           }
           }
-        if (config.genomeTransform != "NONE")
+        if (config.genomeTransform != "NONE") {
           parseOutInterval(config.genomeTransform)
+          isRemapping = true
+        }
 
         remainingParameters
       }
@@ -196,7 +201,10 @@ class BedAnnotation() extends ScoreModel {
     * @return get a listing of the header columns for this score metric
     */
 
-  override def headerColumns(): Array[String] = inputBedNames.getOrElse(Array[String]())
+  override def headerColumns(): Array[String] = if (isRemapping)
+    inputBedNames.getOrElse(Array[String]()) :+ oldContigTag
+  else
+    inputBedNames.getOrElse(Array[String]())
 }
 
 
