@@ -120,8 +120,13 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
 
       if (this.validOverGuideSequence(pack, hit)) {
         val scores = scoreGuide(hit)
+        assert(scores.size == this.headerColumns().size)
         this.headerColumns().zip(scores).foreach{ case(col,scores) =>
           hit.namedAnnotations(col) = scores
+        }
+      } else {
+        this.headerColumns().foreach{ case(col) =>
+          hit.namedAnnotations(col) = Array[String](SingleGuideScoreModel.missingAnnotation)
         }
       }
     }
@@ -130,6 +135,8 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
 }
 
 object SingleGuideScoreModel {
+  val missingAnnotation = "NA"
+
   /**
     * the sequence stored with a guide can have additional 'context' on each side; find the guide position within that context,
     * handling conditions where the guide is repeated within the context.  In that case we choose the instance most centered

@@ -5,7 +5,7 @@ import java.io.{File, PrintWriter}
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import crispr.{CRISPRHit, CRISPRSiteOT}
 import reference.CRISPRSite
-import scoring.ScoreModel
+import scoring.{ScoreModel, ScoringManager, SingleGuideScoreModel}
 import utils.Utils
 
 import scala.collection.mutable
@@ -104,13 +104,13 @@ class TabDelimitedOutput(outputFile: File,
     output.write((if (guide.target.forwardStrand) TabDelimitedOutput.forward else TabDelimitedOutput.reverse) + TabDelimitedOutput.sep)
 
     models.foreach { model =>
-      output.write(model.headerColumns().map{col => guide.namedAnnotations.getOrElse(col,Array[String]("NONE"))}.map{t => t.mkString(",")}.mkString(TabDelimitedOutput.sep) + TabDelimitedOutput.sep)
+      output.write(model.headerColumns().map{col => guide.namedAnnotations.getOrElse(col,Array[String](SingleGuideScoreModel.missingAnnotation))}.map{ t => t.mkString(",")}.mkString(TabDelimitedOutput.sep) + TabDelimitedOutput.sep)
     }
 
-    output.write(guide.offTargets.size + TabDelimitedOutput.sep)
+    output.write(guide.offTargets.size)
 
     if (writeOTs)
-      output.write(guide.offTargets.map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeperator) + "\n")
+      output.write(TabDelimitedOutput.sep + guide.offTargets.map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeperator) + "\n")
     else
       output.write("\n")
   }
