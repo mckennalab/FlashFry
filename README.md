@@ -22,7 +22,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.5/FlashFry-assembly-1.5.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.6/FlashFry-assembly-1.6.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
@@ -35,7 +35,7 @@ then run the database creation step (this should take a few minutes, it takes ~1
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.5.jar \
+java -Xmx4g -jar FlashFry-assembly-1.6.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -46,7 +46,7 @@ java -Xmx4g -jar FlashFry-assembly-1.5.jar \
 Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.5.jar \
+java -Xmx4g -jar FlashFry-assembly-1.6.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
@@ -56,7 +56,7 @@ java -Xmx4g -jar FlashFry-assembly-1.5.jar \
 finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.5.jar \
+java -Xmx4g -jar FlashFry-assembly-1.6.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
@@ -109,7 +109,7 @@ The following scoring options can be supplied to the `--scoringMetrics` command 
 - `bedannotator` - annotate the scored output file with associated annotations from a BED file.
  Additional command line options: 
      - `inputAnnotationBed`: the bed file to pull annotation information from.
-     - `transformPositions`: The bedannotator module will attempt to assign annotations by transforming the candidates within the target region into the cordinate space specified. Say if you pulled your region from the 1Mb superenhancer region in front of the human MYC gene, you would specify `chr8:127000000-128000000` here, and the bed annotator would transform each candidate guide into this coordinate space using the start and stop of the input file as offsets into this space. 
+     - `transformPositions`: The bedannotator module will attempt to assign annotations by transforming the candidates within the target regions from the bed into the cordinate space specified. Say if you pulled your region from the 1Mb superenhancer region in front of the human MYC gene, which you called `>MYC_Region` in the fasta file. You would then include a BED file where you had a line like `chr8 127000000 128000000 MYC_Region` (seperated by tabs) here, and the bed annotator would transform each candidate guide into this coordinate space using the start and stop of the line as offsets into this space. 
 - `dangerous` - annotate sequences that would be difficult to work with. Currently this includes: 
      - `IN_GENOME=X` : The number of times a perfect match target for this guide sequence is seen within the genome of interest. 
      - `GC_X` : flagging sequences that have a high (>75%) or low (<25%) GC content
