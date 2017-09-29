@@ -107,7 +107,7 @@ class TabDelimitedOutput(outputFile: File,
       output.write(model.headerColumns().map{col => guide.namedAnnotations.getOrElse(col,Array[String](SingleGuideScoreModel.missingAnnotation))}.map{ t => t.mkString(",")}.mkString(TabDelimitedOutput.sep) + TabDelimitedOutput.sep)
     }
 
-    output.write(guide.offTargets.size)
+    output.write(guide.offTargets.size.toString)
 
     if (writeOTs)
       output.write(TabDelimitedOutput.sep + guide.offTargets.map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeperator) + "\n")
