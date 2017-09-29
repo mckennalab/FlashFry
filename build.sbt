@@ -12,7 +12,7 @@ resolvers ++= Seq(
 
 // set to true if you want to try and build for a GPU with aparapi
 
-unmanagedBase <<= baseDirectory { base => base / "project" }
+unmanagedBase := (baseDirectory.value / "project" )
 
 libraryDependencies += "com.github.samtools" % "htsjdk" % "2.8.1"
 
