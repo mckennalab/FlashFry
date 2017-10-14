@@ -56,7 +56,7 @@ class DangerousSequences extends SingleGuideScoreModel {
       problems(1) = "PolyT"
 
     if (guide.offTargets.size > 0) {
-      val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) 1 else 0}.sum
+      val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) bitEncoder.get.getCount(ot.sequence) else 0}.sum
       if (inGenomeCount > 0)
         problems(2) = "IN_GENOME=" + inGenomeCount
     }
