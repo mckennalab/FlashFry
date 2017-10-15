@@ -201,6 +201,10 @@ The memory requirements of FlashFly are determined by the number guides you're l
 
 If the scoring metric is unable to produce a score for the specified guide it will output NA. This commonly happens when there isn't enough sequence context on either side of a guide for the on-target scoring, which can occur if the guide sits near the beginning or end of the input fasta file.
 
+#### Should I use targets marked with OVERFLOW?
+
+No. We stop accumulating statistics on those targets after we've found too many candidate off-target sites. The remaining numbers are not reliable; these targets are kept in the output as a reference, a look-up for sites you expect to find but are poor candidates.
+
 #### Should I use a masked or unmasked genome to build my database?
 
 Masking a genome obscures repetitive bases by either converting them to Ns (hard-masked) or making them lowercase (soft-masked). We recommend using a unmasked or soft-masked genome. You generally want to consider repetitive content when designing guides (you'd like to know about any off-targets within the genome), and this is not possible with hard-masked genomes. 
