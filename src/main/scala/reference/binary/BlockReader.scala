@@ -80,7 +80,8 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
     val newTargets = ArrayBuffer[TargetPos]()
 
     val toSort = new ArrayBuffer[CRISPRSite]()
-    Source.fromInputStream(Utils.gis(file.getAbsolutePath)).getLines().foreach { line => {
+    //Source.fromInputStream(Utils.gis(file.getAbsolutePath)).getLines().foreach { line => {
+    Source.fromFile(file.getAbsolutePath).getLines().foreach { line => {
       toSort += CRISPRSite.fromLine(line)
     }}
 

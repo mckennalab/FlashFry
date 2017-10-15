@@ -19,7 +19,7 @@
 
 package crispr
 
-import java.io.{File, PrintStream, PrintWriter}
+import java.io._
 
 import utils.{BaseCombinationGenerator, Utils}
 import org.slf4j.LoggerFactory
@@ -37,13 +37,18 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
 
   val logger = LoggerFactory.getLogger("BinWriter")
   val binToFile = new mutable.HashMap[String, File]()
-  val binToWriter = new mutable.HashMap[String, PrintWriter]()
+
+  val bufferedHits = 1000
+
+  // we buffer output, only writing to the output file when we've filled up a bin
+  val binToBuffer = new mutable.HashMap[String, ArrayBuffer[CRISPRSite]]()
+
   val binPrefix = "bin"
   val binSuffix = ".txt"
 
   binGenerator.iterator.foreach{bin => {
     binToFile(bin) = File.createTempFile(binPrefix + bin , binSuffix, tempLocation)
-    binToWriter(bin) = new PrintWriter(Utils.gos(binToFile(bin).getAbsolutePath))
+    binToBuffer(bin) = new ArrayBuffer[CRISPRSite]()
   }}
 
   /**
@@ -52,7 +57,15 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
     */
   def addHit(cRISPRSite: CRISPRSite): Unit = {
     val putToBin = cRISPRSite.bases.slice(0,binGenerator.width)
-    binToWriter(putToBin).write(cRISPRSite.to_output + "\n")
+    binToBuffer(putToBin) += cRISPRSite
+    if (binToBuffer(putToBin).size > bufferedHits) {
+      val fw = new FileWriter(binToFile(putToBin), true)
+      val bw = new BufferedWriter(fw)
+      val output = new PrintWriter(bw)
+      binToBuffer(putToBin).toArray.foreach{hit => output.write(hit.to_output + "\n")}
+      binToBuffer(putToBin).clear()
+      output.close()
+    }
   }
 
   /**
@@ -61,10 +74,15 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
     */
   def close(): mutable.HashMap[String,File] = {
     binGenerator.iterator.foreach{bin => {
-      binToWriter(bin).close()
+
+      val fw = new FileWriter(binToFile(bin), true)
+      val bw = new BufferedWriter(fw)
+      val output = new PrintWriter(bw)
+      binToBuffer(bin).toArray.foreach{hit => output.write(hit.to_output + "\n")}
+      output.close()
 
       // remove the files when we shut down
-      //binToFile(bin).deleteOnExit()
+      binToFile(bin).deleteOnExit()
     }}
     binToFile
   }

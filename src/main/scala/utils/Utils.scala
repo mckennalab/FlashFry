@@ -49,7 +49,7 @@ object Utils extends LazyLogging {
 
   // input and output shortcuts
   def gis(s: String) = new GZIPInputStream(new BufferedInputStream(new FileInputStream(s)))
-  def gos(s: String) = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(s)))
+  def gos(s: String, append: Boolean = false) = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(s,append)))
 
   def inputSource(s: String) = s match {
     case gz if s endsWith ".gz" => Source.fromInputStream(gis(s))
