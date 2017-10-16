@@ -50,7 +50,7 @@ object TabDelimitedOutput {
   val positionReverse = "R"
 
   val contigSeperator = ":"
-  val strandSeperator = "\\^"
+  val strandSeperator = "^"
 
   val offTargetSeperator = ","
   val withinOffTargetSeperator = "_"
