@@ -99,13 +99,16 @@ Modules are chosen using the `--analysis` option. Three analysis modules are cur
 
 # Scoring methods
 
-The following scoring options can be supplied to the `--scoringMetrics` command line parameter. Some of these have command line options of their own, documented below:
+The following scoring options can be supplied to the `--scoringMetrics` command line parameter. I'd recommend reading Read Haeussler et al. for details about scoring schemes, and which are most appropriate given your experimental design [Link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-1012-2). Some of these scores have command line options of their own, documented below. A reminder that FlashFry currently outputs guides that OVERFLOW. You should exclude these from your analysis, are are only included for completeness (their scores are not valid):
 
-- `hsu2013` - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score.
+- `hsu2013` - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score. Scores range from 0 to 100, higher scores are better. Scores will vary for a guide sequence with the allowed number of mismatches.
  
-- `doench2014ontarget` - on target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501)
-- `doench2016cfd` - The Doench 2016 cutting frequency determination score [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
-- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target method [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/)
+- `doench2014ontarget` - On-target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501). From 0 to 1, higher scores mean more active guide sequence.
+
+- `doench2016cfd` - The Doench 2016 cutting frequency determination score, a measure of how well an off-target candidate in the genome will be cut by your guide. The scores here range from 1 (highly active cutting at the off-target) to 0 (not active). This is calculated for each off-target, and we take the highest score (see FAQ for more details) [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
+
+- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target scoring scheme: [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/). Scores range from 1 (highly active at their target) to 0 (not an active cutting guide). Negitive values are possible. Read Haeussler et al. for caveats about this score [Link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-1012-2)
+
 - `bedannotator` - annotate the scored output file with associated annotations from a BED file.
  Additional command line options: 
      - `inputAnnotationBed`: the bed file to pull annotation information from.
