@@ -38,27 +38,27 @@ class CRISPRHit(sq: Long, coord: Array[Long]) {
         val otDecoded = bitEncoding.bitDecodeString(sequence)
         val positions = coordinates.map { otPos => {
           val decoded = posEnc.decode(otPos)
-          decoded.contig + TabDelimitedOutput.contigSeperator + decoded.start + TabDelimitedOutput.strandSeperator +
+          decoded.contig + TabDelimitedOutput.contigSeparator + decoded.start + TabDelimitedOutput.strandSeparator +
             (if (decoded.forwardStrand) TabDelimitedOutput.positionForward else TabDelimitedOutput.positionReverse)
         }
         }
 
         if (positions.size == 0) {
-          otDecoded.str + TabDelimitedOutput.withinOffTargetSeperator +
-            otDecoded.count + TabDelimitedOutput.withinOffTargetSeperator +
+          otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator +
+            otDecoded.count + TabDelimitedOutput.withinOffTargetSeparator +
             bitEncoding.mismatches(guide, sequence)
         } else {
-          otDecoded.str + TabDelimitedOutput.withinOffTargetSeperator +
-            otDecoded.count + TabDelimitedOutput.withinOffTargetSeperator +
+          otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator +
+            otDecoded.count + TabDelimitedOutput.withinOffTargetSeparator +
             bitEncoding.mismatches(guide, sequence) + TabDelimitedOutput.positionListTerminatorFront +
-            positions.mkString(TabDelimitedOutput.positionListSeperator) + TabDelimitedOutput.positionListTerminatorBack
+            positions.mkString(TabDelimitedOutput.positionListSeparator) + TabDelimitedOutput.positionListTerminatorBack
         }
       }
     else {
       {
         val otDecoded = bitEncoding.bitDecodeString(sequence)
-        otDecoded.str + TabDelimitedOutput.withinOffTargetSeperator + otDecoded.count +
-          TabDelimitedOutput.withinOffTargetSeperator + bitEncoding.mismatches(guide,sequence)
+        otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator + otDecoded.count +
+          TabDelimitedOutput.withinOffTargetSeparator + bitEncoding.mismatches(guide,sequence)
       }
     }
   }

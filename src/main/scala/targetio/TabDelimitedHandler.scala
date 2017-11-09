@@ -49,14 +49,14 @@ object TabDelimitedOutput {
   val positionForward = "F"
   val positionReverse = "R"
 
-  val contigSeperator = ":"
-  val strandSeperator = "^"
+  val contigSeparator = "\\:"
+  val strandSeparator = "\\^"
 
-  val offTargetSeperator = ","
-  val withinOffTargetSeperator = "_"
+  val offTargetSeparator = ","
+  val withinOffTargetSeparator = "_"
   val positionListTerminatorFront = "<"
   val positionListTerminatorBack = ">"
-  val positionListSeperator = "|"
+  val positionListSeparator = "\\|"
 
   val default_columns = Array[String]("contig", "start", "stop", "target", "context", "overflow", "orientation")
   val final_columns = Array[String]("otCount", "offTargets")
@@ -129,7 +129,7 @@ class TabDelimitedOutput(outputFile: File,
     output.write(guide.offTargets.size.toString)
 
     if (writeOTs)
-      output.write(TabDelimitedOutput.sep + guide.offTargets.map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeperator) + "\n")
+      output.write(TabDelimitedOutput.sep + guide.offTargets.map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeparator) + "\n")
     else
       output.write("\n")
   }
@@ -196,12 +196,15 @@ class TabDelimitedInput(inputFile: File,
 
     (0 until annotations.size).foreach(anIndex => ot.namedAnnotations(annotations(anIndex)) = Array[String](sp(7 + anIndex)))
 
-    if (withOTs && (sp(sp.size - 1) contains TabDelimitedOutput.offTargetSeperator)) {
-      sp(sp.size - 1).split(TabDelimitedOutput.offTargetSeperator).foreach { token => {
+    if (withOTs && (sp(sp.size - 1) contains TabDelimitedOutput.offTargetSeparator)) {
+      sp(sp.size - 1).split(TabDelimitedOutput.offTargetSeparator).foreach { token => {
 
-        val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeperator)(0)
-        val offTargetCount = token.split(TabDelimitedOutput.withinOffTargetSeperator)(1).toInt
-        val offTargetMismatches = token.split(TabDelimitedOutput.withinOffTargetSeperator)(2).toInt
+        val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeparator)(0)
+        val offTargetCount = token.split(TabDelimitedOutput.withinOffTargetSeparator)(1).toInt
+        val offTargetMismatches = if (token.split(TabDelimitedOutput.withinOffTargetSeparator)(2) contains TabDelimitedOutput.positionListTerminatorFront)
+          token.split(TabDelimitedOutput.withinOffTargetSeparator)(2).split(TabDelimitedOutput.positionListTerminatorFront)(0).toInt
+        else
+          token.split(TabDelimitedOutput.withinOffTargetSeparator)(2).toInt
 
         if (offTargetMismatches <= maximumMismatches) {
 
@@ -209,11 +212,11 @@ class TabDelimitedInput(inputFile: File,
           if (token contains TabDelimitedOutput.positionListTerminatorFront) {
             val targetAndPositions = token.split(TabDelimitedOutput.positionListTerminatorFront)
 
-            val positions = targetAndPositions(1).stripSuffix(TabDelimitedOutput.positionListTerminatorBack).split(TabDelimitedOutput.positionListSeperator).map { positionEncoded => {
-              bitPosition.encode(positionEncoded.split(TabDelimitedOutput.contigSeperator)(0),
-                positionEncoded.split(TabDelimitedOutput.contigSeperator)(1).split(TabDelimitedOutput.strandSeperator)(0).toInt,
+            val positions = targetAndPositions(1).stripSuffix(TabDelimitedOutput.positionListTerminatorBack).split(TabDelimitedOutput.positionListSeparator).map { positionEncoded => {
+              bitPosition.encode(positionEncoded.split(TabDelimitedOutput.contigSeparator)(0),
+                positionEncoded.split(TabDelimitedOutput.contigSeparator)(1).split(TabDelimitedOutput.strandSeparator)(0).toInt,
                 offTargetSeq.size,
-                positionEncoded.split(TabDelimitedOutput.strandSeperator)(1) == "F")
+                positionEncoded.split(TabDelimitedOutput.strandSeparator)(1) == "F")
             }
             }
 

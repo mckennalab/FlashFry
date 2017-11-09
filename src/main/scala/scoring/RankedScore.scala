@@ -1,0 +1,5 @@
+package scoring
+
+trait RankedScore {
+
+}

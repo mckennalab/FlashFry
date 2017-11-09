@@ -44,6 +44,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
     0.445, 0.508, 0.613, 0.851, 0.732,
     0.828, 0.615, 0.804, 0.685, 0.583)
 
+  // estimated from Doench et al. We use this to down-weight non-NGG PAM sequences
+  val pamToAdjustment = Map("GG" -> 1.0, "AG" -> 0.26, "CG" -> 0.11, "TG" -> 0.01)
+
   // has to be setup before we do anything -- check with asserts
   var bitEncoder: Option[BitEncoding] = None
 
@@ -64,55 +67,61 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
     */
   def score_crispr(cRISPRHit: CRISPRSiteOT): Double = {
     val scores = scoreAgainstOffTargets(cRISPRHit)
-    val distances = get_distances(cRISPRHit)
-    val meanDist = distances.sum.toDouble / distances.length.toDouble
-    getScore(scores, meanDist)
-  }
-
-  /**
-    * find all the pairwise distances between our off-targets
-    *
-    * @param cRISPRHit the guide / off-target object
-    * @return the pairwise distances between all values
-    *
-    */
-  private def get_distances(cRISPRHit: CRISPRSiteOT, maximumSitesToConsider: Int = 100): Array[Double] = {
-    val otList =
-      if (cRISPRHit.offTargets.size > maximumSitesToConsider)
-        Random.shuffle(cRISPRHit.offTargets).slice(0,maximumSitesToConsider)
-      else cRISPRHit.offTargets
-
-    otList.combinations(2).map { case (ots) => {
-      bitEncoder.get.mismatches(ots(0).sequence, ots(1).sequence).toDouble
-    }}.toArray
+    getScore(scores)
   }
 
   /**
     * score the matches and mismatches with the score matrix
+    *
+    * for more details, reference the help webpage on http://crispr.mit.edu/about
     * @param cRISPRHit the crispr hit information
     * @return the score tuples
     */
-  def scoreAgainstOffTargets(cRISPRHit: CRISPRSiteOT): Array[Tuple2[Double, Int]] = {
+  def scoreAgainstOffTargets(cRISPRHit: CRISPRSiteOT): Array[Double] = {
     assert(bitEncoder.isDefined,"We don't have a valid bit encoding to work with")
 
-    var scores = Array[Tuple2[Double, Int]]()
+    var scores = Array[Double]()
     cRISPRHit.offTargets.foreach { offTarget => {
-      var score = 1.0
+
       var mismatches = 0
-
+      var distances = Array[Int]()
+      var lastMismatch: Option[Int] = None
       val stringOTSeq = bitEncoder.get.bitDecodeString(offTarget.sequence)
+      var equationPartOne = 1.0
 
+      // first part of the equation -- score each mismatch from the target compared to the off target with their scoring matrix
       stringOTSeq.str.slice(0,20).zip(cRISPRHit.target.bases.slice(0,20)).zipWithIndex.foreach { case (bases, index) => {
-        if (bases._1 == bases._2)
-          score = score * 1.0
-        else {
-          score = score * (1.0 - offtargetCoeff(index))
+
+        if (bases._1 != bases._2) {
+          equationPartOne = equationPartOne * (1.0 - offtargetCoeff(index))
           mismatches += 1
+          lastMismatch.map { tk =>
+            distances :+= index - tk
+          }
+          lastMismatch = Some(index)
         }
       }}
-      if (mismatches > 0) {
-        scores :+= (score, mismatches)
+
+      // the second part -- penalize based on the average distance between mismatches
+      // couldn't get this right, and has to find this first part in the CRISPOR code
+      val equationPartTwo = if (mismatches < 2) {1.0 } else {
+        val avgDist = distances.sum.toDouble / distances.size.toDouble
+        1.0 / ((((19 - avgDist)/19.0) * 4.0) + 1.0)
       }
+
+      // the last part is a 'damper' according to the website, to penalize pairings with lots of mismatches
+      val equationPartThree = if (mismatches == 0) { 1.0 } else { 1.0 / math.pow(mismatches.toDouble,2) }
+
+      val totalScore = equationPartOne * equationPartTwo * equationPartThree * 100.0
+
+      // adjust the scores based on the Doench PAM coefficients for alternate PAMs
+      val pamAdj = if (pamToAdjustment contains stringOTSeq.str.slice(21,23)) {
+        pamToAdjustment(stringOTSeq.str.slice(21, 23))
+      } else {
+        0.01
+      }
+
+      scores :+= totalScore * pamAdj
     }}
     scores
   }
@@ -121,19 +130,10 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
     * get the final score
     *
     * @param scores
-    * @param meanDistance
     * @return
     */
-  def getScore(scores: Array[Tuple2[Double, Int]], meanDistance: Double): Double = {
-    var finalScore = 100.0
-    scores.foreach { case (score, mismatch) => {
-      val termTwo = (1.0 / (((19.0 - meanDistance) / 19.0) * 4.0 + 1.0))
-      val termThree = ((1.0 / (mismatch)) * (1.0 / (mismatch)))
-      val thisScore = score * termTwo * termThree
-      finalScore += 100.0 * thisScore
-    }
-    }
-    return ((100.0 / (finalScore)) * 100.0)
+  def getScore(scores: Array[Double]): Double = {
+    (100.0 / (100.0 + scores.sum)) * 100.0
   }
 
   /**
@@ -149,7 +149,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
   /**
     * parse out any command line arguments that are optional or required for this scoring metric
     *
-    * @param Args the command line arguments
+    * @param args the command line arguments
     */
   override def parseScoringParameters(args: Seq[String]): Seq[String] = {
     // we don't have any command line args
