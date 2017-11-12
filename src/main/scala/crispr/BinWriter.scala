@@ -23,7 +23,6 @@ import java.io._
 
 import utils.{BaseCombinationGenerator, Utils}
 import org.slf4j.LoggerFactory
-import reference.CRISPRSite
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -20,10 +20,10 @@
 
 package targetio
 import java.io.{File, PrintWriter}
+import java.util.regex.Pattern
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
-import crispr.{CRISPRHit, CRISPRSiteOT}
-import reference.CRISPRSite
+import crispr.{CRISPRHit, CRISPRSite, CRISPRSiteOT}
 import scoring.{ScoreModel, ScoringManager, SingleGuideScoreModel}
 import utils.Utils
 
@@ -49,14 +49,18 @@ object TabDelimitedOutput {
   val positionForward = "F"
   val positionReverse = "R"
 
-  val contigSeparator = "\\:"
-  val strandSeparator = "\\^"
+  val contigSeparator = ":"
+  val contigSeparatorInput = Pattern.quote(contigSeparator)
+  val strandSeparator = "^"
+  val strandSeparatorInput = Pattern.quote(strandSeparator)
 
   val offTargetSeparator = ","
   val withinOffTargetSeparator = "_"
   val positionListTerminatorFront = "<"
+
   val positionListTerminatorBack = ">"
-  val positionListSeparator = "\\|"
+  val positionListSeparator = "|"
+  val positionListSeparatorInput = Pattern.quote(positionListSeparator)
 
   val default_columns = Array[String]("contig", "start", "stop", "target", "context", "overflow", "orientation")
   val final_columns = Array[String]("otCount", "offTargets")
@@ -123,13 +127,16 @@ class TabDelimitedOutput(outputFile: File,
     output.write((if (guide.target.forwardStrand) TabDelimitedOutput.forward else TabDelimitedOutput.reverse) + TabDelimitedOutput.sep)
 
     models.foreach { model =>
-      output.write(model.headerColumns().map{col => guide.namedAnnotations.getOrElse(col,Array[String](SingleGuideScoreModel.missingAnnotation))}.map{ t => t.mkString(",")}.mkString(TabDelimitedOutput.sep) + TabDelimitedOutput.sep)
+      output.write(model.headerColumns().map{col => guide.namedAnnotations.getOrElse(col,Array[String](SingleGuideScoreModel.missingAnnotation))}.
+        map{ t => t.mkString(",")}.mkString(TabDelimitedOutput.sep) + TabDelimitedOutput.sep)
     }
 
-    output.write(guide.offTargets.size.toString)
+    // output the total number of targets we found -- not just the number of sequences
+    output.write(guide.offTargets.map{ot => ot.coordinates.size}.sum.toString)
 
     if (writeOTs)
-      output.write(TabDelimitedOutput.sep + guide.offTargets.map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeparator) + "\n")
+      output.write(TabDelimitedOutput.sep + guide.offTargets.
+        map { ot => ot.toOutput(bitEncoding, bitPosition, guide.longEncoding, writePositons) }.mkString(TabDelimitedOutput.offTargetSeparator) + "\n")
     else
       output.write("\n")
   }
@@ -197,7 +204,7 @@ class TabDelimitedInput(inputFile: File,
     (0 until annotations.size).foreach(anIndex => ot.namedAnnotations(annotations(anIndex)) = Array[String](sp(7 + anIndex)))
 
     if (withOTs && (sp(sp.size - 1) contains TabDelimitedOutput.offTargetSeparator)) {
-      sp(sp.size - 1).split(TabDelimitedOutput.offTargetSeparator).foreach { token => {
+      sp(sp.size - 1).split(Pattern.quote(TabDelimitedOutput.offTargetSeparator)).foreach { token => {
 
         val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeparator)(0)
         val offTargetCount = token.split(TabDelimitedOutput.withinOffTargetSeparator)(1).toInt
@@ -212,11 +219,11 @@ class TabDelimitedInput(inputFile: File,
           if (token contains TabDelimitedOutput.positionListTerminatorFront) {
             val targetAndPositions = token.split(TabDelimitedOutput.positionListTerminatorFront)
 
-            val positions = targetAndPositions(1).stripSuffix(TabDelimitedOutput.positionListTerminatorBack).split(TabDelimitedOutput.positionListSeparator).map { positionEncoded => {
-              bitPosition.encode(positionEncoded.split(TabDelimitedOutput.contigSeparator)(0),
-                positionEncoded.split(TabDelimitedOutput.contigSeparator)(1).split(TabDelimitedOutput.strandSeparator)(0).toInt,
+            val positions = targetAndPositions(1).stripSuffix(TabDelimitedOutput.positionListTerminatorBack).split(TabDelimitedOutput.positionListSeparatorInput).map { positionEncoded => {
+              bitPosition.encode(positionEncoded.split(TabDelimitedOutput.contigSeparatorInput)(0),
+                positionEncoded.split(TabDelimitedOutput.contigSeparatorInput)(1).split(TabDelimitedOutput.strandSeparatorInput)(0).toInt,
                 offTargetSeq.size,
-                positionEncoded.split(TabDelimitedOutput.strandSeparator)(1) == "F")
+                positionEncoded.split(TabDelimitedOutput.strandSeparatorInput)(1) == "F")
             }
             }
 

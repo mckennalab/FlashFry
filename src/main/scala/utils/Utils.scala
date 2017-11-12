@@ -178,4 +178,19 @@ object Utils extends LazyLogging {
       throw new java.lang.AssertionError("assertion failed")
   }
 
+  /**
+    * find the median of a sequence
+    * @param s the sequence
+    * @param n the fractional type underlying the type of s
+    * @tparam T the type
+    * @return the median of the sequence
+    */
+  def median[T](s: Seq[T])(implicit n: Fractional[T]): T = {
+    assert(s.size != 0)
+    if (s.size == 1) return s(0)
+
+    import n._
+    val (lower, upper) = s.sortWith(_<_).splitAt(s.size / 2)
+    if (s.size % 2 == 0) (lower.last + upper.head) / fromInt(2) else upper.head
+  }
 }

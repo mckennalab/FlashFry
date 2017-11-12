@@ -20,7 +20,6 @@
 package crispr
 
 import bitcoding.{BitEncoding, BitPosition}
-import reference.CRISPRSite
 import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable

@@ -35,7 +35,7 @@ import scala.util.Random
   * so our unit tests rely on only verified lists where all discovered off-target sequences are the same
   *
   */
-class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
+class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
 
   // the coefficients for each position in the guide
   val offtargetCoeff = Array[Double](
@@ -177,4 +177,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel {
     * @return get a listing of the header columns for this score metric
     */
   override def headerColumns(): Array[String] = Array[String]("Hsu2013")
+
+  /**
+    * @return true, a high score is good
+    */
+  override def highScoreIsGood: Boolean = true
 }

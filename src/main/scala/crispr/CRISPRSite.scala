@@ -17,7 +17,7 @@
  *
  */
 
-package reference
+package crispr
 
 import bitcoding.PositionInformation
 

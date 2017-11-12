@@ -44,9 +44,15 @@ class ScoringManager(bitEncoder: BitEncoding, posEncoder: BitPosition, scoringMe
       logger.info("adding score: " + model.scoreName())
       model.bitEncoder(bitEncoder)
       scoringModels :+= model
-    } else
+    } else {
       logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEncoder.mParameterPack.enzyme)
+    }
   }}
+
+  // feed any aggregate scoring metrics the full list of other metrics
+  val nonAggregate = scoringModels.filter{case(m) => m.isInstanceOf[RankedScore]}.map{e => e.asInstanceOf[RankedScore]}
+  val aggregate    = scoringModels.filter{case(m) => m.isInstanceOf[AggregateScore]}
+  aggregate.foreach{case(e) => e.asInstanceOf[AggregateScore].initializeScoreNames(nonAggregate)}
 
 
   def scoreGuides(guides: Array[CRISPRSiteOT], maxMismatch: Int, header: BinaryHeader) {
@@ -89,6 +95,9 @@ object ScoringManager {
       }
       case "reciprocalofftargets" => {
         new ReciprocalOffTargets()
+      }
+      case "rank" => {
+        new AggregateRankedScore()
       }
       case _ => {
         throw new IllegalArgumentException("Unknown scoring metric: " + name)

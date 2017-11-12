@@ -4,10 +4,9 @@ import java.io.{DataInputStream, DataOutputStream, File}
 
 import bitcoding.{BinAndMask, BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSiteOT, ResultsAggregator}
+import crispr.{CRISPRSite, CRISPRSiteOT, ResultsAggregator}
 import main.scala.Main.logger
 import org.scalatest.{FlatSpec, Matchers}
-import reference.CRISPRSite
 import standards.{Cas9ParameterPack, Cpf1ParameterPack}
 import utils.{BaseCombinationGenerator, RandoCRISPR, Utils}
 

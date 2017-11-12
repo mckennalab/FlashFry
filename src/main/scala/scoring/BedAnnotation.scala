@@ -22,9 +22,8 @@ package scoring
 import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition, PositionInformation}
-import crispr.CRISPRSiteOT
+import crispr.{CRISPRSite, CRISPRSiteOT}
 import modules.{DiscoverConfig, OffTargetBaseOptions}
-import reference.CRISPRSite
 import scopt.{OptionParser, PeelParser}
 import standards.ParameterPack
 import utils.BEDFile

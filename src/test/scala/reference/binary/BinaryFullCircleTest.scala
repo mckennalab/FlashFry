@@ -3,10 +3,9 @@ package reference.binary
 import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition}
-import crispr.CRISPRSiteOT
+import crispr.CRISPRSite
 import utils.BaseCombinationGenerator
 import org.scalatest.{FlatSpec, Matchers}
-import reference.CRISPRSite
 import standards.{Cpf1ParameterPack, ParameterPack}
 
 /**

@@ -32,4 +32,4 @@ mainClass in (Compile, packageBin) := Some("main.scala.Main")
 
 mainClass in (Compile, run) := Some("main.scala.Main")
 
-
+javaOptions += "-Xmx2G"

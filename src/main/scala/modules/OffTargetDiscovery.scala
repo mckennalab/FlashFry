@@ -26,7 +26,7 @@ import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
 import utils.BaseCombinationGenerator
 import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
-import reference.{CRISPRSite, ReferenceEncoder}
+import reference.ReferenceEncoder
 import reference.binary.BinaryHeader
 import reference.traversal.{LinearTraversal, OrderedBinTraversalFactory}
 import reference.traverser.SeekTraverser._

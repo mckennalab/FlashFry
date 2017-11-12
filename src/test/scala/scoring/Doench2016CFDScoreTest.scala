@@ -1,9 +1,8 @@
 package scoring
 
 import bitcoding.{BitEncoding, StringCount}
-import crispr.{CRISPRHit, CRISPRSiteOT}
+import crispr.{CRISPRHit, CRISPRSite, CRISPRSiteOT}
 import org.scalatest.{FlatSpec, Matchers}
-import reference.CRISPRSite
 import standards.Cas9ParameterPack
 
 import scala.collection.mutable
@@ -26,7 +25,18 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("CGCGCGGCCCCAGTTCTGCGCAG", 1)),1000)
     otListLong.foreach{ot => otHit.addOT(new CRISPRHit(ot,Array[Long](0l)))}
 
-    (dScore.scoreGuide(otHit)(0)(0).toDouble) should be(0.0 +- 0.001) //0.016806722683753505, but reduced to zero by CRISPOR rules
+    (dScore.scoreGuide(otHit)(0)(0).toDouble) should be(0.0 +- 0.001)
+  }
+
+
+  "Doench2016CFDScore" should "correctly score the relationship between a pair of sequences" in {
+    val guide = "GACTTGCATCCGAAGCCGGT"
+
+    (dScore.scoreCFD(guide,"GACCTGCATACGAAGCCTTT")) should be(0.249237473 +- 0.001)
+    (dScore.scoreCFD(guide,"TTCTTGCATCAGAAGCCGCT")) should be(0.244514106 +- 0.001)
+    (dScore.scoreCFD(guide,"GACCTGCATCCAAAGCCAGA")) should be(0.235180995 +- 0.001)
+    (dScore.scoreCFD(guide,"GGCTGGCATCCCAAGCCAGT")) should be(0.187656109 +- 0.001)
+    (dScore.scoreCFD(guide,"GACTTGCCTCCCAAACCTGT")) should be(0.142362828 +- 0.001)
   }
 
 
@@ -72,5 +82,4 @@ class Doench2016CFDScoreTest extends FlatSpec with Matchers {
 
     (dScore.scoreGuide(otHit)(0)(0).toDouble) should be(0.30252100830756307 +- 0.001)
   }
-
 }

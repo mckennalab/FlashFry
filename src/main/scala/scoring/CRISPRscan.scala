@@ -27,7 +27,12 @@ import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
   * Implementation of Moreno-Mateos et. al. 2015 Nature Methods. Much (or all) credit goes to the team behind CRISPOR who's
   * reference implementation I worked from.
   */
-class CRISPRscan extends SingleGuideScoreModel with LazyLogging {
+class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore {
+
+  /**
+    * @return true, a high score is good
+    */
+  override def highScoreIsGood: Boolean = true
 
   /**
     * define a score over a single guide. The is the core of the method

@@ -23,7 +23,7 @@ import java.io._
 
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.GuideContainer
+import crispr.{CRISPRSite, GuideContainer}
 import utils.Utils
 import standards.ParameterPack
 

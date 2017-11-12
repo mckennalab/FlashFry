@@ -2,10 +2,9 @@ package bitcoding
 
 import org.scalatest.{FlatSpec, Matchers}
 import bitcoding.{BitEncoding, BitPosition, StringCount}
-import crispr.{CRISPRHit, CRISPRSiteOT}
+import crispr.{CRISPRHit, CRISPRSite}
 import standards.ParameterPack
 import standards.Cas9ParameterPack
-import reference.CRISPRSite
 import bitcoding._
 
 /**

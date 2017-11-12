@@ -35,7 +35,7 @@ import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
   * THE SCORES IN SUPPLEMENTAL TABLE 7. The reason is unclear.
   *
   */
-class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
+class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with RankedScore {
 
   private var bitEncoder: Option[BitEncoding] = None
 
@@ -153,6 +153,11 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging {
     * @return get a listing of the header columns for this score metric
     */
   override def headerColumns(): Array[String] = Array[String]("Doench2014OnTarget")
+
+  /**
+    * @return true, a high score is good
+    */
+  override def highScoreIsGood: Boolean = true
 }
 
 // constants they use in the paper

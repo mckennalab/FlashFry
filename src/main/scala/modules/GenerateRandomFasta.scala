@@ -23,10 +23,10 @@ import java.io.{File, PrintWriter}
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSiteOT, GuideMemoryStorage}
+import crispr.{CRISPRSite, CRISPRSiteOT, GuideMemoryStorage}
 import utils.BaseCombinationGenerator
 import reference.traverser.SeekTraverser
-import reference.{CRISPRSite, ReferenceEncoder}
+import reference.ReferenceEncoder
 import standards.ParameterPack
 import utils.RandoCRISPR
 

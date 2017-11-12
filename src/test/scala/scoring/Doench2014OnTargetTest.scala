@@ -1,9 +1,8 @@
 package scoring
 
 import bitcoding.{BitEncoding, StringCount}
-import crispr.CRISPRSiteOT
+import crispr.{CRISPRSite, CRISPRSiteOT}
 import org.scalatest.{FlatSpec, Matchers}
-import reference.CRISPRSite
 import standards.Cas9ParameterPack
 
 import scala.collection.mutable

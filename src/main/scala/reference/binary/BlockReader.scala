@@ -22,7 +22,7 @@ package reference.binary
 import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
-import reference.CRISPRSite
+import crispr.CRISPRSite
 import utils.{BaseCombinationGenerator, Utils}
 
 import scala.collection.mutable

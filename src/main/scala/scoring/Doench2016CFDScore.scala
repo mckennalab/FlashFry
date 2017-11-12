@@ -27,7 +27,7 @@ import standards.{Cas9Type, ParameterPack}
   * implementation of the Doench 2016 CFD score from their python code
   * doi:10.1038/nbt.3437
   */
-class Doench2016CFDScore extends SingleGuideScoreModel {
+class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
   var bitCode: Option[BitEncoding] = None
 
   /**
@@ -126,7 +126,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
     * @param otString the string we want to score against
     * @return the score, as a double
     */
-  private def scoreCFD(guide: String, otString: String): Double = {
+  def scoreCFD(guide: String, otString: String): Double = {
     assert(guide.size == 20, "guide size is not 20")
     assert(otString.size == 20, "Wildtype string size is not 20")
 
@@ -154,6 +154,11 @@ class Doench2016CFDScore extends SingleGuideScoreModel {
 
 
   def specialReverseCompBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'U') 'A' else c
+
+  /**
+    * @return a low CFD score is good
+    */
+  override def highScoreIsGood: Boolean = false
 }
 
 // constants for the CDF score --- taken from their Python Pickle files

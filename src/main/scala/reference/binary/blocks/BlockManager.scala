@@ -21,8 +21,7 @@ package reference.binary.blocks
 
 import bitcoding.{BinAndMask, BitEncoding}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRHit, GuideIndex, ResultsAggregator}
-import reference.CRISPRSite
+import crispr.{CRISPRHit, CRISPRSite, GuideIndex, ResultsAggregator}
 import reference.binary.{BlockDescriptor, TargetPos}
 import reference.binary.blocks.BlockManager.{compareIndexedBlock, compareLinearBlock}
 import reference.traverser.Traverser.{allComparisons, allTargets, allTargetsAndPositions}

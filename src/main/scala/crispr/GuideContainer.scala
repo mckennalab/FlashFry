@@ -21,8 +21,6 @@ package crispr
 
 import java.io.File
 
-import reference.CRISPRSite
-
 import scala.collection.mutable
 
 /**

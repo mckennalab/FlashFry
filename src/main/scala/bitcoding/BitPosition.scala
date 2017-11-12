@@ -50,7 +50,7 @@ class BitPosition extends LazyLogging {
   }
 
   def encode(refName: String, position: Int, targetLength: Int, forwardStrand: Boolean): Long = {
-    assert(contigMap contains refName, "Unknown contig: " + refName)
+    assert(contigMap contains refName, "Unknown contig: " + refName + "; our current contig list is " + contigMap.map{case(c,t) => c + "=" + t}.mkString(","))
     assert(position >= 0, "Position should be positive, we saw: " + position)
     assert(targetLength < 256, "Target length is too large, should be less than 128: " + targetLength)
 
