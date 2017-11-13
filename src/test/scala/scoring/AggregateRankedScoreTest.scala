@@ -12,27 +12,50 @@ class AggregateRankedScoreTest extends FlatSpec with Matchers {
   val target = new CRISPRSite("chr8", "GACTTGCATCCGAAGCCGGTGGG", true, 150, None)
   val posEnc = new BitPosition()
 
-  "AggregateRankedScore" should "correctly rank scores by a descending score" in {
-    val fakeTargets = Range(0,100).map{ind => CRISPROTFactory.createFakeCRISPROT()}.toArray
+  "AggregateRankedScore" should "correctly sort values using the provided methods" in {
+    val fakeTargets = Range(0,1).map{ind => CRISPROTFactory.createFakeCRISPROT(ind.toString)}.toArray
     val fakeRankedScore1 = new FakeRankedScore1()
     fakeRankedScore1.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
 
+
+    val values = Array[Tuple2[Double,RankedCRISPRSiteOT]](
+      Tuple2[Double,RankedCRISPRSiteOT](10,RankedCRISPRSiteOT(fakeTargets(0))),
+      Tuple2[Double,RankedCRISPRSiteOT](5,RankedCRISPRSiteOT(fakeTargets(0))))
+
+    //(AggregateRankedScore.scoreHighIsGood(values(0),values(1))) should be (true)
+    //(AggregateRankedScore.scoreLowIsGood(values(0),values(1))) should be (false)
+
+    val highSorted = values.sortWith(AggregateRankedScore.scoreHighIsGood)
+    (highSorted(0)._1) should be (10)
+    (AggregateRankedScore.scoreHighIsGood(values(0),values(1))) should be (true)
+
+    val lowSorted = values.sortWith(AggregateRankedScore.scoreLowIsGood)
+    (lowSorted(0)._1) should be (5)
+    (AggregateRankedScore.scoreLowIsGood(values(0),values(1))) should be (false)
+  }
+
+  "AggregateRankedScore" should "correctly rank scores by a descending score" in {
+    val guideCount = 5
+    val fakeTargets = Range(0,guideCount).map{ind => CRISPROTFactory.createFakeCRISPROT(ind.toString)}.toArray
+    val fakeRankedScore1 = new FakeRankedScore1()
+    fakeRankedScore1.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
     val aggScore = new AggregateRankedScore()
     aggScore.initializeScoreNames(List[RankedScore](fakeRankedScore1))
 
     aggScore.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
 
-    var targetRank = 1
+    var targetRank = guideCount
+    val guideToTranche = Map(5 -> 1, 4 -> 2, 3 -> 3, 2 -> 4, 1 -> 4)
+
     fakeTargets.foreach{gd => {
-      (gd.namedAnnotations(aggScore.scoreName() + "_medianTranche").mkString("")) should be (Math.ceil(targetRank/25.0).toInt.toString)
+      (gd.namedAnnotations(aggScore.scoreName() + "_tranche").mkString("")) should be (guideToTranche(gd.target.contig.toInt + 1) .toString)
       (gd.namedAnnotations(aggScore.scoreName() + "_medianRank").mkString("")) should be (targetRank.toString)
-      targetRank += 1
+      targetRank -= 1
     }}
   }
 
-
   "AggregateRankedScore" should "handle a scoring metric that ranks in the reverse order (high scores are bad)" in {
-    val fakeTargets = Range(0,100).map{ind => CRISPROTFactory.createFakeCRISPROT()}.toArray
+    val fakeTargets = Range(0,5).map{ind => CRISPROTFactory.createFakeCRISPROT(ind.toString)}.toArray
     val fakeRankedScore2 = new FakeRankedScore2()
     fakeRankedScore2.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
 
@@ -41,38 +64,61 @@ class AggregateRankedScoreTest extends FlatSpec with Matchers {
 
     aggScore.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
 
-    var targetRank = 100
+
+    val guideToTranche = Map(5 -> 4, 4 -> 4, 3 -> 3, 2 -> 2, 1 -> 1)
+    var targetRank = 1
     fakeTargets.foreach{gd => {
-      (gd.namedAnnotations(aggScore.scoreName() + "_medianTranche").mkString("")) should be (Math.ceil(targetRank/25.0).toInt.toString)
+      (gd.namedAnnotations(aggScore.scoreName() + "_tranche").mkString("")) should be (guideToTranche(targetRank).toString)
       (gd.namedAnnotations(aggScore.scoreName() + "_medianRank").mkString("")) should be (targetRank.toString)
-      targetRank -= 1
+      targetRank += 1
     }}
   }
 
 
 
   "AggregateRankedScore" should "correctly merge two score systems into a unified rank" in {
-    val fakeTargets = Range(0,100).map{ind => CRISPROTFactory.createFakeCRISPROT()}.toArray
+    val fakeTargets = Range(0,100).map{ind => CRISPROTFactory.createFakeCRISPROT(ind.toString)}.toArray
 
     val fakeRankedScore1 = new FakeRankedScore1()
     val fakeRankedScore2 = new FakeRankedScore2()
 
     fakeRankedScore1.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
+
+    // ****** we reverse the guides here to have the scoring schemes consistent
     fakeRankedScore2.scoreGuides(fakeTargets.reverse,bitEncoder,posEnc,Cas9ParameterPack)
 
     val aggScore = new AggregateRankedScore()
     aggScore.initializeScoreNames(List[RankedScore](fakeRankedScore1,fakeRankedScore2))
     aggScore.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
 
-    var targetRank = 1
-    //println("SZ = = " + fakeTargets.size)
-    fakeTargets.foreach{gd => {
-      //println(gd.namedAnnotations.map{case(k,v) => k + " -> " + v.mkString("_")}.mkString(","))
-      (gd.namedAnnotations(aggScore.scoreName() + "_medianTranche").mkString("")) should be (Math.ceil(targetRank/25.0).toInt.toString)
+    var targetRank = 100
+    fakeTargets.foreach { gd => {
       (gd.namedAnnotations(aggScore.scoreName() + "_medianRank").mkString("")) should be (targetRank.toString)
-      targetRank += 1
+      targetRank -= 1
     }}
   }
+
+  "AggregateRankedScore" should "correctly merge two conflicting score systems into a single identical rank list" in {
+    val fakeTargets = Range(0,100).map{ind => CRISPROTFactory.createFakeCRISPROT(ind.toString)}.toArray
+
+    val fakeRankedScore1 = new FakeRankedScore1()
+    val fakeRankedScore2 = new FakeRankedScore2()
+
+    fakeRankedScore1.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
+    fakeRankedScore2.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
+
+    val aggScore = new AggregateRankedScore()
+    aggScore.initializeScoreNames(List[RankedScore](fakeRankedScore1,fakeRankedScore2))
+    aggScore.scoreGuides(fakeTargets,bitEncoder,posEnc,Cas9ParameterPack)
+
+    var targetRank = 100
+    fakeTargets.foreach { gd => {
+      (gd.namedAnnotations(aggScore.scoreName() + "_tranche").mkString("")) should be (3.toString)
+      (gd.namedAnnotations(aggScore.scoreName() + "_medianRank").mkString("")) should be (50.toString)
+      targetRank -= 1
+    }}
+  }
+
 }
 
 class FakeRankedScore1 extends RankedScore {

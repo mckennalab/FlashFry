@@ -1,4 +1,5 @@
 package scoring
+
 /*
  *
  *     Copyright (C) 2017  Aaron McKenna
@@ -33,7 +34,7 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class AggregateRankedScore extends ScoreModel with AggregateScore {
+class AggregateRankedScore(trancheCount: Int = 4) extends ScoreModel with AggregateScore {
 
   // our stored list of score names
   var scoreNames = List[RankedScore]()
@@ -56,68 +57,47 @@ class AggregateRankedScore extends ScoreModel with AggregateScore {
     */
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
 
-    println("guide size = " + guides.size)
     // the range of our rank order
     val range = guides.size
 
     // our ranked guide container
-    val rankedGuides = guides.map{gd => RankedCRISPRSiteOT(gd)}
+    val rankedGuides = guides.map { gd => RankedCRISPRSiteOT(gd) }
 
     // add rank information to the guides
-    rankGuides(rankedGuides)
+    AggregateRankedScore.rankGuides(rankedGuides,scoreNames)
 
     // now reverse the sort -- we want the best targets first
-    val medianRankedGuides = Array(rankedGuides.map{gd => {
-      (gd.medianRank,gd)
-    }}.toSeq.sortWith(_._1 > _._1):_*)
+    val medianRankedGuides = Array(rankedGuides.map { gd => {
+      (gd.medianRank, gd)
+    }
+    }.toSeq.sortWith(_._1 < _._1): _*)
 
-    val trancheDividers = Range(0,rankedGuides.size).grouped(Math.ceil(rankedGuides.size / 4.0).toInt).toArray
+    //
+    val trancheUpperDividers = Range(1, (trancheCount + 1)).map{v => v.toDouble/trancheCount.toDouble}.toArray
 
-    medianRankedGuides.zipWithIndex.foreach{case((median,guide),index) => {
-
+    medianRankedGuides.zipWithIndex.foreach { case ((median, guide), index) => {
       // assign the tranche name
-      val tranche = trancheDividers.zipWithIndex.filter{case(t,ind) => t.contains(index)}.map{case(t,ind) => ind + 1}
-      assert(tranche.size == 1)
-      guide.site.namedAnnotations(scoreName + "_medianRank") = Array[String]((rankedGuides.size - median).toInt.toString)
-      guide.site.namedAnnotations(scoreName + "_medianTranche") = Array[String](tranche.mkString(","))
-    }}
+      val normalizedIndex = (index.toDouble) / (rankedGuides.size - 1).toDouble
+      val tranchesGreaterThan = trancheUpperDividers.filter(belowThis => ((median.toDouble / (rankedGuides.size).toDouble) <= belowThis))
+      val tranche = trancheUpperDividers.indexOf(tranchesGreaterThan(0)) + 1
+
+      guide.site.namedAnnotations(scoreName + "_medianRank") = Array[String]((median).toInt.toString)
+      guide.site.namedAnnotations(scoreName + "_tranche") = Array[String](tranche.toString)
+    }
+    }
 
     // now rank either the top 1000 guides or the first quantile, using the Schulze method
-    val topXGuides = Math.min(Math.ceil(rankedGuides.size / 4.0).toInt,1000)
+    val topXGuides = Math.min(Math.ceil(rankedGuides.size / trancheCount.toDouble).toInt, 1000)
 
-    val topGuides = medianRankedGuides.slice(0,topXGuides).map{case(med,gd) => (gd.ranks.values.toArray,gd)}.toArray
+    val topGuides = medianRankedGuides.slice(0, topXGuides).map { case (med, gd) => (gd.ranks.values.toArray, gd) }.toArray
     val schRank = new utils.SchulzeRank[RankedCRISPRSiteOT](topGuides)
 
-    topGuides.zipWithIndex.foreach{case((scores,gd),index) => {
+    topGuides.zipWithIndex.foreach { case ((scores, gd), index) => {
       gd.site.namedAnnotations(scoreName + "_topX") = Array[String]((schRank.indexToRNS(index).rank + 1 /*make it one-based instead of zero-based*/).toString)
-    }}
-  }
-
-  /**
-    * add rank information to a set of targets
-    * @param rankedGuides the array of RankedCRISPRSiteOTs
-    */
-  private def rankGuides(rankedGuides: Array[RankedCRISPRSiteOT]) = {
-    // for each scoring scheme we're considering, create and record a rank order
-    scoreNames.foreach { scheme => {
-      val preRanked = rankedGuides.map { gd => (convertToScore(gd.site.namedAnnotations.getOrElse(scheme.scoreName, Array[String]("FAIL"))).getOrElse(-1.0), gd) }
-
-      // which way is the metric sorted?
-      val ranked = if (scheme.highScoreIsGood) {
-        ListMap(preRanked.toSeq.sortWith(_._1 > _._1): _*)
-      } else {
-        ListMap(preRanked.toSeq.sortWith(_._1 < _._1): _*)
-      }
-
-      // now store the rank
-      ranked.zipWithIndex.foreach { case ((score, guide), index) => guide.ranks(scheme.scoreName) = index }
     }
     }
   }
 
-  def convertToScore(scores: Array[String]): Option[Double] = {
-    try { Some(scores.mkString("").toDouble) } catch { case _ => None }
-  }
 
   /**
     * are we valid over the enzyme of interest? always true
@@ -154,7 +134,7 @@ class AggregateRankedScore extends ScoreModel with AggregateScore {
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String](scoreName + "_medianRank",scoreName + "_medianQuantile",scoreName + "_topX")
+  override def headerColumns(): Array[String] = Array[String](scoreName + "_medianRank", scoreName + "_medianQuantile", scoreName + "_topX")
 
   /**
     * set the bit encoder for this scoring metric
@@ -165,5 +145,67 @@ class AggregateRankedScore extends ScoreModel with AggregateScore {
 
   override def initializeScoreNames(scoreNames: List[RankedScore]): Unit = {
     this.scoreNames = scoreNames
+  }
+}
+
+object AggregateRankedScore {
+  /**
+    * add rank information to a set of targets, worst to best
+    *
+    * @param rankedGuides the array of RankedCRISPRSiteOTs
+    */
+  def rankGuides(rankedGuides: Array[RankedCRISPRSiteOT], scoreNames: List[RankedScore]): Unit = {
+
+    // for each scoring scheme we're considering, create and record a rank order
+    scoreNames.foreach { rnkScore => {
+
+      // which way is the metric sorted?
+      val (rankingApproach, failScore) = if (rnkScore.highScoreIsGood) {
+        (scoreHighIsGood, Int.MinValue)
+      } else {
+        (scoreLowIsGood, Int.MaxValue)
+      }
+
+      val preRanked = rankedGuides.map { gd => {
+        (convertToScore(gd.site.namedAnnotations.getOrElse(rnkScore.scoreName,Array[String](failScore.toString)),failScore), gd)
+      }}
+
+      val ranked = Array(preRanked.toSeq.sortWith(rankingApproach): _*)
+
+      var currentRank = 1
+      var rankBuffer = new ArrayBuffer[Tuple2[Double, RankedCRISPRSiteOT]]()
+
+      ranked.zipWithIndex.foreach { case ((score, guide), index) => {
+        // if we have a better-scoring guide, assign ranks to all those guides in the buffer
+        if (rankBuffer.size > 0 && rankingApproach(rankBuffer(rankBuffer.size - 1), (score, guide))) {
+          val assignedRank = currentRank + Math.floor(rankBuffer.size / 2).toInt
+          rankBuffer.toArray.foreach { rk => {
+            rk._2.ranks("RANKED_" + rnkScore.scoreName()) = assignedRank
+          }}
+          currentRank += rankBuffer.size
+          rankBuffer.clear()
+        }
+        rankBuffer += Tuple2[Double, RankedCRISPRSiteOT](score, guide)
+      }
+      }
+      val assignedRank = currentRank + Math.floor(rankBuffer.size / 2).toInt
+      rankBuffer.toArray.foreach { rk => {
+        rk._2.ranks("RANKED_" + rnkScore.scoreName()) = assignedRank
+      }}
+    }
+    }
+  }
+
+  val scoreHighIsGood = (s1: Tuple2[Double, RankedCRISPRSiteOT], s2: Tuple2[Double, RankedCRISPRSiteOT]) => s1._1 > s2._1
+
+  val scoreLowIsGood = (s1: Tuple2[Double, RankedCRISPRSiteOT], s2: Tuple2[Double, RankedCRISPRSiteOT]) => s1._1 < s2._1
+
+
+  def convertToScore(scores: Array[String], failoverScore: Double): Double = {
+    try {
+      scores.mkString("").toDouble
+    } catch {
+      case _ : Throwable => failoverScore
+    }
   }
 }

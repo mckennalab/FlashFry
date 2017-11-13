@@ -12,9 +12,7 @@ class TabDelimitedHanderTest extends FlatSpec with Matchers {
   val bitEncoder = new BitEncoding(Cas9ParameterPack)
   val target = new CRISPRSite("fakeChrom", "GACTTGCATCCGAAGCCGGTGGG", true, 150, None)
   val posEnc = new BitPosition()
-  TabDelimitedHanderTest.hg19ChromeOrder.foreach{t => {println("Adding " + t); posEnc.addReference(t)}}
-
-  println(posEnc.contigMap.map{case(c,t) => c + "=" + t}.mkString(","))
+  TabDelimitedHanderTest.hg19ChromeOrder.foreach{t => {posEnc.addReference(t)}}
 
   "TabDelimitedHander" should "read the same file it just wrote" in {
     val inputFile = new File("test_data/fake.sites")

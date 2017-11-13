@@ -30,7 +30,6 @@ import reference.ReferenceEncoder
 import reference.binary.BinaryHeader
 import reference.traversal.{LinearTraversal, OrderedBinTraversalFactory}
 import reference.traverser.SeekTraverser._
-import reference.traverser.parallel.ParallelTraverser
 import standards.ParameterPack
 
 import scala.collection.mutable
@@ -80,35 +79,21 @@ class OffTargetDiscovery extends LazyLogging with Module {
         /*
         handle the various configurations -- forced linear traversal, saturated traversal, multithreaded (not supported currently)
          */
-        (config.forceLinear, isTraversalSaturated, config.numberOfThreads) match {
-          case (fl, sat, threads) if ((fl | sat) & threads == 1) => {
+        (config.forceLinear, isTraversalSaturated) match {
+          case (fl, sat) if (fl | sat) => {
             val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
             guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
             logger.info("Starting linear traversal")
             LinearTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
           }
-          case (fl, sat, threads) if (!fl & !sat & threads == 1) => {
+          case (fl, sat) if (!fl & !sat) => {
             logger.info("Starting seek traversal")
             val traversal = traversalFactory.get.iterator
             guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
             SeekTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
           }
-          case (fl, sat, threads) if (!fl & !sat & threads > 1) => {
-            logger.info("Starting parallel traversal")
-            ParallelTraverser.numberOfThreads = threads
-            val traversal = traversalFactory.get.iterator
-            guideStorage.setTraversalOverFlowCallback(traversal.overflowGuide)
-            ParallelTraverser.scan(new File(config.binaryOTFile), header, traversal, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
-          }
-          case (fl, sat, threads) if (!fl & threads > 1) => {
-            logger.info("Starting parallel linear traversal")
-            val lTrav = new LinearTraversal(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage)
-            guideStorage.setTraversalOverFlowCallback(lTrav.overflowGuide)
-            ParallelTraverser.numberOfThreads = threads
-            ParallelTraverser.scan(new File(config.binaryOTFile), header, lTrav, guideStorage, config.maxMismatch, header.inputParameterPack, header.bitCoder, header.bitPosition)
-          }
-          case (fl, sat, threads) => {
-            throw new IllegalStateException("We don't have a run type when --forceLinear=" + fl + ", binSaturation=" + sat + ", and --numberOfThreads=" + threads)
+          case (fl,sat) => {
+            throw new IllegalStateException("We don't have a run type when --forceLinear=" + fl + ", binSaturation=" + sat)
           }
         }
 
@@ -144,8 +129,7 @@ case class DiscoverConfig(analysisType: Option[String] = None,
                           markTargetsWithExactGenomeHits: Boolean = false,
                           flankingSequence: Int = 6,
                           maximumOffTargets: Int = 2000,
-                          forceLinear: Boolean = false,
-                          numberOfThreads: Int = 1)
+                          forceLinear: Boolean = false)
 
 
 class OffTargetBaseOptions extends OptionParser[DiscoverConfig]("discover") {

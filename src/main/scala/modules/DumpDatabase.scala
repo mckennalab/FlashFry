@@ -31,7 +31,6 @@ import reference.binary.{BinaryHeader, DatabaseWriter}
 import reference.traversal.{LinearTraversal, OrderedBinTraversalFactory}
 import reference.traverser.SeekTraverser._
 import reference.traverser.dump.DumpAllGuides
-import reference.traverser.parallel.ParallelTraverser
 import standards.ParameterPack
 
 import scala.collection.mutable
