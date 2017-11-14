@@ -109,7 +109,7 @@ The following scoring options can be supplied to the `--scoringMetrics` command 
 
 - `moreno2015` (ranking score) - Moreno-Mateos and Vejnar's CRISPRscan on-target scoring scheme: [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/). Scores range from 1 (highly active at their target) to 0 (not an active cutting guide). Negitive values are possible. Read Haeussler et al. for caveats about this score [Link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-1012-2)
 
-- `rank` (meta score) - This score takes the rank-ordering of any scoring metric included above, finds the median rank, and then ranks all of the guides by their median rank. Scores that are undefined (such as on-target scores that aren't given enough sequence context to score) are tied at the worst rank before calculating the median rank. This is intended to help users pick the best aggregate targets across multiple scoring schemes. This is still a bit experimental.
+- `rank` (meta score) - This score takes the rank-ordering of any scoring metric included above, finds the median rank, and then ranks all of the guides by their median rank. Scores that are undefined (such as on-target scores that aren't given enough sequence context to score) are tied at the worst rank before calculating the median rank. The top 1000 guides are then ranked using the [Schulze voting method](https://en.wikipedia.org/wiki/Schulze_method). This is intended to help users pick the best aggregate targets across multiple scoring schemes. This is still a bit experimental.
 
 - `bedannotator` - annotate the scored output file with associated annotations from a BED file.
  Additional command line options: 
