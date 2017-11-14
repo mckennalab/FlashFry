@@ -31,7 +31,7 @@ wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quicks
 tar xf quickstart_data.tar.gz
 ```
 
-then run the database creation step (this should take a few minutes, it takes ~152 seconds on my laptop):
+then run the database creation step (this should take a few minutes, it takes ~75 seconds on my laptop):
 
 ```shell
 mkdir tmp
