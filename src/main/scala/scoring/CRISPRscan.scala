@@ -122,7 +122,7 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("Moreno-Mateos2015OnTarget")
+  override def headerColumns(): Array[String] = Array[String](scoreName)
 }
 
 

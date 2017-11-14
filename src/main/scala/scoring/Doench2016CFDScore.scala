@@ -150,7 +150,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("Doench2016CDFScore")
+  override def headerColumns(): Array[String] = Array[String](scoreName)
 
 
   def specialReverseCompBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'U') 'A' else c

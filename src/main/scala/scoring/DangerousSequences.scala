@@ -45,14 +45,13 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @return a score (as a string)
     */
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
-
-
     var problems = Array.fill[String](3)("NONE")
 
     if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
       problems(0) = "GC_" + Utils.gcContent(guide.target.bases)
 
-    if (guide.target.bases.contains("TTTT"))
+    // thanks to D. Simeonov for the bug catch here
+    if (guide.target.bases.slice(bitEncoder.get.mParameterPack.targetRange._1,bitEncoder.get.mParameterPack.targetRange._2).contains("TTTT"))
       problems(1) = "PolyT"
 
     if (guide.offTargets.size > 0) {

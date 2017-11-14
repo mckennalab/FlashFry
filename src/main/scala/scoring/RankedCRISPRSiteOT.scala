@@ -23,7 +23,6 @@ case class RankedCRISPRSiteOT(site: CRISPRSiteOT) {
   }
 
   lazy val medianRank:Double = {
-    println("Median of " + ranks.map{case(k,v) => k + "," + v}.mkString(",") + " is " + Utils.median(ranks.values.map{t => t.toDouble}.toSeq))
     Utils.median(ranks.values.map{t => t.toDouble}.toSeq)
   }
 }

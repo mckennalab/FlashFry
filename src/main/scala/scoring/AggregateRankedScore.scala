@@ -26,6 +26,7 @@ import java.io.File
 import bitcoding.{BitEncoding, BitPosition, PositionInformation}
 import crispr.{CRISPRSite, CRISPRSiteOT}
 import modules.{DiscoverConfig, OffTargetBaseOptions}
+import scoring.AggregateRankedScore.{scoreHighIsGood, scoreLowIsGood}
 import scoring._
 import standards.ParameterPack
 import utils.{BEDFile, Utils}
@@ -75,14 +76,21 @@ class AggregateRankedScore(trancheCount: Int = 4) extends ScoreModel with Aggreg
     //
     val trancheUpperDividers = Range(1, (trancheCount + 1)).map{v => v.toDouble/trancheCount.toDouble}.toArray
 
+    // attach the median-of-median rank to the score
+    AggregateRankedScore.assignRank(medianRankedGuides, scoreLowIsGood, this.scoreName + "_medianRank")
+
+    // assign the tranche
     medianRankedGuides.zipWithIndex.foreach { case ((median, guide), index) => {
-      // assign the tranche name
       val normalizedIndex = (index.toDouble) / (rankedGuides.size - 1).toDouble
-      val tranchesGreaterThan = trancheUpperDividers.filter(belowThis => ((median.toDouble / (rankedGuides.size).toDouble) <= belowThis))
+
+      val tranchesGreaterThan = trancheUpperDividers.filter(belowThis =>
+        (guide.site.namedAnnotations(this.scoreName + "_medianRank")(0).toDouble / medianRankedGuides.size.toDouble <= belowThis))
+
       val tranche = trancheUpperDividers.indexOf(tranchesGreaterThan(0)) + 1
 
-      guide.site.namedAnnotations(scoreName + "_medianRank") = Array[String]((median).toInt.toString)
       guide.site.namedAnnotations(scoreName + "_tranche") = Array[String](tranche.toString)
+
+
     }
     }
 
@@ -134,7 +142,7 @@ class AggregateRankedScore(trancheCount: Int = 4) extends ScoreModel with Aggreg
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String](scoreName + "_medianRank", scoreName + "_medianQuantile", scoreName + "_topX")
+  override def headerColumns(): Array[String] = Array[String](scoreName + "_medianRank", scoreName + "_tranche", scoreName + "_topX")
 
   /**
     * set the bit encoder for this scoring metric
@@ -167,31 +175,41 @@ object AggregateRankedScore {
       }
 
       val preRanked = rankedGuides.map { gd => {
-        (convertToScore(gd.site.namedAnnotations.getOrElse(rnkScore.scoreName,Array[String](failScore.toString)),failScore), gd)
+        (convertToScore(gd.site.namedAnnotations.getOrElse(rnkScore.scoreName(),Array[String](failScore.toString)),failScore), gd)
       }}
 
-      val ranked = Array(preRanked.toSeq.sortWith(rankingApproach): _*)
+      val ranked = preRanked.sortWith(rankingApproach)
 
-      var currentRank = 1
-      var rankBuffer = new ArrayBuffer[Tuple2[Double, RankedCRISPRSiteOT]]()
+      assignRank(ranked,rankingApproach,"RANKED_" + rnkScore.scoreName())
+    }
+    }
+  }
 
-      ranked.zipWithIndex.foreach { case ((score, guide), index) => {
-        // if we have a better-scoring guide, assign ranks to all those guides in the buffer
-        if (rankBuffer.size > 0 && rankingApproach(rankBuffer(rankBuffer.size - 1), (score, guide))) {
-          val assignedRank = currentRank + Math.floor(rankBuffer.size / 2).toInt
-          rankBuffer.toArray.foreach { rk => {
-            rk._2.ranks("RANKED_" + rnkScore.scoreName()) = assignedRank
-          }}
-          currentRank += rankBuffer.size
-          rankBuffer.clear()
+  def assignRank(ranked: Array[(Double, RankedCRISPRSiteOT)],
+                         rankingApproach: (Tuple2[Double, RankedCRISPRSiteOT], Tuple2[Double, RankedCRISPRSiteOT]) => Boolean,
+                         rankName: String) = {
+    var currentRank = 1
+    var rankBuffer = new ArrayBuffer[Tuple2[Double, RankedCRISPRSiteOT]]()
+
+    ranked.zipWithIndex.foreach { case ((score, guide), index) => {
+      // if we have a better-scoring guide, assign ranks to all those guides in the buffer
+      if (rankBuffer.size > 0 && rankingApproach(rankBuffer(rankBuffer.size - 1), (score, guide))) {
+        val assignedRank = currentRank + Math.floor(rankBuffer.size / 2).toInt
+        rankBuffer.toArray.foreach { rk => {
+          rk._2.ranks(rankName) = assignedRank
+          rk._2.site.namedAnnotations(rankName) = Array[String](assignedRank.toString)
         }
-        rankBuffer += Tuple2[Double, RankedCRISPRSiteOT](score, guide)
+        }
+        currentRank += rankBuffer.size
+        rankBuffer.clear()
       }
-      }
-      val assignedRank = currentRank + Math.floor(rankBuffer.size / 2).toInt
-      rankBuffer.toArray.foreach { rk => {
-        rk._2.ranks("RANKED_" + rnkScore.scoreName()) = assignedRank
-      }}
+      rankBuffer += Tuple2[Double, RankedCRISPRSiteOT](score, guide)
+    }
+    }
+    val assignedRank = currentRank + Math.floor(rankBuffer.size / 2).toInt
+    rankBuffer.toArray.foreach { rk => {
+      rk._2.ranks(rankName) = assignedRank
+      rk._2.site.namedAnnotations(rankName) = Array[String](assignedRank.toString)
     }
     }
   }
@@ -203,7 +221,7 @@ object AggregateRankedScore {
 
   def convertToScore(scores: Array[String], failoverScore: Double): Double = {
     try {
-      scores.mkString("").toDouble
+      scores.mkString("-fail-").toDouble
     } catch {
       case _ : Throwable => failoverScore
     }

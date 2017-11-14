@@ -114,7 +114,7 @@ class AggregateRankedScoreTest extends FlatSpec with Matchers {
     var targetRank = 100
     fakeTargets.foreach { gd => {
       (gd.namedAnnotations(aggScore.scoreName() + "_tranche").mkString("")) should be (3.toString)
-      (gd.namedAnnotations(aggScore.scoreName() + "_medianRank").mkString("")) should be (50.toString)
+      (gd.namedAnnotations(aggScore.scoreName() + "_medianRank").mkString("")) should be (51.toString)
       targetRank -= 1
     }}
   }

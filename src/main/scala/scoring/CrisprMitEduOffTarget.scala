@@ -176,7 +176,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("Hsu2013")
+  override def headerColumns(): Array[String] = Array[String](scoreName)
 
   /**
     * @return true, a high score is good

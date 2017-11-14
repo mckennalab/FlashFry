@@ -152,7 +152,7 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with Ran
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("Doench2014OnTarget")
+  override def headerColumns(): Array[String] = Array[String](scoreName)
 
   /**
     * @return true, a high score is good

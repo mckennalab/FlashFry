@@ -38,6 +38,8 @@ sealed trait ParameterPack {
   def comparisonBitEncoding: Long
 
   def fivePrimePam: Boolean
+
+  def targetRange: Tuple2[Int,Int]
 }
 
 object ParameterPack {
@@ -80,6 +82,8 @@ case object Cas9ParameterPack extends ParameterPack {
   override def fwdRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}[AG]G))""".r
 
   override def revRegex: Regex = """([C])(?=([CT][ACGTacgt]{21}))""".r
+
+  override def targetRange = (0,20)
 }
 
 
@@ -95,6 +99,8 @@ case object Cas9NGGParameterPack extends ParameterPack {
   override def fwdRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}GG))""".r
 
   override def revRegex: Regex = """([C])(?=(C[ACGTacgt]{21}))""".r
+
+  override def targetRange = (0,20)
 }
 
 
@@ -110,6 +116,8 @@ case object Cas9NAGParameterPack extends ParameterPack {
   override def fwdRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}AG))""".r
 
   override def revRegex: Regex = """([C])(?=(T[ACGTacgt]{21}))""".r
+
+  override def targetRange = (0,20)
 }
 
 case object Cpf1ParameterPack extends ParameterPack {
@@ -123,6 +131,8 @@ case object Cpf1ParameterPack extends ParameterPack {
   override def fwdRegex: Regex = """(T)(?=(TT[ACGTacgt]{21}))""".r
 
   override def revRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}AAA))""".r
+
+  override def targetRange = (4,24)
 
 }
 
