@@ -51,7 +51,7 @@ class DangerousSequences extends SingleGuideScoreModel {
       problems(0) = "GC_" + Utils.gcContent(guide.target.bases)
 
     // thanks to D. Simeonov for the bug catch here
-    if (guide.target.bases.slice(bitEncoder.get.mParameterPack.targetRange._1,bitEncoder.get.mParameterPack.targetRange._2).contains("TTTT"))
+    if (guide.target.bases.slice(bitEncoder.get.mParameterPack.guideRange._1,bitEncoder.get.mParameterPack.guideRange._2).contains("TTTT"))
       problems(1) = "PolyT"
 
     if (guide.offTargets.size > 0) {

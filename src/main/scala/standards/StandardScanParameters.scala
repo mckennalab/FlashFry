@@ -39,7 +39,7 @@ sealed trait ParameterPack {
 
   def fivePrimePam: Boolean
 
-  def targetRange: Tuple2[Int,Int]
+  def guideRange: Tuple2[Int,Int]
 }
 
 object ParameterPack {
@@ -83,7 +83,7 @@ case object Cas9ParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=([CT][ACGTacgt]{21}))""".r
 
-  override def targetRange = (0,20)
+  override def guideRange = (0,20)
 }
 
 
@@ -100,7 +100,7 @@ case object Cas9NGGParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=(C[ACGTacgt]{21}))""".r
 
-  override def targetRange = (0,20)
+  override def guideRange = (0,20)
 }
 
 
@@ -117,7 +117,7 @@ case object Cas9NAGParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=(T[ACGTacgt]{21}))""".r
 
-  override def targetRange = (0,20)
+  override def guideRange = (0,20)
 }
 
 case object Cpf1ParameterPack extends ParameterPack {
@@ -132,7 +132,7 @@ case object Cpf1ParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}AAA))""".r
 
-  override def targetRange = (4,24)
+  override def guideRange = (4,24)
 
 }
 

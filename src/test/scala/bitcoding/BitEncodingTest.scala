@@ -350,7 +350,7 @@ class BitEncodingTest extends FlatSpec with Matchers {
     val encodeDevice = new BitEncoding(Cas9NGGParameterPack)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
-    val justTarget = encodeDevice.bitDecodeString(encoding).toStr.slice(Cas9NGGParameterPack.targetRange._1,Cas9NGGParameterPack.targetRange._2)
+    val justTarget = encodeDevice.bitDecodeString(encoding).toStr.slice(Cas9NGGParameterPack.guideRange._1,Cas9NGGParameterPack.guideRange._2)
 
     (justTarget) should be ("GGCTCCGAGCAGAAGAAGAA")
   }
@@ -362,7 +362,7 @@ class BitEncodingTest extends FlatSpec with Matchers {
     val encodeDevice = new BitEncoding(Cpf1ParameterPack)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
-    val justTarget = encodeDevice.bitDecodeString(encoding).toStr.slice(Cpf1ParameterPack.targetRange._1,Cpf1ParameterPack.targetRange._2)
+    val justTarget = encodeDevice.bitDecodeString(encoding).toStr.slice(Cpf1ParameterPack.guideRange._1,Cpf1ParameterPack.guideRange._2)
 
     (justTarget) should be ("GGCTCCGAGCAGAAGAAGAA")
   }
