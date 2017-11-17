@@ -22,7 +22,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.7/FlashFry-assembly-1.7.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.7.1/FlashFry-assembly-1.7.1.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
@@ -31,11 +31,11 @@ wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quicks
 tar xf quickstart_data.tar.gz
 ```
 
-then run the database creation step (this should take a few minutes, it takes ~152 seconds on my laptop):
+then run the database creation step (this should take a few minutes, it takes ~75 seconds on my laptop):
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.7.jar \
+java -Xmx4g -jar FlashFry-assembly-1.7.1.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -46,7 +46,7 @@ java -Xmx4g -jar FlashFry-assembly-1.7.jar \
 Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.7.jar \
+java -Xmx4g -jar FlashFry-assembly-1.7.1.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
@@ -56,7 +56,7 @@ java -Xmx4g -jar FlashFry-assembly-1.7.jar \
 finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.7.jar \
+java -Xmx4g -jar FlashFry-assembly-1.7.1.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
@@ -101,13 +101,15 @@ Modules are chosen using the `--analysis` option. Three analysis modules are cur
 
 The following scoring options can be supplied to the `--scoringMetrics` command line parameter. I'd recommend reading Read Haeussler et al. for details about scoring schemes, and which are most appropriate given your experimental design [Link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-1012-2). Some of these scores have command line options of their own, documented below. A reminder that FlashFry currently outputs guides that OVERFLOW. You should exclude these from your analysis, are are only included for completeness (their scores are not valid):
 
-- `hsu2013` - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score. Scores range from 0 to 100, higher scores are better. Scores will vary for a guide sequence with the allowed number of mismatches.
+- `hsu2013` (ranking score) - Also known as the crispr.mit.edu score. From the paper "DNA targeting specificity of RNA-guided Cas9 nucleases" Hsu et. al. Nature Biotechnology, 2013 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/23287718) .This score is valid over the NGG and NAG Cas9 targets. Although the original website has some issues, this is probably the most widely used off-target specificity score. Scores range from 0 to 100, higher scores are better. Scores will vary for a guide sequence with the allowed number of mismatches.
  
-- `doench2014ontarget` - On-target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501). From 0 to 1, higher scores mean more active guide sequence.
+- `doench2014ontarget` (ranking score) - On-target activity score from "Rational design of highly active sgRNAs for CRISPR-Cas9-mediated gene inactivation". Doench et. al. Nature Biotechnology, 2014 [Pubmed link](https://www.ncbi.nlm.nih.gov/pubmed/25184501). From 0 to 1, higher scores mean more active guide sequence.
 
-- `doench2016cfd` - The Doench 2016 cutting frequency determination score, a measure of how well an off-target candidate in the genome will be cut by your guide. The scores here range from 1 (highly active cutting at the off-target) to 0 (not active). This is calculated for each off-target, and we take the highest score (see FAQ for more details) [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
+- `doench2016cfd` (ranking score) - The Doench 2016 cutting frequency determination score, a measure of how well an off-target candidate in the genome will be cut by your guide. The scores here range from 1 (highly active cutting at the off-target) to 0 (not active). This is calculated for each off-target, and we take the highest score (see FAQ for more details) [Pubmed](https://www.ncbi.nlm.nih.gov/pubmed/26780180)
 
-- `moreno2015` - Moreno-Mateos and Vejnar's CRISPRscan on-target scoring scheme: [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/). Scores range from 1 (highly active at their target) to 0 (not an active cutting guide). Negitive values are possible. Read Haeussler et al. for caveats about this score [Link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-1012-2)
+- `moreno2015` (ranking score) - Moreno-Mateos and Vejnar's CRISPRscan on-target scoring scheme: [Pubmed](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4589495/). Scores range from 1 (highly active at their target) to 0 (not an active cutting guide). Negitive values are possible. Read Haeussler et al. for caveats about this score [Link](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-1012-2)
+
+- `rank` (meta score) - This score takes the rank-ordering of any scoring metric included above, finds the median rank, and then ranks all of the guides by their median rank. Scores that are undefined (such as on-target scores that aren't given enough sequence context to score) are tied at the worst rank before calculating the median rank. The top 1000 guides are then ranked using the [Schulze voting method](https://en.wikipedia.org/wiki/Schulze_method). This is intended to help users pick the best aggregate targets across multiple scoring schemes. This is still a bit experimental.
 
 - `bedannotator` - annotate the scored output file with associated annotations from a BED file.
  Additional command line options: 
@@ -116,7 +118,7 @@ The following scoring options can be supplied to the `--scoringMetrics` command 
 - `dangerous` - annotate sequences that would be difficult to work with. Currently this includes: 
      - `IN_GENOME=X` : The number of times a perfect match target for this guide sequence is seen within the genome of interest. 
      - `GC_X` : flagging sequences that have a high (>75%) or low (<25%) GC content
-     - `PolyT` : guide sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
+     - `PolyT` : guide sequences (subsetted from the target sequences) sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
 - `minot` - a convenience score: what's the minimum distance to the target within the off-target set? encodes both the distance and the number of off-targets at that distance
 - reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
 
