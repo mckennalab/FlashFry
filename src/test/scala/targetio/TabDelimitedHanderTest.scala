@@ -17,7 +17,7 @@ class TabDelimitedHanderTest extends FlatSpec with Matchers {
   "TabDelimitedHander" should "read the same file it just wrote" in {
     val inputFile = new File("test_data/fake.sites")
     val outputTemp = new File("test_data/fake.sites_temp")
-    outputTemp.deleteOnExit()
+    //outputTemp.deleteOnExit()
 
     val input = new TabDelimitedInput(inputFile,bitEncoder,posEnc,4)
     val output = new TabDelimitedOutput(outputTemp,bitEncoder,posEnc,Array[ScoreModel](),true,true)

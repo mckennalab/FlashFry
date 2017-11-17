@@ -55,6 +55,17 @@ class CrisprMitEduOffTargetTest extends FlatSpec with Matchers {
     val mit = new CrisprMitEduOffTarget()
     mit.bitEncoder(bitEncoder)
     (mit.score_crispr(crisprOT)) should be (96.0 +- 1.0) // they report 97, not sure how it was rounded. we get 96.4 or so
+  }
 
+
+  "CrisprMitEduOffTargetTest" should "score TTGTTTCCAGGTCAATGTGACGG to correctly TTGTCTTCAAGTCAATATGATGG" in {
+    val target = new CRISPRSite("1", "TTGTTTCCAGGTCAATGTGACGG", true, 1, None)
+    val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 1)),1000)
+
+    val otHit = new CRISPRHit(bitEncoder.bitEncodeString(StringCount("TTGTCTTCAAGTCAATATGATGG",1)),Array[Long]())
+
+    val mit = new CrisprMitEduOffTarget()
+    mit.bitEncoder(bitEncoder)
+    (mit.scoreOffTarget(crisprOT,otHit)) should be (0.36403873 +- 0.1) // they report 97, not sure how it was rounded. we get 96.4 or so
   }
 }

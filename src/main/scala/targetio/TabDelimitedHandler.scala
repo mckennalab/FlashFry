@@ -123,7 +123,7 @@ class TabDelimitedOutput(outputFile: File,
     output.write((guide.target.start + guide.target.length) + TabDelimitedOutput.sep)
     output.write((guide.target.bases) + TabDelimitedOutput.sep)
     output.write((guide.target.sequenceContext.getOrElse("NONE")) + TabDelimitedOutput.sep)
-    output.write((if (guide.full) TabDelimitedOutput.overflow else TabDelimitedOutput.targetOK) + TabDelimitedOutput.sep)
+    output.write((if (guide.full | guide.inheritedOverflow) TabDelimitedOutput.overflow else TabDelimitedOutput.targetOK) + TabDelimitedOutput.sep)
     output.write((if (guide.target.forwardStrand) TabDelimitedOutput.forward else TabDelimitedOutput.reverse) + TabDelimitedOutput.sep)
 
     models.foreach { model =>
@@ -157,7 +157,8 @@ class TabDelimitedOutput(outputFile: File,
 class TabDelimitedInput(inputFile: File,
                         bitEncoding: BitEncoding,
                         bitPosition: BitPosition,
-                       maximumMismatches: Int) {
+                       maximumMismatches: Int,
+                        filterOutOverflowedGuides: Boolean = false) {
 
   val input = if (inputFile.getAbsolutePath().endsWith(".gz")) {
     Source.fromInputStream(Utils.gis(inputFile.getAbsolutePath)).getLines()
@@ -194,12 +195,14 @@ class TabDelimitedInput(inputFile: File,
       sp(TabDelimitedOutput.startPos).toInt,
       if (sp(TabDelimitedOutput.contextPos) == "NONE") None else Some(sp(TabDelimitedOutput.contextPos)))
 
-    val ot = new CRISPRSiteOT(site, bitEncoding.bitEncodeString(sp(TabDelimitedOutput.targetPos)),
-      if (sp(TabDelimitedOutput.overflowPos) == "OK")
-        (sp((TabDelimitedOutput.setColumnCount - 1) + annotations.size).toInt + 1)
-      else
-        (sp((TabDelimitedOutput.setColumnCount - 1) + annotations.size).toInt)
-    )
+    val isOverflowed = sp(TabDelimitedOutput.overflowPos) != "OK"
+    val overflowCount = if (!isOverflowed)
+      (sp((TabDelimitedOutput.setColumnCount - 1) + annotations.size).toInt + 1)
+    else {
+      (sp((TabDelimitedOutput.setColumnCount - 1) + annotations.size).toInt)
+    }
+
+    val ot = new CRISPRSiteOT(site, bitEncoding.bitEncodeString(sp(TabDelimitedOutput.targetPos)),overflowCount,isOverflowed)
 
     (0 until annotations.size).foreach(anIndex => ot.namedAnnotations(annotations(anIndex)) = Array[String](sp(7 + anIndex)))
 
@@ -241,7 +244,8 @@ class TabDelimitedInput(inputFile: File,
       }
       }
     }
-    guides += ot
+    if ((!filterOutOverflowedGuides) || (!ot.inheritedOverflow && !ot.full))
+      guides += ot
   }
   }
 }

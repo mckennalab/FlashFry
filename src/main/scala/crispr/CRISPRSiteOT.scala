@@ -28,21 +28,20 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * store off-target hits associated with a specific CRISPR target
   */
-class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Ordered[CRISPRSiteOT] with LazyLogging {
+class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int, inputOverflow: Boolean = false) extends Ordered[CRISPRSiteOT] with LazyLogging {
   var target = tgt
   var offTargets = new ArrayBuffer[CRISPRHit]
   val longEncoding = encoding
   var currentTotal = 0
-
   val namedAnnotations = new mutable.HashMap[String,Array[String]]
-
+  val inheritedOverflow = inputOverflow
 
   def full = currentTotal >= overflow
 
   def addOT(offTarget: CRISPRHit) = {
     assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide: " + encoding + " overflow value: " + overflow + " current size " + currentTotal)
     offTargets += offTarget
-    currentTotal += 1
+    currentTotal += offTarget.coordinates.size
   }
 
   def addOTs(offTargetList: Array[CRISPRHit]) = {
@@ -74,5 +73,3 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int) extends Order
     offTargets = toKeep
   }
 }
-
-

@@ -19,8 +19,11 @@
 
 package scoring
 
+import java.io.File
+
 import bitcoding.BitEncoding
-import crispr.{CRISPRSiteOT}
+import crispr.{CRISPRHit, CRISPRSiteOT}
+import scopt.PeelParser
 import standards.{Cas9Type, ParameterPack}
 import standards.ParameterPack._
 
@@ -43,6 +46,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     0.395, 0.317, 0.0, 0.389, 0.079,
     0.445, 0.508, 0.613, 0.851, 0.732,
     0.828, 0.615, 0.804, 0.685, 0.583)
+
+  // do we consider on-target sequences (same exact sequence, just located in the genome) in the off-target score calculation?
+  var considerOnTarget = false
 
   // estimated from Doench et al. We use this to down-weight non-NGG PAM sequences
   val pamToAdjustment = Map("GG" -> 1.0, "AG" -> 0.26, "CG" -> 0.11, "TG" -> 0.01)
@@ -82,46 +88,8 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
 
     var scores = Array[Double]()
     cRISPRHit.offTargets.foreach { offTarget => {
-
-      var mismatches = 0
-      var distances = Array[Int]()
-      var lastMismatch: Option[Int] = None
-      val stringOTSeq = bitEncoder.get.bitDecodeString(offTarget.sequence)
-      var equationPartOne = 1.0
-
-      // first part of the equation -- score each mismatch from the target compared to the off target with their scoring matrix
-      stringOTSeq.str.slice(0,20).zip(cRISPRHit.target.bases.slice(0,20)).zipWithIndex.foreach { case (bases, index) => {
-
-        if (bases._1 != bases._2) {
-          equationPartOne = equationPartOne * (1.0 - offtargetCoeff(index))
-          mismatches += 1
-          lastMismatch.map { tk =>
-            distances :+= index - tk
-          }
-          lastMismatch = Some(index)
-        }
-      }}
-
-      // the second part -- penalize based on the average distance between mismatches
-      // couldn't get this right, and has to find this first part in the CRISPOR code
-      val equationPartTwo = if (mismatches < 2) {1.0 } else {
-        val avgDist = distances.sum.toDouble / distances.size.toDouble
-        1.0 / ((((19 - avgDist)/19.0) * 4.0) + 1.0)
-      }
-
-      // the last part is a 'damper' according to the website, to penalize pairings with lots of mismatches
-      val equationPartThree = if (mismatches == 0) { 1.0 } else { 1.0 / math.pow(mismatches.toDouble,2) }
-
-      val totalScore = equationPartOne * equationPartTwo * equationPartThree * 100.0
-
-      // adjust the scores based on the Doench PAM coefficients for alternate PAMs
-      val pamAdj = if (pamToAdjustment contains stringOTSeq.str.slice(21,23)) {
-        pamToAdjustment(stringOTSeq.str.slice(21, 23))
-      } else {
-        0.01
-      }
-
-      scores :+= totalScore * pamAdj
+      if (considerOnTarget | bitEncoder.get.mismatches(cRISPRHit.longEncoding,offTarget.sequence) != 0)
+        scores :+= scoreOffTarget(cRISPRHit, offTarget)
     }}
     scores
   }
@@ -134,6 +102,48 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     */
   def getScore(scores: Array[Double]): Double = {
     (100.0 / (100.0 + scores.sum)) * 100.0
+  }
+
+  def scoreOffTarget(crispr: CRISPRSiteOT, offTarget: CRISPRHit): Double = {
+
+    var mismatches = 0
+    var distances = Array[Int]()
+    var lastMismatch: Option[Int] = None
+    val stringOTSeq = bitEncoder.get.bitDecodeString(offTarget.sequence)
+    var equationPartOne = 1.0
+
+    // first part of the equation -- score each mismatch from the target compared to the off target with their scoring matrix
+    stringOTSeq.str.slice(0,20).zip(crispr.target.bases.slice(0,20)).zipWithIndex.foreach { case (bases, index) => {
+
+      if (bases._1 != bases._2) {
+        equationPartOne = equationPartOne * (1.0 - offtargetCoeff(index))
+
+        mismatches += 1
+        lastMismatch.map { tk =>
+          distances :+= index - tk
+        }
+        lastMismatch = Some(index)
+      }
+    }}
+
+    // the second part -- penalize based on the average distance between mismatches
+    // couldn't get this right, and has to find this first part in the CRISPOR code
+    val equationPartTwo = if (mismatches < 2) {1.0} else {
+      val avgDist = distances.sum.toDouble / distances.size.toDouble
+      1.0 / ((((19 - avgDist)/19.0) * 4.0) + 1.0)
+    }
+
+    // the last part is a 'damper' according to the website, to penalize pairings with lots of mismatches
+    val equationPartThree = if (mismatches == 0) { 1.0 } else { 1.0 / math.pow(mismatches.toDouble,2) }
+
+    val totalScore = equationPartOne * equationPartTwo * equationPartThree * 100.0
+    val pamAdj = if (pamToAdjustment contains stringOTSeq.str.slice(21,23)) {
+      pamToAdjustment(stringOTSeq.str.slice(21, 23))
+    } else {
+      0.01
+    }
+
+    totalScore * pamAdj
   }
 
   /**
@@ -152,7 +162,17 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @param args the command line arguments
     */
   override def parseScoringParameters(args: Seq[String]): Seq[String] = {
-    // we don't have any command line args
+    val parser = new MITAnnotationOptionParser()
+
+    val remaining = parser.parse(args, CRISPRMITConfig()) map {
+      case (config, remainingParameters) => {
+        if (!config.countOnTargetInScore) {
+          considerOnTarget = true
+        }
+        remainingParameters
+      }
+    }
+    remaining.getOrElse(Seq[String]())
     args
   }
 
@@ -182,4 +202,14 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @return true, a high score is good
     */
   override def highScoreIsGood: Boolean = true
+}
+
+/*
+ * the configuration class, it stores the user's arguments from the command line, set defaults here
+ */
+case class CRISPRMITConfig(countOnTargetInScore: Boolean = false)
+
+class MITAnnotationOptionParser extends PeelParser[CRISPRMITConfig]("") {
+  opt[Boolean]("countOnTargetInScore") valueName ("<string>") action { (x, c) => c.copy(countOnTargetInScore = x) } text ("do we consider exact matches when calculating the off-target scores")
+
 }
