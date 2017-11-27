@@ -120,7 +120,7 @@ The following scoring options can be supplied to the `--scoringMetrics` command 
      - `GC_X` : flagging sequences that have a high (>75%) or low (<25%) GC content
      - `PolyT` : guide sequences (subsetted from the target sequences) sequences that have four or more thymine (T) bases in a row. Could potentially terminate polIII transcription early (not an issue with other transcription approaches)
 - `minot` - a convenience score: what's the minimum distance to the target within the off-target set? encodes both the distance and the number of off-targets at that distance
-- reciprocalofftargets - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
+- `reciprocalofftargets` - mark guides within the target region that are a good off-target to one-another. This can lead to large deletion drop-out, which can confound results
 
 
 # General documentation
