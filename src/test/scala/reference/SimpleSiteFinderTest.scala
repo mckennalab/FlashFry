@@ -23,6 +23,22 @@ class SimpleSiteFinderTest extends FlatSpec with Matchers {
     (guideStore.guideHits(0).bases) should be (string)
   }
 
+  "SimpleSiteFinder" should "find context correctly" in {
+    val guideStr = "ATTTA AAAAA TTTTT AAAAA AGG".filter{c => c != ' '}.mkString("")
+    val string = "ATA ATATA ATTTA AAAAA TTTTT AAAAA AGG AATTA AAT".filter{c => c != ' '}.mkString("")
+
+    val guideStore = new GuideMemoryStorage()
+    val circ = SimpleSiteFinder(guideStore,Cas9NGGParameterPack,8)
+    circ.reset("testContig")
+
+    circ.addLine(string)
+    circ.close()
+    (guideStore.guideHits.size) should be (1)
+    (guideStore.guideHits(0).bases) should be (guideStr)
+    (guideStore.guideHits(0).sequenceContext.get) should be (string)
+    (guideStore.guideHits(0).start) should be (8)
+  }
+
   "SimpleSiteFinder" should "find a RC NGG Cas9 site correctly" in {
     val string = "CCTTA AAAAA CCCCC AAAAA AAA".filter{c => c != ' '}.mkString("")
 
