@@ -40,7 +40,7 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
     * @return a score as a double
     */
   def calcScore(guide: CRISPRSiteOT): Double = {
-    100.0 * (CRISPRscan.modelIntercept + CRISPRscan.paramsCRISPRscan.map{case(modelSeq,position,weight) => {
+    1.0 * (CRISPRscan.modelIntercept + CRISPRscan.paramsCRISPRscan.map{case(modelSeq,position,weight) => {
       val guideSubSeq = guide.target.sequenceContext.get.slice((position - 1),(position - 1) + modelSeq.length)
       assert(guideSubSeq.length == modelSeq.length,"Our comparison should have the same length: " + guideSubSeq + " and " + modelSeq + " for position " + position)
 
