@@ -41,7 +41,7 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int, inputOverflow
   def addOT(offTarget: CRISPRHit) = {
     assert(currentTotal < overflow || overflow == 0,"We should not add off-targets to an overflowed guide: " + encoding + " overflow value: " + overflow + " current size " + currentTotal)
     offTargets += offTarget
-    currentTotal += offTarget.coordinates.size
+    currentTotal += offTarget.getOffTargetCount
   }
 
   def addOTs(offTargetList: Array[CRISPRHit]) = {

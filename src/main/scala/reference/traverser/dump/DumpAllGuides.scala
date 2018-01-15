@@ -96,7 +96,7 @@ object DumpAllGuides extends LazyLogging {
           bitCoder.binToLongComparitor(binString))
 
         targets.foreach{target => {
-          if (target.coordinates.size == 1) {
+          if (target.getOffTargetCount == 1) {
             val sequence = bitCoder.bitDecodeString(target.sequence)
             val longestPoly = Utils.longestHomopolymerRun(sequence.str)
             val entropy = Utils.sequenceEntropy(sequence.str)

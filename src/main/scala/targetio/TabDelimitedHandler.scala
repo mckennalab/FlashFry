@@ -132,7 +132,7 @@ class TabDelimitedOutput(outputFile: File,
     }
 
     // output the total number of targets we found -- not just the number of sequences
-    output.write(guide.offTargets.map{ot => ot.coordinates.size}.sum.toString)
+    output.write(guide.offTargets.map{ot => ot.getOffTargetCount}.sum.toString)
 
     if (writeOTs)
       output.write(TabDelimitedOutput.sep + guide.offTargets.
@@ -178,6 +178,7 @@ class TabDelimitedInput(inputFile: File,
 
   val withOTs = (remainingColumns(remainingColumns.size - 2) == TabDelimitedOutput.final_columns(0) &&
     remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(1))
+  val withOTTokenLength = headerLine.size
 
   assert(withOTs || (remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(0)), "Unable to parse out the final columns in the header")
 
@@ -206,9 +207,8 @@ class TabDelimitedInput(inputFile: File,
 
     (0 until annotations.size).foreach(anIndex => ot.namedAnnotations(annotations(anIndex)) = Array[String](sp(7 + anIndex)))
 
-    if (withOTs && (sp(sp.size - 1) contains TabDelimitedOutput.offTargetSeparator)) {
+    if (withOTs && sp.size == withOTTokenLength) {
       sp(sp.size - 1).split(Pattern.quote(TabDelimitedOutput.offTargetSeparator)).foreach { token => {
-
         val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeparator)(0)
         val offTargetCount = token.split(TabDelimitedOutput.withinOffTargetSeparator)(1).toInt
         val offTargetMismatches = if (token.split(TabDelimitedOutput.withinOffTargetSeparator)(2) contains TabDelimitedOutput.positionListTerminatorFront)
@@ -236,7 +236,7 @@ class TabDelimitedInput(inputFile: File,
               ot.addOT(otHit)
           } else {
             assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-            val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), Array[Long]())
+            val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), new Array[Long](offTargetCount))
             if (!ot.full)
               ot.addOT(otHit)
           }

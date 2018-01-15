@@ -27,13 +27,16 @@ import targetio.{TabDelimitedOutput}
   *
   * @param sq the sequence
   * @param coord it's coordinates
+  * @param coord it's coordinates
   */
-class CRISPRHit(sq: Long, coord: Array[Long]) {
+class CRISPRHit(sq: Long, coord: Array[Long], validCoordinates: Boolean = true) {
   val sequence = sq
-  val coordinates = coord
+  private val coordinates = coord
+  def getOffTargetCount = coordinates.size
+
 
   def toOutput(bitEncoding: BitEncoding, posEnc: BitPosition, guide: Long, outputPositions: Boolean): String = {
-    // now output the off target information --
+    // now output the off-target information --
     if (outputPositions) {
         val otDecoded = bitEncoding.bitDecodeString(sequence)
         val positions = coordinates.map { otPos => {
