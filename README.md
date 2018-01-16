@@ -22,7 +22,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.7.4/FlashFry-assembly-1.7.5.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.7.5/FlashFry-assembly-1.7.5.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
