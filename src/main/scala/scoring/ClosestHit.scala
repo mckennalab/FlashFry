@@ -102,5 +102,5 @@ class ClosestHit extends SingleGuideScoreModel {
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("closestInGneome")
+  override def headerColumns(): Array[String] = Array[String]("basesDiffToClosestHit","closestHitCount")
 }
