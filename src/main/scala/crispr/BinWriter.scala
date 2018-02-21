@@ -23,6 +23,7 @@ import java.io._
 
 import utils.{BaseCombinationGenerator, Utils}
 import org.slf4j.LoggerFactory
+import standards.ParameterPack
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -32,7 +33,7 @@ import scala.io.Source
   * handle writing off-target hits to sorted output files. When the BinWriter is closed, we merge all the off-targets
   * back into one master sorted file
   */
-case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator) extends GuideContainer {
+case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator, parameterPack: ParameterPack) extends GuideContainer {
 
   val logger = LoggerFactory.getLogger("BinWriter")
   val binToFile = new mutable.HashMap[String, File]()
@@ -55,7 +56,13 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator)
     * @param cRISPRSite the site to add
     */
   def addHit(cRISPRSite: CRISPRSite): Unit = {
-    val putToBin = cRISPRSite.bases.slice(0,binGenerator.width)
+    val putToBin =
+      if (parameterPack.fivePrimePam) {
+        cRISPRSite.bases.slice(parameterPack.pamLength, binGenerator.width + parameterPack.pamLength)
+      } else {
+        cRISPRSite.bases.slice(0,binGenerator.width)
+      }
+
     binToBuffer(putToBin) += cRISPRSite
     if (binToBuffer(putToBin).size > bufferedHits) {
       val fw = new FileWriter(binToFile(putToBin), true)

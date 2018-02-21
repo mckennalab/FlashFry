@@ -178,7 +178,7 @@ class BitEncoding(parameterPack: ParameterPack) {
     */
   def binShift(binSize: Int, base: Long, rightShiftXBases: Int = 0): Long = {
     if (parameterPack.fivePrimePam) {
-      base << (2 * (parameterPack.totalScanLength - (binSize + parameterPack.pam.size + rightShiftXBases))) & BitEncoding.stringMask
+      base << (2 * (parameterPack.totalScanLength - (binSize + parameterPack.pamLength + rightShiftXBases))) & BitEncoding.stringMask
     } else {
       base << (2 * (parameterPack.totalScanLength - (binSize + rightShiftXBases))) & BitEncoding.stringMask
     }

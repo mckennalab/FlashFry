@@ -23,6 +23,7 @@ import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import crispr.CRISPRSite
+import standards.ParameterPack
 import utils.{BaseCombinationGenerator, Utils}
 
 import scala.collection.mutable
@@ -36,7 +37,8 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
                   fetchingBlockSize: Int,
                   outputFileBlockSize: Int,
                   bitEncoding: BitEncoding,
-                  bitPosition: BitPosition) {
+                  bitPosition: BitPosition
+                 ) {
 
   assert(fetchingBlockSize >= outputFileBlockSize, "The fetching block size must be larger or equal to the output file block size")
 
@@ -44,14 +46,13 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
 
   var targets = Array[TargetPos]()
 
-  val binMask = bitEncoding.compBitmaskForBin(fetchingBlockSize, 0)
-
   /**
-    * get the bin
+    * get the bin of off-targets specified by the bin bin
     * @param bin the bin, as a string
     * @return a sorted block of longs that represent this bin
     */
   def fetchBin(bin: String): Array[TargetPos] = {
+
     val binSlice = bin.slice(0, outputFileBlockSize)
 
     val binComparitor = bitEncoding.binToLongComparitor(bin)
@@ -64,8 +65,17 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
 
     // while-loop for speed
     var index = 0
+
+
     while (index < targets.size) {
-      if (bitEncoding.mismatches(targets(index).target, binComparitor.binLong, binMask) == 0)
+      val mm = bitEncoding.mismatches(targets(index).target, binComparitor.binLong, binComparitor.guideMask)
+      /*
+      println("trio: " + mm)
+      println(Utils.longToBitString(binComparitor.binLong))
+      println(Utils.longToBitString(binComparitor.guideMask))
+      println(Utils.longToBitString(targets(index).target))
+      */
+      if (mm == 0)
         ret += targets(index)
       index += 1
     }

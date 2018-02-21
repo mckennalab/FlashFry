@@ -22,12 +22,15 @@ package standards
 import scala.util.matching.Regex
 
 /**
-  * everything we need to know about an enzyme
+  * everything we need to know about an enzyme -- this is the most dangerous file to edit in the
+  * codebase, as many of these constants are specific to their use-case in FlashFry. Be careful!
   */
 sealed trait ParameterPack {
   def enzyme: Enzyme
 
   def pam: Array[String]
+
+  def pamLength: Int
 
   def fwdRegex: Regex
 
@@ -73,6 +76,7 @@ object ParameterPack {
 case object Cas9ParameterPack extends ParameterPack {
   def enzyme = SpCAS9
   def pam = Array[String]("GG","AG")
+  def pamLength: Int = 3
 
   def totalScanLength: Int = 23
   def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
@@ -90,6 +94,7 @@ case object Cas9ParameterPack extends ParameterPack {
 case object Cas9NGGParameterPack extends ParameterPack {
   def enzyme = SpCAS9
   def pam = Array[String]("GG")
+  def pamLength: Int = 3
 
   def totalScanLength: Int = 23
   def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
@@ -107,6 +112,7 @@ case object Cas9NGGParameterPack extends ParameterPack {
 case object Cas9NAGParameterPack extends ParameterPack {
   def enzyme = SpCAS9
   def pam = Array[String]("AG")
+  def pamLength: Int = 3
 
   def totalScanLength: Int = 23
   def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
@@ -123,6 +129,7 @@ case object Cas9NAGParameterPack extends ParameterPack {
 case object Cpf1ParameterPack extends ParameterPack {
   def enzyme = CPF1
   def pam = Array[String]("TTT")
+  def pamLength: Int = 4
   def totalScanLength: Int = 24
   def comparisonBitEncoding: Long = 0x00FFFFFFFFFFl // be super careful with this value!!
   def fivePrimePam: Boolean = true

@@ -61,16 +61,16 @@ class BuildOffTargetDatabase extends LazyLogging {
         // setup a decent sized iterator over bases patterns for finding sites
         val binGenerator = BaseCombinationGenerator(6)
 
-        // create out output bins
-        val outputBins = BinWriter(new File(config.tmp), binGenerator)
-
         // get our settings
         val params = ParameterPack.nameToParameterPack(config.enzyme)
+
+        // create out output bins
+        val outputBins = BinWriter(new File(config.tmp), binGenerator, params)
 
         // first discover sites in the target genome -- writing out in bins
         val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, 0)
 
-        logger.info("Closing the temperary binary output files...")
+        logger.info("Closing the temporary binary output files...")
 
         val binToFile = outputBins.close()
 

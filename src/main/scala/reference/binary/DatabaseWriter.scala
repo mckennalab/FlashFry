@@ -74,16 +74,18 @@ object DatabaseWriter extends LazyLogging {
 
     val compressedBlockInfo = new mutable.HashMap[String,BlockOffset]()
 
+    // for each bin, decide if it should be linear or indexed, and dump the database version to disk
     binIterator.zipWithIndex.foreach{case(bin,index) => {
 
       val oldPos = blockStream.getPosition
 
       val nextBlock = blockReader.fetchBin(bin)
 
-      val encodedBlock = if (nextBlock.size > maxTargetsPerLinearBin)
-        BlockManager.createIndexedBlock(nextBlock,bin,bitEncoder,4)
-      else
-        BlockManager.createLinearBlock(nextBlock,bin,bitEncoder)
+      val encodedBlock = if (nextBlock.size > maxTargetsPerLinearBin) {
+        BlockManager.createIndexedBlock(nextBlock, bin, bitEncoder, 4)
+      } else {
+        BlockManager.createLinearBlock(nextBlock, bin, bitEncoder)
+      }
 
       blockStream.write(Utils.longArrayToByteArray(encodedBlock))
 

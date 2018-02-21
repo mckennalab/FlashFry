@@ -54,7 +54,7 @@ class OffTargetDiscovery extends LazyLogging with Module {
         logger.info("Reading the header....")
         val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
 
-        // load up their input file, and scan for any potential targets
+        // load up the input file, and scan for any potential targets
         val guideHits = new GuideMemoryStorage()
         val encoders = ReferenceEncoder.findTargetSites(new File(config.inputFasta), guideHits, header.inputParameterPack, config.flankingSequence)
 
