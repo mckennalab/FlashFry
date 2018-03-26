@@ -21,6 +21,8 @@ class SimpleSiteFinderTest extends FlatSpec with Matchers {
     circ.close()
     (guideStore.guideHits.size) should be (1)
     (guideStore.guideHits(0).bases) should be (string)
+
+    (guideStore.guideHits(0).sequenceContext.isDefined) should be (true)
   }
 
   "SimpleSiteFinder" should "find context correctly" in {
@@ -153,4 +155,21 @@ class SimpleSiteFinderTest extends FlatSpec with Matchers {
     (guideStore.guideHits(0).bases) should be (Utils.reverseCompString(string.slice(0,24)))
     (guideStore.guideHits(1).bases) should be (Utils.reverseCompString(string.slice(1,25)))
   }
+
+
+  "SimpleSiteFinder" should "not return content for a target without the required content" in {
+    val string = "ATTTA AAAAA CCCCC AAAAA GGG".filter{c => c != ' '}.mkString("")
+
+    val guideStore = new GuideMemoryStorage()
+    val circ = SimpleSiteFinder(guideStore,Cas9NGGParameterPack,1)
+    circ.reset("testContig")
+
+    circ.addLine(string)
+    circ.close()
+    (guideStore.guideHits.size) should be (1)
+    (guideStore.guideHits(0).sequenceContext.isDefined) should be (false)
+
+
+  }
+
 }
