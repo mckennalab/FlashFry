@@ -149,10 +149,11 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
         var site = CRISPRSite(currentContig.get,
           subStr,
           false,
-          start, if (context.size == params.totalScanLength + (2 * flankingSequence))
+          start,
+          if (context.size == params.totalScanLength + (2 * flankingSequence))
             Some(context)
           else
-            None))
+            None)
         binWriter.addHit(site)
         targetCount += 1
 
