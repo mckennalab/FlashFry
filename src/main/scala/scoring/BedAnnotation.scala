@@ -21,10 +21,9 @@ package scoring
 
 import java.io.File
 
-import bitcoding.{BitEncoding, BitPosition, PositionInformation}
+import bitcoding.{BitEncoding, BitPosition}
 import crispr.{CRISPRSite, CRISPRSiteOT}
-import modules.{DiscoverConfig, OffTargetBaseOptions}
-import scopt.{OptionParser, PeelParser}
+import scopt.{PeelParser}
 import standards.ParameterPack
 import utils.BEDFile
 
@@ -75,7 +74,7 @@ class BedAnnotation() extends ScoreModel {
               val newPos = mappingIntervals.get(ref)
 
               val oldTarget = guide.target
-              val newTarget = CRISPRSite(newPos._1, oldTarget.bases, oldTarget.forwardStrand, oldTarget.position + newPos._2, oldTarget.sequenceContext)
+              val newTarget = CRISPRSite(newPos._1, oldTarget.bases, oldTarget.forwardStrand, (oldTarget.position - 1) + newPos._2, oldTarget.sequenceContext)
               guide.target = newTarget
               guide.namedAnnotations(oldContigTag) = guide.namedAnnotations.getOrElse(oldContigTag, Array[String]()) :+ ref
             }
@@ -155,10 +154,12 @@ class BedAnnotation() extends ScoreModel {
             }
           }
           }
+
         if (config.genomeTransform != "NONE") {
           parseOutInterval(config.genomeTransform)
           isRemapping = true
         }
+
 
         remainingParameters
       }
@@ -209,7 +210,8 @@ class BedAnnotation() extends ScoreModel {
  * the configuration class, it stores the user's arguments from the command line, set defaults here
  */
 case class BedConfig(inputBed: String = "NONE",
-                     genomeTransform: String = "NONE")
+                     genomeTransform: String = "NONE",
+                     oneBased: Boolean = false)
 
 class BedAnnotationOptions extends PeelParser[BedConfig]("") {
   opt[String]("inputAnnotationBed") valueName ("<string>") action { (x, c) => c.copy(inputBed = x) } text ("the bed file we'd like to annotate with, and an associated name (name:bedfile)")
