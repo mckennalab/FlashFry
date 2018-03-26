@@ -6,11 +6,16 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 
 The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry.
 
-#### Quick links:
-- [Documentation](https://github.com/aaronmck/FlashFry/wiki/Command-line-options)
-- [Tutorial - BED annotation](#scoring-methods)
+#### links:
+- [Quick start](#Quickstart)
+- [General options documentation](https://github.com/aaronmck/FlashFry/wiki/Command-line-options)
+- [Scoring methods](https://github.com/aaronmck/FlashFry/wiki/Site-scoring)
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
+- Tutorials
+ - Tutorial - call sites and annotate with BED file intervals
+ - Analyze scores in R
+ 
 
 
 # Quickstart
