@@ -60,4 +60,4 @@ java -Xmx4g -jar FlashFry-assembly-1.7.6.jar \
  --database chr22_cas9ngg_database
 ```
 
-There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documenation and 
+There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documenation and and tutorials for more quesiton specific details.
