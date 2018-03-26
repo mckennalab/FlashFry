@@ -13,8 +13,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
 - Tutorials
-  * Tutorial - call sites and annotate with BED file intervals
-  * Analyze scores in R
+  * Tutorial - [call sites and annotate with BED file intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
  
 
 
@@ -23,7 +22,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.7.6/FlashFry-assembly-1.7.6.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.7.8/FlashFry-assembly-1.7.8.jar
 ```
 download and then un-gzip the sample data for human chromosome 22:
 
@@ -36,7 +35,7 @@ then run the database creation step (this should take a few minutes, it takes ~7
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.7.6.jar \
+java -Xmx4g -jar FlashFry-assembly-1.7.8.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -47,7 +46,7 @@ java -Xmx4g -jar FlashFry-assembly-1.7.6.jar \
 Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.7.6.jar \
+java -Xmx4g -jar FlashFry-assembly-1.7.8.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
@@ -57,7 +56,7 @@ java -Xmx4g -jar FlashFry-assembly-1.7.6.jar \
 finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.7.6.jar \
+java -Xmx4g -jar FlashFry-assembly-1.7.8.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
