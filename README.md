@@ -7,10 +7,10 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry.
 
 #### Quick links:
-- [Quickstart](#quickstart)
-- [Documentation](#command-line-options)
+- [Documentation](https://github.com/aaronmck/FlashFry/wiki/Command-line-options)
 - [Tutorial - BED annotation](#scoring-methods)
-- [FAQ](#faq)
+- [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
+- [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
 
 
 # Quickstart
