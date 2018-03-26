@@ -13,8 +13,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
 - Tutorials
-  * Tutorial - call sites and annotate with BED file intervals
-  * Analyze scores in R
+  * Tutorial - [call sites and annotate with BED file intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
  
 
 
