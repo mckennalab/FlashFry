@@ -20,9 +20,9 @@
 package bitcoding
 
 /**
-  * Created by aaronmck on 6/6/17.
+  * everything you might want to know about a target's position in the genome, with
+  * some helper functions to determine overlap (used for instance with BED annotations)
   */
-// everything you might want to know about a target's position in the genome
 trait PositionInformation {
   def contig: String
   def start: Int

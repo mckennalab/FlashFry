@@ -31,7 +31,12 @@ import bitcoding.PositionInformation
   * @param position the position we found this sequence at within the contig
   * @param sequenceContext add a broader context to the candidate target. We expect the target to approximately centered (or at least embedded with) the context
   */
-case class CRISPRSite(contig: String, bases: String, forwardStrand: Boolean, position: Int, sequenceContext: Option[String]) extends Ordered[CRISPRSite] with PositionInformation {
+case class CRISPRSite(contig: String,
+                      bases: String,
+                      forwardStrand: Boolean,
+                      position: Int,
+                      sequenceContext: Option[String]) extends Ordered[CRISPRSite] with PositionInformation {
+  
   val sep = "\t"
   val strandOutput = if (forwardStrand) CRISPRSite.forwardStrandEncoding else CRISPRSite.reverseStrandEncoding
 
