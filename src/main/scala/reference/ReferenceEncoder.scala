@@ -146,7 +146,13 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
         val subStr = Utils.reverseCompString(contigBuffer.slice(start, end))
 
         val context = Utils.reverseCompString(contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence))
-        var site = CRISPRSite(currentContig.get, subStr, false, start, Some(context))
+        var site = CRISPRSite(currentContig.get,
+          subStr,
+          false,
+          start, if (context.size == params.totalScanLength + (2 * flankingSequence))
+            Some(context)
+          else
+            None))
         binWriter.addHit(site)
         targetCount += 1
 
