@@ -57,11 +57,18 @@ object CRISPRSite {
 
   def fromLine(line: String): CRISPRSite = {
     val sp = line.split("\t")
-    val strandEncoding = sp(4) match {
-      case `forwardStrandEncoding` => true
-      case `reverseStrandEncoding` => false
-      case _ => throw new IllegalStateException("Unable to parse strand encoding: " + sp(4))
+    try {
+      val strandEncoding = sp(4) match {
+        case `forwardStrandEncoding` => true
+        case `reverseStrandEncoding` => false
+        case _ => throw new IllegalStateException("Unable to parse strand encoding: " + sp(4))
+      }
+      CRISPRSite(sp(0), sp(3), strandEncoding, sp(1).toInt, None)
+    } catch {
+      case e: Exception => {
+        println("Unable to parse line: " + line)
+        throw e
+      }
     }
-    CRISPRSite(sp(0), sp(3), strandEncoding, sp(1).toInt, None)
   }
 }

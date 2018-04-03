@@ -90,10 +90,18 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
     val newTargets = ArrayBuffer[TargetPos]()
 
     val toSort = new ArrayBuffer[CRISPRSite]()
+    try {
     //Source.fromInputStream(Utils.gis(file.getAbsolutePath)).getLines().foreach { line => {
     Source.fromFile(file.getAbsolutePath).getLines().foreach { line => {
       toSort += CRISPRSite.fromLine(line)
     }}
+    } catch {
+      case e: Exception => {
+        println("Failed on processing file: " + file.getAbsoluteFile)
+        throw e
+      }
+    }
+
 
     val toSortResults = toSort.toArray
     scala.util.Sorting.quickSort(toSortResults)

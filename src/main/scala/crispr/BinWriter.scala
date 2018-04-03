@@ -85,6 +85,11 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator,
       val bw = new BufferedWriter(fw)
       val output = new PrintWriter(bw)
       binToBuffer(bin).toArray.foreach{hit => output.write(hit.to_output + "\n")}
+
+      // make sure everything gets flushed out
+      output.flush()
+      bw.flush()
+      fw.flush()
       output.close()
 
       // remove the files when we shut down
