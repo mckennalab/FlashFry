@@ -52,9 +52,9 @@ class GenerateRandomFasta extends LazyLogging with Module {
 
       // *********************************** Inputs *******************************************************
       opt[String]("outputFile") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
-      opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
+      opt[String]("enzyme") required() valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
       opt[Unit]("onlyUnidirectional") valueName ("<string>") action { (x, c) => c.copy(onlyUnidirectional = true) } text ("should we ensure that the guides only work in one direction?")
-      opt[Int]("randomCount") valueName ("<int>") action { (x, c) => c.copy(randomCount = x) } text ("how many surviving random sequences should we have")
+      opt[Int]("randomCount") required() valueName ("<int>") action { (x, c) => c.copy(randomCount = x) } text ("how many surviving random sequences should we have")
 
       // some general command-line setup stuff
       note("Given the enyzme of interest, generate a series of random target sequences that pass our initial filtering criteria\n")
@@ -73,7 +73,7 @@ class GenerateRandomFasta extends LazyLogging with Module {
         // our collection of random CRISPR sequences
         val sequences = new ArrayBuffer[CRISPRSite]()
 
-        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pam.size, params.pam, params.fivePrimePam)
+        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength, params.pam, params.fivePrimePam)
 
         while (sequences.size < config.randomCount) {
           val randomSeq = crisprMaker.next()
