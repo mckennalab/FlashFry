@@ -15,9 +15,9 @@ arguments:
 stderr: $(inputs.std_err)
 
 
-baseCommand: bash
+baseCommand: /usr/bin/time
 arguments:
-- valueFrom: "/usr/bin/memusg.sh"
+- valueFrom: "-v"
   position: 1
 - valueFrom: "Rscript"
   position: 2
