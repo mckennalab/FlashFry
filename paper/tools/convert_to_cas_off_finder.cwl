@@ -24,6 +24,11 @@ inputs:
     inputBinding:
       position: 3
 
+  mismatches:
+    type: int
+    inputBinding:
+      position: 4
+
 outputs:
   output:
     type: File

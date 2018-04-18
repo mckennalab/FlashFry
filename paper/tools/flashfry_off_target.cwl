@@ -7,19 +7,28 @@ requirements:
 hints:
   - class: DockerRequirement
     dockerPull: aaronmck/flashfry
-    
-baseCommand: java
+
+stdout: $(inputs.std_out)
 arguments:
-- valueFrom: "-Xmx2g"
+ - { valueFrom: "echo foo 1>&2", shellQuote: False }
+stderr: $(inputs.std_err)
+
+baseCommand: /usr/bin/time
+arguments:
+- valueFrom: "-v"
   position: 1
-- valueFrom: "-jar"
+- valueFrom: "java"
   position: 2
-- valueFrom: "/FlashFry/flashfry.jar"
+- valueFrom: "-Xmx8g"
   position: 3
-- valueFrom: "--analysis"
+- valueFrom: "-jar"
   position: 4
-- valueFrom: "discover"
+- valueFrom: "/FlashFry/flashfry.jar"
   position: 5
+- valueFrom: "--analysis"
+  position: 6
+- valueFrom: "discover"
+  position: 7
 - valueFrom: "--database"
   position: 8
 - valueFrom: "/genome/hg38"
@@ -37,9 +46,25 @@ inputs:
     inputBinding:
       prefix: '--output'
       position: 11
+      
+  std_out:
+    type: string
+
+  std_err:
+    type: string
+
+  mismatches:
+    type: int
+    inputBinding:
+      prefix: '--maxMismatch'
+      position: 12
 
 outputs:
-  output:
+  outputscores:
     type: File
     outputBinding:
       glob: $(inputs.output_scores)
+  output:
+    type: stdout
+  outputerror:
+    type: stderr

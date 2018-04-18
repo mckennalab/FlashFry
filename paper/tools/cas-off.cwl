@@ -8,28 +8,45 @@ hints:
   - class: DockerRequirement
     dockerPull: aaronmck/flashfry
 
-baseCommand: bash
+stdout: $(inputs.std_out)
 arguments:
-- valueFrom: "/usr/bin/memusg.sh"
-  position: 1
-- valueFrom: "/cas-off/cas-off"
+ - { valueFrom: "echo foo 1>&2", shellQuote: False }
+stderr: $(inputs.std_err)
+
+baseCommand: /usr/bin/time
+arguments:
+- valueFrom: "-v"
   position: 2
+- valueFrom: "/cas-off/cas-off"
+  position: 3
 - valueFrom: "C"
-  position: 4
-  
+  position: 5
+
 inputs:
   input:
     type: File
     inputBinding:
-      position: 3
-  
+      position: 4
+
   output_ots:
     type: string
     inputBinding:
-      position: 5
+      position: 6
+
+  std_out:
+    type: string
+
+  std_err:
+    type: string
 
 outputs:
-  output:
+  stdoutput:
+    type: stdout
+  outputerror:
+    type: stderr
+  outcalls:
     type: File
     outputBinding:
       glob: $(inputs.output_ots)
+
+

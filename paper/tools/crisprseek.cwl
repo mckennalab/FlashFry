@@ -8,6 +8,13 @@ hints:
   - class: DockerRequirement
     dockerPull: aaronmck/flashfry
 
+
+stdout: $(inputs.std_out)
+arguments:
+ - { valueFrom: "echo foo 1>&2", shellQuote: False }
+stderr: $(inputs.std_err)
+
+
 baseCommand: bash
 arguments:
 - valueFrom: "/usr/bin/memusg.sh"
@@ -33,9 +40,19 @@ inputs:
 
   outputFilename: string
 
+  std_out:
+    type: string
+
+  std_err:
+    type: string
+
 
 outputs:
-  output:
+  outcalls:
     type: File
     outputBinding:
       glob: $(inputs.outputFilename)
+  stdoutput:
+    type: stdout
+  outputerror:
+    type: stderr
