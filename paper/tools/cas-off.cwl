@@ -13,25 +13,32 @@ arguments:
  - { valueFrom: "echo foo 1>&2", shellQuote: False }
 stderr: $(inputs.std_err)
 
-baseCommand: /usr/bin/time
+
+baseCommand: taskset
 arguments:
-- valueFrom: "-v"
+- valueFrom: "-c"
+  position: 1
+- valueFrom: "0"
   position: 2
-- valueFrom: "/cas-off/cas-off"
+- valueFrom: "/usr/bin/time"
   position: 3
-- valueFrom: "C"
+- valueFrom: "-v"
+  position: 4
+- valueFrom: "/cas-off/cas-off"
   position: 5
+- valueFrom: "C"
+  position: 7
 
 inputs:
   input:
     type: File
     inputBinding:
-      position: 4
+      position: 6
 
   output_ots:
     type: string
     inputBinding:
-      position: 6
+      position: 8
 
   std_out:
     type: string

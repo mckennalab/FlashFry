@@ -13,39 +13,45 @@ arguments:
  - { valueFrom: "echo foo 1>&2", shellQuote: False }
 stderr: $(inputs.std_err)
 
-baseCommand: /usr/bin/time
+baseCommand: taskset
 arguments:
-- valueFrom: "-v"
+- valueFrom: "-c"
   position: 1
-- valueFrom: "java"
+- valueFrom: "0"
   position: 2
-- valueFrom: "-Xmx8g"
+- valueFrom: "/usr/bin/time"
   position: 3
-- valueFrom: "-jar"
+- valueFrom: "-v"
   position: 4
-- valueFrom: "/FlashFry/flashfry.jar"
+- valueFrom: "java"
   position: 5
-- valueFrom: "--analysis"
+- valueFrom: "-Xmx8g"
   position: 6
-- valueFrom: "discover"
+- valueFrom: "-jar"
   position: 7
-- valueFrom: "--database"
+- valueFrom: "/FlashFry/flashfry.jar"
   position: 8
-- valueFrom: "/genome/hg38"
+- valueFrom: "--analysis"
   position: 9
+- valueFrom: "discover"
+  position: 10
+- valueFrom: "--database"
+  position: 11
+- valueFrom: "/genome/hg38"
+  position: 12
   
 inputs:
   fasta:
     type: File
     inputBinding:
       prefix: '--fasta'
-      position: 10
+      position: 13
   
   output_scores:
     type: string
     inputBinding:
       prefix: '--output'
-      position: 11
+      position: 14
       
   std_out:
     type: string
@@ -57,7 +63,7 @@ inputs:
     type: int
     inputBinding:
       prefix: '--maxMismatch'
-      position: 12
+      position: 15
 
 outputs:
   outputscores:

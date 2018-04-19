@@ -15,14 +15,20 @@ arguments:
 stderr: $(inputs.std_err)
 
 
-baseCommand: /usr/bin/time
+baseCommand: taskset
 arguments:
-- valueFrom: "-v"
+- valueFrom: "-c"
   position: 1
-- valueFrom: "Rscript"
+- valueFrom: "0"
   position: 2
-- valueFrom: "/FlashFry_GIT/paper/CRISPRseek/run_timing_crisprseek.R"
+- valueFrom: "/usr/bin/time"
   position: 3
+- valueFrom: "-v"
+  position: 4
+- valueFrom: "Rscript"
+  position: 5
+- valueFrom: "/FlashFry_GIT/paper/CRISPRseek/run_timing_crisprseek.R"
+  position: 6
 
 
 stdout: $(inputs.outputFilename)
@@ -31,12 +37,12 @@ inputs:
   fasta:
     type: File
     inputBinding:
-      position: 4
+      position: 7
 
   mismatches:
     type: int
     inputBinding:
-      position: 5
+      position: 8
 
   outputFilename: string
 
