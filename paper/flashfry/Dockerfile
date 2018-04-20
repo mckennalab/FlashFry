@@ -12,15 +12,13 @@ RUN sudo yum install -y mono-devel
 
 RUN cd opencl && wget http://registrationcenter-download.intel.com/akdlm/irc_nas/12556/opencl_runtime_16.1.2_x64_rh_6.4.0.37.tgz
 RUN cd opencl && tar xf opencl_runtime_16.1.2_x64_rh_6.4.0.37.tgz
-RUN cd opencl/opencl_runtime_16.1.2_x64_rh_6.4.0.37 && wget https://gist.githubusercontent.com/aaronmck/b4bef23cce0c20390567a7774c475312/raw/eddfb35c857a354f2c1a851acfa567fd9331bea4/silent_ins
-tall.cfg
+RUN cd opencl/opencl_runtime_16.1.2_x64_rh_6.4.0.37 && wget https://gist.githubusercontent.com/aaronmck/b4bef23cce0c20390567a7774c475312/raw/eddfb35c857a354f2c1a851acfa567fd9331bea4/silent_install.cfg
 
 
 RUN cd opencl/opencl_runtime_16.1.2_x64_rh_6.4.0.37 && bash install.sh -s silent_install.cfg
 RUN cd opencl && wget http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/12526/intel_sdk_for_opencl_2017_7.0.0.2568_x64.gz
 RUN cd opencl && tar xf intel_sdk_for_opencl_2017_7.0.0.2568_x64.gz
-RUN cd opencl/intel_sdk_for_opencl_2017_7.0.0.2568_x64 && wget https://gist.githubusercontent.com/aaronmck/b4bef23cce0c20390567a7774c475312/raw/eddfb35c857a354f2c1a851acfa567fd9331bea4/silent_
-install.cfg
+RUN cd opencl/intel_sdk_for_opencl_2017_7.0.0.2568_x64 && wget https://gist.githubusercontent.com/aaronmck/b4bef23cce0c20390567a7774c475312/raw/eddfb35c857a354f2c1a851acfa567fd9331bea4/silent_install.cfg
 
 RUN cd opencl/intel_sdk_for_opencl_2017_7.0.0.2568_x64 && sudo bash install.sh -s silent_install.cfg
 
@@ -52,7 +50,7 @@ RUN cd /genome && aws s3 cp s3://flashfrydist/hg38.fa.ann ./
 RUN cd /genome && aws s3 cp s3://flashfrydist/hg38.fa.bwt ./
 RUN cd /genome && aws s3 cp s3://flashfrydist/hg38.fa.pac ./
 RUN cd /genome && aws s3 cp s3://flashfrydist/hg38.fa.sa ./
-# RUN cd /genome && aws s3 cp s3://flashfrydist/hg38.fa ./
+RUN cd /genome && aws s3 cp s3://flashfrydist/hg38.fa ./
 
 # get R and CRISPRseek setup
 RUN sudo yum -y install epel-release git openssl-devel mysql-devel
