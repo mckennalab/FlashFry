@@ -5,10 +5,10 @@ class: Workflow
 requirements:
   - class: InlineJavascriptRequirement
   - class: StepInputExpressionRequirement
+    
 inputs:
   guide_count: int
   allowed_mismatches: int
-  iteration: int
   
 outputs:
   outputcasoff: 
@@ -26,7 +26,7 @@ steps:
     run: flashfry_random.cwl
     in:
       count: guide_count
-      iter: iteration
+      iter: allowed_mismatches
       output_fasta:
         valueFrom: $("flashfry" + inputs.count + "_i" + inputs.iter + ".fasta")
       random_count: guide_count
@@ -38,7 +38,7 @@ steps:
       count: guide_count
       fasta: random_guides/output
       mismatches: allowed_mismatches
-      iter: iteration
+      iter: allowed_mismatches
       outputFilename:
         valueFrom: $("crisprSeek" + inputs.count + "_i" + inputs.iter + ".output")
       std_out: 
@@ -53,7 +53,7 @@ steps:
       count: guide_count
       fasta: random_guides/output
       mismatches: allowed_mismatches
-      iter: iteration
+      iter: allowed_mismatches
       output_scores: 
         valueFrom: $("flashfry" + inputs.count + "_i" + inputs.iter + ".output")
       std_out: 
@@ -67,18 +67,34 @@ steps:
     in:
       mismatches: allowed_mismatches
       fasta: random_guides/output
-      iter: iteration
+      iter: allowed_mismatches
       casFile:  
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".input")
+      fastq:
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".fastq")
       mismatches: guide_count
-    out: [output]
+    out: [casFile,fastq]
 
   casoff:
     run: cas-off.cwl
     in:
       count: guide_count
+      input: casoffPrep/casFile
+      iter: allowed_mismatches
+      output_ots:  
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter +  ".output")
+      std_out:  
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".stdout")
+      std_err:  
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".stderr")
+    out: [stdoutput,outputerror,outcalls]
+
+  bwa_aln:
+    run: bwa-aln.cwl
+    in:
+      count: guide_count
       input: casoffPrep/output
-      iter: iteration
+      iter: allowed_mismatches
       output_ots:  
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter +  ".output")
       std_out:  

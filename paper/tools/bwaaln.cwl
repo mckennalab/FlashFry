@@ -13,6 +13,7 @@ arguments:
  - { valueFrom: "echo foo 1>&2", shellQuote: False }
 stderr: $(inputs.std_err)
 
+# run BWA with the following parameters:
 # aln -o 0 -m 20000000 -n <mismatch_count> -k <mismatch_count> -N -l 20 <humanRef>
 
 baseCommand: taskset
@@ -45,20 +46,25 @@ arguments:
   position: 13
 
 inputs:
+  reads:
+    type: File
+    inputBinding:
+      position: 17
+    
   mismatches:
-    type: 
+    type: int
     inputBinding:
       prefix: "-n"
       position: 14
 
   mismatchesTwo:
-    type: File
+    type: int
     inputBinding:
       prefix: "-k"
       position: 15
 
   humanReference:
-    type: 
+    type: File
     inputBinding:
       position: 16
 
@@ -71,6 +77,7 @@ inputs:
 outputs:
   stdoutput:
     type: stdout
+    
   outputerror:
     type: stderr
 

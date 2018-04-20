@@ -24,13 +24,22 @@ inputs:
     inputBinding:
       position: 3
 
-  mismatches:
-    type: int
+  fastq:
+    type: string
     inputBinding:
       position: 4
 
+  mismatches:
+    type: int
+    inputBinding:
+      position: 5
+
 outputs:
-  output:
+  casFile:
     type: File
     outputBinding:
       glob: $(inputs.casFile)
+  fastq:
+    type: File
+    outputBinding:
+      glob: $(inputs.fastq)

@@ -13,6 +13,7 @@ arguments:
  - { valueFrom: "echo foo 1>&2", shellQuote: False }
 stderr: $(inputs.std_err)
 
+# run BWA with the following parameters:
 # aln -o 0 -m 20000000 -n <mismatch_count> -k <mismatch_count> -N -l 20 <humanRef>
 
 baseCommand: taskset
@@ -27,41 +28,36 @@ arguments:
   position: 4
 - valueFrom: "bwa"
   position: 5
-- valueFrom: "aln"
+- valueFrom: "samse"
   position: 6
-- valueFrom: "-o"
-  position: 7
-- valueFrom: "0"
-  position: 8
-- valueFrom: "-m"
-  position: 9
-- valueFrom: "20000000"
-  position: 10
-- valueFrom: "-N"
-  position: 11
-- valueFrom: "-l"
-  position: 12
-- valueFrom: "20"
-  position: 13
 
 inputs:
-  mismatches:
-    type: 
-    inputBinding:
-      prefix: "-n"
-      position: 14
-
-  mismatchesTwo:
+  maxoccurances:
     type: File
     inputBinding:
-      prefix: "-k"
-      position: 15
+      prefix: "-n"
+      position: 7
 
-  humanReference:
-    type: 
+  samfile: string
     inputBinding:
-      position: 16
+      prefix: "-f"
+      position: 8
 
+  ref:
+    type: File
+    inputBinding:
+      position: 9
+
+  sai:
+    type: File
+    inputBinding:
+      position: 10
+
+  fastq:
+    type: File
+    inputBinding:
+      position: 11
+    
   std_out:
     type: string
 
@@ -71,6 +67,13 @@ inputs:
 outputs:
   stdoutput:
     type: stdout
+    
   outputerror:
     type: stderr
 
+  samout:
+    type: File
+    outputBinding:
+      glob: $(inputs.samfile)
+    
+    
