@@ -13,7 +13,6 @@ arguments:
  - { valueFrom: "echo foo 1>&2", shellQuote: False }
 stderr: $(inputs.std_err)
 
-# aln -o 0 -m 20000000 -n <mismatch_count> -k <mismatch_count> -N -l 20 <humanRef>
 
 baseCommand: taskset
 arguments:
@@ -25,42 +24,21 @@ arguments:
   position: 3
 - valueFrom: "-v"
   position: 4
-- valueFrom: "bwa"
+- valueFrom: "/cas-off/cas-off"
   position: 5
-- valueFrom: "aln"
-  position: 6
-- valueFrom: "-o"
+- valueFrom: "C"
   position: 7
-- valueFrom: "0"
-  position: 8
-- valueFrom: "-m"
-  position: 9
-- valueFrom: "20000000"
-  position: 10
-- valueFrom: "-N"
-  position: 11
-- valueFrom: "-l"
-  position: 12
-- valueFrom: "20"
-  position: 13
 
 inputs:
-  mismatches:
-    type: 
-    inputBinding:
-      prefix: "-n"
-      position: 14
-
-  mismatchesTwo:
+  input:
     type: File
     inputBinding:
-      prefix: "-k"
-      position: 15
+      position: 6
 
-  humanReference:
-    type: 
+  output_ots:
+    type: string
     inputBinding:
-      position: 16
+      position: 8
 
   std_out:
     type: string
@@ -73,4 +51,7 @@ outputs:
     type: stdout
   outputerror:
     type: stderr
-
+  outcalls:
+    type: File
+    outputBinding:
+      glob: $(inputs.output_ots)

@@ -13,7 +13,7 @@ quals = "HHHHHHHHHHHHHHHHHHHHHHH"
 for line in infile:
     if not (">" in line):
         output_casoff.write(line.strip("\n") + " " + str(mismatch) + "\n")
-        output_fastq.write("@" + line.strip + line + "\n+\n" + quals + "\n")
+        output_fastq.write("@" + line.strip("\n") + "\n" + line + "+\n" + quals + "\n")
 
 output_casoff.close()
 output_fastq.close()

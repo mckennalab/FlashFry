@@ -75,13 +75,13 @@ steps:
       fastq:
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".fastq")
       mismatches: guide_count
-    out: [casFile,fastq]
+    out: [casFileOut,fastqOut]
 
   casoff:
     run: cas-off.cwl
     in:
       count: guide_count
-      input: casoffPrep/casFile
+      input: casoffPrep/casFileOut
       iter: allowed_mismatches
       output_ots:  
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter +  ".output")
@@ -94,17 +94,17 @@ steps:
   bwa_aln:
     run: bwaaln.cwl
     in:
-      reads: casoffPrep/fastq
+      reads: casoffPrep/fastqOut
       indexGenome: genome
       count: guide_count
       iter: allowed_mismatches
 
       mismatches: allowed_mismatches
       mismatchesTwo: allowed_mismatches
-      std_err: 
-        valueFrom: $("bwaaln" + inputs.count + "_i" + inputs.iter + ".stderr")
-      std_out: 
+      stdOut:
         valueFrom: $("bwaaln" + inputs.count + "_i" + inputs.iter + ".stdout")
+      stdErr: 
+        valueFrom: $("bwaaln" + inputs.count + "_i" + inputs.iter + ".stderr")
     out: [stdoutput, outputerror]
 
   bwa_samse:
@@ -115,12 +115,12 @@ steps:
       maxoccurances: max_off_targets
       samfile:
         valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".sam")
-      fastq: casoffPrep/fastq
-      sai: bwa_aln/std_out
+      fastq: casoffPrep/fastqOut
+      sai: bwa_aln/stdoutput
       ref: genome
       std_out: 
         valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".stdout")
       std_err: 
         valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".stderr")
 
-    out: [stdoutput,stderror,samout]
+    out: [stdoutput,outputerror,samout]

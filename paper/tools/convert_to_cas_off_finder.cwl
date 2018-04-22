@@ -35,11 +35,11 @@ inputs:
       position: 5
 
 outputs:
-  casFile:
+  casFileOut:
     type: File
     outputBinding:
       glob: $(inputs.casFile)
-  fastq:
+  fastqOut:
     type: File
     outputBinding:
       glob: $(inputs.fastq)

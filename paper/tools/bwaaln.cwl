@@ -8,10 +8,10 @@ hints:
   - class: DockerRequirement
     dockerPull: aaronmck/flashfry
 
-stdout: $(inputs.std_out)
+stdout: $(inputs.stdOut)
 arguments:
  - { valueFrom: "echo foo 1>&2", shellQuote: False }
-stderr: $(inputs.std_err)
+stderr: $(inputs.stdErr)
 
 # run BWA with the following parameters:
 # aln -o 0 -m 20000000 -n <mismatch_count> -k <mismatch_count> -N -l 20 <humanRef>
@@ -74,10 +74,10 @@ inputs:
     inputBinding:
       position: 17
 
-  std_out:
+  stdOut:
     type: string
 
-  std_err:
+  stdErr:
     type: string
 
 outputs:

@@ -8,12 +8,8 @@ hints:
   - class: DockerRequirement
     dockerPull: aaronmck/flashfry
 
-baseCommand: bash
+baseCommand: java
 arguments:
-- valueFrom: "/usr/bin/memusg.sh"
-  position: 1
-- valueFrom: "java"
-  position: 2
 - valueFrom: "-Xmx2g"
   position: 3
 - valueFrom: "-jar"
