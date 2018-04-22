@@ -46,10 +46,16 @@ arguments:
   position: 13
 
 inputs:
-  reads:
+  indexGenome:
     type: File
     inputBinding:
-      position: 17
+      position: 16
+    secondaryFiles:
+      - .amb
+      - .ann
+      - .bwt
+      - .pac
+      - .sa
     
   mismatches:
     type: int
@@ -63,10 +69,10 @@ inputs:
       prefix: "-k"
       position: 15
 
-  humanReference:
+  reads:
     type: File
     inputBinding:
-      position: 16
+      position: 17
 
   std_out:
     type: string

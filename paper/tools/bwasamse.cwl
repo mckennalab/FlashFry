@@ -33,12 +33,13 @@ arguments:
 
 inputs:
   maxoccurances:
-    type: File
+    type: int
     inputBinding:
       prefix: "-n"
       position: 7
 
-  samfile: string
+  samfile: 
+    type: string
     inputBinding:
       prefix: "-f"
       position: 8
@@ -47,7 +48,12 @@ inputs:
     type: File
     inputBinding:
       position: 9
-
+    secondaryFiles:
+      - .amb
+      - .ann
+      - .bwt
+      - .pac
+      - .sa
   sai:
     type: File
     inputBinding:

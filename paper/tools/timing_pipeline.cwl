@@ -1,7 +1,6 @@
 cwlVersion: v1.0
 class: Workflow
 
-
 requirements:
   - class: InlineJavascriptRequirement
   - class: StepInputExpressionRequirement
@@ -9,7 +8,10 @@ requirements:
 inputs:
   guide_count: int
   allowed_mismatches: int
-  
+  max_off_targets: int
+  genome: 
+    type: File
+
 outputs:
   outputcasoff: 
     type: File
@@ -90,15 +92,35 @@ steps:
     out: [stdoutput,outputerror,outcalls]
 
   bwa_aln:
-    run: bwa-aln.cwl
+    run: bwaaln.cwl
+    in:
+      reads: casoffPrep/fastq
+      indexGenome: genome
+      count: guide_count
+      iter: allowed_mismatches
+
+      mismatches: allowed_mismatches
+      mismatchesTwo: allowed_mismatches
+      std_err: 
+        valueFrom: $("bwaaln" + inputs.count + "_i" + inputs.iter + ".stderr")
+      std_out: 
+        valueFrom: $("bwaaln" + inputs.count + "_i" + inputs.iter + ".stdout")
+    out: [stdoutput, outputerror]
+
+  bwa_samse:
+    run: bwasamse.cwl
     in:
       count: guide_count
-      input: casoffPrep/output
       iter: allowed_mismatches
-      output_ots:  
-        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter +  ".output")
-      std_out:  
-        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".stdout")
-      std_err:  
-        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".stderr")
-    out: [stdoutput,outputerror,outcalls]
+      maxoccurances: max_off_targets
+      samfile:
+        valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".sam")
+      fastq: casoffPrep/fastq
+      sai: bwa_aln/std_out
+      ref: genome
+      std_out: 
+        valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".stdout")
+      std_err: 
+        valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".stderr")
+
+    out: [stdoutput,stderror,samout]
