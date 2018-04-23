@@ -1,0 +1,8 @@
+reads: 
+  class: File
+  path: /home/ec2-user/test.fq.gz
+
+mismatches: 5
+mismatchesTwo: 5
+stdErr: timing.txt
+stdOut: read.sai

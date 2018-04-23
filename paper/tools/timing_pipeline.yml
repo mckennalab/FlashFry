@@ -1,0 +1,6 @@
+guide_count: 1
+allowed_mismatches: 5
+genome: 
+  class: File
+  path: /genome/hg38.fa
+max_off_targets: 2000

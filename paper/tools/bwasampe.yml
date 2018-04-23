@@ -1,0 +1,13 @@
+maxoccurances: 2000
+samfile: testbwasampoe.sam
+fastq: 
+  class: File
+  path: /home/ec2-user/ff_git/paper/read.fq
+sai:
+  class: File
+  path: /home/ec2-user/ff_git/paper/read.sai
+ref: 
+  class: File
+  path: /home/ec2-user/hs37d5.fa
+std_out: samse_out
+std_err: samse_err
