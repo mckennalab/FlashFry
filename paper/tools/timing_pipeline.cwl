@@ -11,7 +11,12 @@ inputs:
   max_off_targets: int
   genome: 
     type: File
-
+    secondaryFiles:
+      - .amb
+      - .ann
+      - .bwt
+      - .pac
+      - .sa
 outputs:
   outputcasoff: 
     type: File
@@ -22,6 +27,12 @@ outputs:
   outputcrisprseek: 
     type: File
     outputSource: crisprseek/outputerror
+  outputbwa-aln:
+    type: File
+    outputSource: bwa_aln/outputerror
+  outputbwa-samse:
+    type: File
+    outputSource: bwa_samse/outputerror
 
 steps:
   random_guides:
@@ -70,11 +81,12 @@ steps:
       mismatches: allowed_mismatches
       fasta: random_guides/output
       iter: allowed_mismatches
+      count: guide_count
       casFile:  
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".input")
       fastq:
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".fastq")
-      mismatches: guide_count
+      mismatches: allowed_mismatches
     out: [casFileOut,fastqOut]
 
   casoff:
@@ -95,10 +107,8 @@ steps:
     run: bwaaln.cwl
     in:
       reads: casoffPrep/fastqOut
-      indexGenome: genome
       count: guide_count
       iter: allowed_mismatches
-
       mismatches: allowed_mismatches
       mismatchesTwo: allowed_mismatches
       stdOut:
@@ -117,7 +127,6 @@ steps:
         valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".sam")
       fastq: casoffPrep/fastqOut
       sai: bwa_aln/stdoutput
-      ref: genome
       std_out: 
         valueFrom: $("samse" + inputs.count + "_i" + inputs.iter + ".stdout")
       std_err: 

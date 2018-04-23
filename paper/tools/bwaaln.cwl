@@ -46,17 +46,11 @@ arguments:
   position: 13
 
 inputs:
-  indexGenome:
-    type: File
+  indexGenome: 
+    type: string
+    default: /genome/hg38.fa    
     inputBinding:
       position: 16
-    secondaryFiles:
-      - .amb
-      - .ann
-      - .bwt
-      - .pac
-      - .sa
-    
   mismatches:
     type: int
     inputBinding:

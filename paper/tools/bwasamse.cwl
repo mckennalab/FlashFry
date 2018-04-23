@@ -45,15 +45,11 @@ inputs:
       position: 8
 
   ref:
-    type: File
+    type: string
+    default: /genome/hg38.fa
     inputBinding:
       position: 9
-    secondaryFiles:
-      - .amb
-      - .ann
-      - .bwt
-      - .pac
-      - .sa
+
   sai:
     type: File
     inputBinding:
