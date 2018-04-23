@@ -1,7 +1,7 @@
 from subprocess import call
 
-testrange = ["1"] #,"10", "100", "1000", "10000"]
-mismatches = ["3"] #,"4","5"]
+testrange = ["1","10", "100", "1000", "10000"]
+mismatches = ["3","4","5"]
 
 score_output = open("/home/ec2-user/ff_git/paper/tools/runtimes.txt","w")
 
@@ -26,7 +26,8 @@ def get_mem_usage(inputFile):
 for i in testrange:
     for mismatch in mismatches:
         # create the yml file to run the pipeline
-        ymlOutput = open("/home/ec2-user/ff_git/paper/tools/run_" + i + "setup.yml","w")
+        yml = "/home/ec2-user/ff_git/paper/tools/run_" + i + "setup.yml"
+        ymlOutput = open(yml,"w")
         ymlOutput.write("guide_count: " + i + "\n")
         ymlOutput.write("allowed_mismatches: " + mismatch + "\n")
         ymlOutput.write("genome:\n")
@@ -36,7 +37,8 @@ for i in testrange:
         ymlOutput.close()
 
         # run cwl-runner with the above yaml file
-        call(["cwl-runner","/home/ec2-user/ff_git/paper/tools/timing_pipeline.cwl","/home/ec2-user/ff_git/paper/tools/run_" + i + "setup.yml"])
+        println(
+        call(["cwl-runner","/home/ec2-user/ff_git/paper/tools/timing_pipeline.cwl",yml])
 
         # recover the timing information from the final output
         score_output.write("BWA_ALN\t" + i + "\t" + mismatch + "\t" + get_wall_time("bwaaln" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("bwaaln" + i + "_i" + mismatch + ".stderr") + "\n")
