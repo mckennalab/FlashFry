@@ -37,7 +37,7 @@ for i in testrange:
         ymlOutput.close()
 
         # run cwl-runner with the above yaml file
-        println(
+        println("running " + yml)
         call(["cwl-runner","/home/ec2-user/ff_git/paper/tools/timing_pipeline.cwl",yml])
 
         # recover the timing information from the final output
