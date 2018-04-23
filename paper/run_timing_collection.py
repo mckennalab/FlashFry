@@ -26,7 +26,7 @@ def get_mem_usage(inputFile):
 for i in testrange:
     for mismatch in mismatches:
         # create the yml file to run the pipeline
-        yml = "/home/ec2-user/ff_git/paper/tools/run_" + i + "setup.yml"
+        yml = "/home/ec2-user/ff_git/paper/tools/run_" + i + mismatch + "_" + "setup.yml"
         ymlOutput = open(yml,"w")
         ymlOutput.write("guide_count: " + i + "\n")
         ymlOutput.write("allowed_mismatches: " + mismatch + "\n")
