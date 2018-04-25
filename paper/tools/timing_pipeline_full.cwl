@@ -18,9 +18,15 @@ inputs:
       - .pac
       - .sa
 outputs:
+  outputcasoff: 
+    type: File
+    outputSource: casoff/outputerror
   outputflashfry: 
     type: File
     outputSource: flashfry/outputerror
+  outputcrisprseek: 
+    type: File
+    outputSource: crisprseek/outputerror
   outputbwa-aln:
     type: File
     outputSource: bwa_aln/outputerror
@@ -38,6 +44,21 @@ steps:
         valueFrom: $("flashfry" + inputs.count + "_i" + inputs.iter + ".fasta")
       random_count: guide_count
     out: [output]
+
+  crisprseek:
+    run: crisprseek.cwl
+    in:
+      count: guide_count
+      fasta: random_guides/output
+      mismatches: allowed_mismatches
+      iter: allowed_mismatches
+      outputFilename:
+        valueFrom: $("crisprSeek" + inputs.count + "_i" + inputs.iter + ".output")
+      std_out: 
+        valueFrom: $("crisprSeek" + inputs.count + "_i" + inputs.iter +  ".stdout")
+      std_err: 
+        valueFrom: $("crisprSeek" + inputs.count + "_i" + inputs.iter + ".stderr")
+    out: [outcalls,stdoutput,outputerror]
 
   flashfry:
     run: flashfry_off_target.cwl
@@ -67,6 +88,20 @@ steps:
         valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".fastq")
       mismatches: allowed_mismatches
     out: [casFileOut,fastqOut]
+
+  casoff:
+    run: cas-off.cwl
+    in:
+      count: guide_count
+      input: casoffPrep/casFileOut
+      iter: allowed_mismatches
+      output_ots:  
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter +  ".output")
+      std_out:  
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".stdout")
+      std_err:  
+        valueFrom: $("casoff" + inputs.count + "_i" + inputs.iter + ".stderr")
+    out: [stdoutput,outputerror,outcalls]
 
   bwa_aln:
     run: bwaaln.cwl
