@@ -73,7 +73,7 @@ class GenerateRandomFasta extends LazyLogging with Module {
         // our collection of random CRISPR sequences
         val sequences = new ArrayBuffer[CRISPRSite]()
 
-        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength, params.pam, params.fivePrimePam)
+        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength, params.paddedPam, params.fivePrimePam)
 
         while (sequences.size < config.randomCount) {
           val randomSeq = crisprMaker.next()
@@ -82,6 +82,8 @@ class GenerateRandomFasta extends LazyLogging with Module {
           // it's valid, and check to make sure there's only one hit, and not a secret reverse sequence hit
           if ((!config.onlyUnidirectional || (config.onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
             sequences.append(crisprSeq)
+          } else {
+            println("Tossing " + crisprSeq.bases + " as its bidirectional")
           }
         }
 

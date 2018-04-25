@@ -43,6 +43,8 @@ sealed trait ParameterPack {
   def fivePrimePam: Boolean
 
   def guideRange: Tuple2[Int,Int]
+
+  def paddedPam: Array[String]
 }
 
 object ParameterPack {
@@ -76,6 +78,7 @@ object ParameterPack {
 case object Cas9ParameterPack extends ParameterPack {
   def enzyme = SpCAS9
   def pam = Array[String]("GG","AG")
+  def paddedPam = Array[String]("NGG","NAG")
   def pamLength: Int = 3
 
   def totalScanLength: Int = 23
@@ -94,6 +97,7 @@ case object Cas9ParameterPack extends ParameterPack {
 case object Cas9NGGParameterPack extends ParameterPack {
   def enzyme = SpCAS9
   def pam = Array[String]("GG")
+  def paddedPam = Array[String]("NGG")
   def pamLength: Int = 3
 
   def totalScanLength: Int = 23
@@ -112,6 +116,7 @@ case object Cas9NGGParameterPack extends ParameterPack {
 case object Cas9NAGParameterPack extends ParameterPack {
   def enzyme = SpCAS9
   def pam = Array[String]("AG")
+  def paddedPam = Array[String]("NAG")
   def pamLength: Int = 3
 
   def totalScanLength: Int = 23
@@ -129,6 +134,7 @@ case object Cas9NAGParameterPack extends ParameterPack {
 case object Cpf1ParameterPack extends ParameterPack {
   def enzyme = CPF1
   def pam = Array[String]("TTT")
+  def paddedPam = Array[String]("TTTN")
   def pamLength: Int = 4
   def totalScanLength: Int = 24
   def comparisonBitEncoding: Long = 0x00FFFFFFFFFFl // be super careful with this value!!

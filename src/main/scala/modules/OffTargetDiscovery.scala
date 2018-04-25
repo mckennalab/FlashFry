@@ -47,6 +47,8 @@ class OffTargetDiscovery extends LazyLogging with Module {
     // parse the command line arguments
     val parser = new OffTargetBaseOptions()
 
+    val stopSmartTraversalProp = 0.95
+
     parser.parse(remainingOptions, DiscoverConfig()) map {
       case(config,remainingParameters) => {
         val formatter = java.text.NumberFormat.getIntegerInstance
@@ -70,7 +72,7 @@ class OffTargetDiscovery extends LazyLogging with Module {
 
         logger.info("Precomputing traversal over bins....")
         if (!config.forceLinear)
-          traversalFactory = Some(new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, header.bitCoder, 0.90, guideStorage))
+          traversalFactory = Some(new OrderedBinTraversalFactory(header.binGenerator, config.maxMismatch, header.bitCoder, stopSmartTraversalProp, guideStorage))
 
         logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
 

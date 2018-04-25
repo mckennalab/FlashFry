@@ -25,10 +25,14 @@ class RandoCRISPR(sz: Int, pams: Array[String], pamFivePrime: Boolean, stringPre
   val r = new scala.util.Random(seed)
 
   def next(): String = {
-    if (pamFivePrime)
-      pams(r.nextInt(pams.length)) + stringPrefix + (0.until(sz - stringPrefix.size)).map{ct => numberToBase(r.nextInt(4))}.mkString("")
-    else
-      stringPrefix + (0.until(sz - stringPrefix.size)).map{ct => numberToBase(r.nextInt(4))}.mkString("") + pams(r.nextInt(pams.length))
+    if (pamFivePrime) {
+      val unpaddedPam = pams(r.nextInt(pams.length)).map{base => if (base == 'N') numberToBase(r.nextInt(4)) else base}.mkString("")
+      unpaddedPam + stringPrefix + (0.until(sz - stringPrefix.size)).map { ct => numberToBase(r.nextInt(4)) }.mkString("")
+    }
+    else {
+      val unpaddedPam = pams(r.nextInt(pams.length)).map{base => if (base == 'N') numberToBase(r.nextInt(4)) else base}.mkString("")
+      stringPrefix + (0.until(sz - stringPrefix.size)).map { ct => numberToBase(r.nextInt(4)) }.mkString("") + unpaddedPam
+    }
   }
 
   def numberToBase(nt: Int): Char = if (nt == 0) 'A' else if (nt == 1) 'C' else if (nt == 2) 'G' else 'T'
