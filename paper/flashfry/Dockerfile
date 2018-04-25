@@ -62,13 +62,10 @@ RUN cd /CRISPRseek && sudo R CMD BATCH setup.R
 
 # setup FlashFry
 RUN sudo mkdir /FlashFry
-RUN cd /FlashFry && sudo wget -O flashfry.jar "https://github.com/aaronmck/FlashFry/releases/download/1.7.9/FlashFry-assembly-1.7.9.jar"
+RUN cd /FlashFry && sudo wget -O flashfry.jar "https://github.com/aaronmck/FlashFry/releases/download/1.8.1/FlashFry-assembly-1.8.1.jar"
 
 # add bwa
 RUN sudo yum -y install bwa
-
-# now add the timing and memory characterization script
-RUN cd /usr/bin && sudo wget -O memusg.sh "https://gist.githubusercontent.com/aaronmck/f67d6e62a58e9271e3c5feb8575c976b/raw/0927d3700291d9af24bf24d8cc6cb4ab232e4c6f/memusg.sh"
 
 # now setup docker on the machine
 RUN sudo yum install -y docker
