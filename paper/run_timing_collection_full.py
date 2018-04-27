@@ -38,7 +38,7 @@ for i in testrange:
 
         # run cwl-runner with the above yaml file
         print "running " + yml
-        call(["cwl-runner","/home/ec2-user/ff_git/paper/tools/timing_pipeline.cwl",yml])
+        call(["cwl-runner","/home/ec2-user/ff_git/paper/tools/timing_pipeline_full.cwl",yml])
 
         # recover the timing information from the final output
         score_output.write("BWA_ALN\t" + i + "\t" + mismatch + "\t" + get_wall_time("bwaaln" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("bwaaln" + i + "_i" + mismatch + ".stderr") + "\n")
