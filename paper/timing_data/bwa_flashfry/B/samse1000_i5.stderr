@@ -1,0 +1,30 @@
+[bwa_aln_core] convert to sequence coordinate... 5.15 sec
+[bwa_aln_core] refine gapped alignments... 0.53 sec
+[bwa_aln_core] print alignments... 0.22 sec
+[bwa_aln_core] 1000 sequences have been processed.
+[main] Version: 0.7.12-r1039
+[main] CMD: bwa samse -n 2000 -f samse1000_i5.sam /genome/hg38.fa /var/lib/cwl/stg00e5e8f2-4095-4f25-b80d-fb6767e1d6b7/bwaaln1000_i5.stdout /var/lib/cwl/stgf6da2c83-2137-4f3e-8210-07808d08fb43/casoff1000_i5.fastq
+[main] Real time: 5.943 sec; CPU: 5.916 sec
+	Command being timed: "bwa samse -n 2000 -f samse1000_i5.sam /genome/hg38.fa /var/lib/cwl/stg00e5e8f2-4095-4f25-b80d-fb6767e1d6b7/bwaaln1000_i5.stdout /var/lib/cwl/stgf6da2c83-2137-4f3e-8210-07808d08fb43/casoff1000_i5.fastq"
+	User time (seconds): 2.47
+	System time (seconds): 3.44
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.94
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 4716032
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 1374501
+	Voluntary context switches: 8
+	Involuntary context switches: 67
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 22632
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
