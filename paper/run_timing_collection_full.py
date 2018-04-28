@@ -40,11 +40,14 @@ for i in testrange:
         print "running " + yml
         call(["cwl-runner","/home/ec2-user/ff_git/paper/tools/timing_pipeline_full.cwl",yml])
 
-        # recover the timing information from the final output
-        score_output.write("BWA_ALN\t" + i + "\t" + mismatch + "\t" + get_wall_time("bwaaln" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("bwaaln" + i + "_i" + mismatch + ".stderr") + "\n")
-        score_output.write("BWA_SAMSE\t" + i + "\t" + mismatch + "\t" + get_wall_time("samse" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("samse" + i + "_i" + mismatch + ".stderr") + "\n")
-        score_output.write("FLASHFRY\t" + i + "\t" + mismatch + "\t" + get_wall_time("flashfry" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("flashfry" + i + "_i" + mismatch + ".stderr") + "\n")
-        score_output.write("CASOFF\t" + i + "\t" + mismatch + "\t" + get_wall_time("casoff" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("casoff" + i + "_i" + mismatch + ".stderr") + "\n")
-        score_output.write("CRISPSEEK\t" + i + "\t" + mismatch + "\t" + get_wall_time("crisprSeek" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("crisprSeek" + i + "_i" + mismatch + ".stderr") + "\n")
+        try:
+            # recover the timing information from the final output
+            score_output.write("BWA_ALN\t" + i + "\t" + mismatch + "\t" + get_wall_time("bwaaln" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("bwaaln" + i + "_i" + mismatch + ".stderr") + "\n")
+            score_output.write("BWA_SAMSE\t" + i + "\t" + mismatch + "\t" + get_wall_time("samse" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("samse" + i + "_i" + mismatch + ".stderr") + "\n")
+            score_output.write("FLASHFRY\t" + i + "\t" + mismatch + "\t" + get_wall_time("flashfry" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("flashfry" + i + "_i" + mismatch + ".stderr") + "\n")
+            score_output.write("CASOFF\t" + i + "\t" + mismatch + "\t" + get_wall_time("casoff" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("casoff" + i + "_i" + mismatch + ".stderr") + "\n")
+            score_output.write("CRISPSEEK\t" + i + "\t" + mismatch + "\t" + get_wall_time("crisprSeek" + i + "_i" + mismatch + ".stderr") + "\t" + get_mem_usage("crisprSeek" + i + "_i" + mismatch + ".stderr") + "\n")
+        except:
+            print("Unable to get timing for " + i)
 
 score_output.close()
