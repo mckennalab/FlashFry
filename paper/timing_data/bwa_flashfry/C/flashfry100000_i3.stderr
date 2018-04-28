@@ -1,0 +1,23 @@
+	Command being timed: "java -Xmx8g -jar /FlashFry/flashfry.jar --analysis discover --database /genome/hg38 --fasta /var/lib/cwl/stg545e4c0e-aba7-4fda-b278-f31ed4b5baac/flashfry100000_i3.fasta --output flashfry100000_i3.output --maxMismatch 3"
+	User time (seconds): 494.02
+	System time (seconds): 1.40
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:15.72
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1050884
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 3
+	Minor (reclaiming a frame) page faults: 263682
+	Voluntary context switches: 20817
+	Involuntary context switches: 27196
+	Swaps: 0
+	File system inputs: 66168
+	File system outputs: 51808
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
