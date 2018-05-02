@@ -1,0 +1,29 @@
+[bwa_aln_core] calculate SA coordinate... 453.93 sec
+[bwa_aln_core] write to the disk... 0.01 sec
+[bwa_aln_core] 1000 sequences have been processed.
+[main] Version: 0.7.12-r1039
+[main] CMD: bwa aln -o 0 -m 20000000 -N -l 20 -n 5 -k 5 /genome/hg38.fa /var/lib/cwl/stgce747782-d0c5-4b06-a0ec-e713c4127359/casoff1000_i5.fastq
+[main] Real time: 483.315 sec; CPU: 456.405 sec
+	Command being timed: "bwa aln -o 0 -m 20000000 -N -l 20 -n 5 -k 5 /genome/hg38.fa /var/lib/cwl/stgce747782-d0c5-4b06-a0ec-e713c4127359/casoff1000_i5.fastq"
+	User time (seconds): 454.08
+	System time (seconds): 2.32
+	Percent of CPU this job got: 94%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:03.31
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3206632
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 801254
+	Voluntary context switches: 12267
+	Involuntary context switches: 4533
+	Swaps: 0
+	File system inputs: 3131384
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
