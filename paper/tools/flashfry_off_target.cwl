@@ -25,7 +25,7 @@ arguments:
   position: 4
 - valueFrom: "java"
   position: 5
-- valueFrom: "-Xmx8g"
+- valueFrom: "-Xmx15g"
   position: 6
 - valueFrom: "-jar"
   position: 7
