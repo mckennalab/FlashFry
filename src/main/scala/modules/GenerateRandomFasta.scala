@@ -55,6 +55,8 @@ class GenerateRandomFasta extends LazyLogging with Module {
       opt[String]("enzyme") required() valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
       opt[Unit]("onlyUnidirectional") valueName ("<string>") action { (x, c) => c.copy(onlyUnidirectional = true) } text ("should we ensure that the guides only work in one direction?")
       opt[Int]("randomCount") required() valueName ("<int>") action { (x, c) => c.copy(randomCount = x) } text ("how many surviving random sequences should we have")
+      opt[Int]("sequenceContextLeft") valueName ("<int>") action { (x, c) => c.copy(randomFront = x) } text ("how many surviving random sequences should we have")
+      opt[Int]("sequenceContextRight") valueName ("<int>") action { (x, c) => c.copy(randomBack = x) } text ("how many surviving random sequences should we have")
 
       // some general command-line setup stuff
       note("Given the enyzme of interest, generate a series of random target sequences that pass our initial filtering criteria\n")
@@ -73,17 +75,23 @@ class GenerateRandomFasta extends LazyLogging with Module {
         // our collection of random CRISPR sequences
         val sequences = new ArrayBuffer[CRISPRSite]()
 
-        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength, params.paddedPam, params.fivePrimePam)
+        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength,
+          params.paddedPam,
+          params.fivePrimePam,
+          "",
+          config.randomFront,
+          config.randomBack)
 
         while (sequences.size < config.randomCount) {
           val randomSeq = crisprMaker.next()
           val crisprSeq = new CRISPRSite(randomSeq, randomSeq, true, 0, None)
 
           // it's valid, and check to make sure there's only one hit, and not a secret reverse sequence hit
-          if ((!config.onlyUnidirectional || (config.onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
+          if ((!config.onlyUnidirectional ||
+              (config.onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
             sequences.append(crisprSeq)
           } else {
-            println("Tossing " + crisprSeq.bases + " as its bidirectional")
+            logger.debug("Tossing " + crisprSeq.bases + " as its contains more than one CRISPR site")
           }
         }
 
@@ -107,4 +115,6 @@ case class RanomdFastaConfig(analysisType: Option[String] = None,
                              outputFile: String = "",
                              enzyme: String = "",
                              onlyUnidirectional: Boolean = false,
-                             randomCount: Int = 1000)
+                             randomCount: Int = 1000,
+                             randomFront: Int = 0,
+                             randomBack: Int = 0)
