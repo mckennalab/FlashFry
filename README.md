@@ -31,14 +31,14 @@ From the UNIX or Mac command line, download the latest release version of the Fl
 ```shell
 wget https://github.com/aaronmck/FlashFry/releases/download/1.8.1/FlashFry-assembly-1.8.1.jar
 ```
-download and then un-gzip the sample data for human chromosome 22:
+Download and then un-gzip the sample data for human chromosome 22:
 
 ```shell
 wget https://raw.githubusercontent.com/aaronmck/FlashFry/master/test_data/quickstart_data.tar.gz
 tar xf quickstart_data.tar.gz
 ```
 
-then run the database creation step (this should take a few minutes, it takes ~75 seconds on my laptop):
+Then run the database creation step (this should take a few minutes, it takes ~75 seconds on my laptop):
 
 ```shell
 mkdir tmp
@@ -60,7 +60,7 @@ java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
  --output EMX1.output
 ```
 
-finally we score the discovered sites (a few seconds):
+Finally we score the discovered sites (a few seconds):
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
@@ -71,4 +71,4 @@ java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
  --database chr22_cas9ngg_database
 ```
 
-There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documenation and and tutorials for more quesiton specific details.
+There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documentation and tutorials for more specific details.
