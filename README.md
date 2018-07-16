@@ -19,8 +19,10 @@ The easiest way to get started it to try out the quick-start procedure to make s
 - [Scoring methods](https://github.com/aaronmck/FlashFry/wiki/Site-scoring)
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
-- Tutorials
-  * Tutorial - [call sites and annotate with BED file intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
+- Tutorials - on the [wiki](https://github.com/aaronmck/FlashFry/wiki)
+  * [call sites and annotate with BED file intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
+  * [Create random target sequences and score them against the genome](https://github.com/aaronmck/FlashFry/wiki/Scoring-random-sequences-against-the-genome)
+- [Citing FlashFry](#Cite)
  
 
 
@@ -72,3 +74,26 @@ java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
 ```
 
 There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documentation and tutorials for more specific details.
+
+# Citing FlashFry
+
+FlashFry is published in [BMC Biology](https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-018-0545-0); if you find it useful please cite: 
+
+```
+TY  - JOUR
+AU  - McKenna, Aaron
+AU  - Shendure, Jay
+PY  - 2018
+DA  - 2018/07/05
+TI  - FlashFry: a fast and flexible tool for large-scale CRISPR target design
+JO  - BMC Biology
+SP  - 74
+VL  - 16
+IS  - 1
+AB  - Genome-wide knockout studies, noncoding deletion scans, and other large-scale studies require a simple and lightweight framework that can quickly discover and score thousands of candidate CRISPR guides targeting an arbitrary DNA sequence. While several CRISPR web applications exist, there is a need for a high-throughput tool to rapidly discover and process hundreds of thousands of CRISPR targets.
+SN  - 1741-7007
+UR  - https://doi.org/10.1186/s12915-018-0545-0
+DO  - 10.1186/s12915-018-0545-0
+ID  - McKenna2018
+ER  -
+```
