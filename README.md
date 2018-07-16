@@ -75,7 +75,7 @@ java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
 
 There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documentation and tutorials for more specific details.
 
-# Citing FlashFry
+# Cite
 
 FlashFry is published in [BMC Biology](https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-018-0545-0); if you find it useful please cite: 
 
