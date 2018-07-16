@@ -20,7 +20,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
 - Tutorials - on the [wiki](https://github.com/aaronmck/FlashFry/wiki)
-  * [call sites and annotate with BED file intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
+  * [Call target sites in a FASTA and annotate with BED intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
   * [Create random target sequences and score them against the genome](https://github.com/aaronmck/FlashFry/wiki/Scoring-random-sequences-against-the-genome)
 - [Citing FlashFry](#Cite)
  
