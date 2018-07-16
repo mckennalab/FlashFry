@@ -14,7 +14,7 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry.
 
 #### links:
-- [Quick start](#Quickstart)
+- [Quick start](https://github.com/aaronmck/FlashFry#quickstart)
 - [General options documentation](https://github.com/aaronmck/FlashFry/wiki/Command-line-options)
 - [Scoring methods](https://github.com/aaronmck/FlashFry/wiki/Site-scoring)
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
@@ -22,7 +22,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 - Tutorials - on the [wiki](https://github.com/aaronmck/FlashFry/wiki)
   * [Call target sites in a FASTA and annotate with BED intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
   * [Create random target sequences and score them against the genome](https://github.com/aaronmck/FlashFry/wiki/Scoring-random-sequences-against-the-genome)
-- [Citing FlashFry](#Cite)
+- [Citing FlashFry](https://github.com/aaronmck/FlashFry#cite)
  
 
 
