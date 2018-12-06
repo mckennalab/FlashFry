@@ -14,13 +14,15 @@ FlashFry is a fast and flexible command-line tool for characterizing large numbe
 The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry.
 
 #### links:
-- [Quick start](#Quickstart)
+- [Quick start](https://github.com/aaronmck/FlashFry#quickstart)
 - [General options documentation](https://github.com/aaronmck/FlashFry/wiki/Command-line-options)
 - [Scoring methods](https://github.com/aaronmck/FlashFry/wiki/Site-scoring)
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
-- Tutorials
-  * Tutorial - [call sites and annotate with BED file intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
+- Tutorials - on the [wiki](https://github.com/aaronmck/FlashFry/wiki)
+  * [Call target sites in a FASTA and annotate with BED intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
+  * [Create random target sequences and score them against the genome](https://github.com/aaronmck/FlashFry/wiki/Scoring-random-sequences-against-the-genome)
+- [Citing FlashFry](https://github.com/aaronmck/FlashFry#cite)
  
 
 
@@ -29,7 +31,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.8.1/FlashFry-assembly-1.8.1.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.8.3/FlashFry-assembly-1.8.3.jar
 ```
 Download and then un-gzip the sample data for human chromosome 22:
 
@@ -42,7 +44,7 @@ Then run the database creation step (this should take a few minutes, it takes ~7
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
+java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
  --analysis index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -53,7 +55,7 @@ java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
 Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
+java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
  --analysis discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
@@ -63,7 +65,7 @@ java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
 Finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
+java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
  --analysis score \
  --input EMX1.output \
  --output EMX1.output.scored \
@@ -72,3 +74,26 @@ java -Xmx4g -jar FlashFry-assembly-1.8.1.jar \
 ```
 
 There should now be a set of scored sites in the `EMX1.output.scored`. Success! Now check out the documentation and tutorials for more specific details.
+
+# Cite
+
+FlashFry is published in [BMC Biology](https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-018-0545-0); if you find it useful please cite: 
+
+```
+TY  - JOUR
+AU  - McKenna, Aaron
+AU  - Shendure, Jay
+PY  - 2018
+DA  - 2018/07/05
+TI  - FlashFry: a fast and flexible tool for large-scale CRISPR target design
+JO  - BMC Biology
+SP  - 74
+VL  - 16
+IS  - 1
+AB  - Genome-wide knockout studies, noncoding deletion scans, and other large-scale studies require a simple and lightweight framework that can quickly discover and score thousands of candidate CRISPR guides targeting an arbitrary DNA sequence. While several CRISPR web applications exist, there is a need for a high-throughput tool to rapidly discover and process hundreds of thousands of CRISPR targets.
+SN  - 1741-7007
+UR  - https://doi.org/10.1186/s12915-018-0545-0
+DO  - 10.1186/s12915-018-0545-0
+ID  - McKenna2018
+ER  -
+```
