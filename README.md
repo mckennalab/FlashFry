@@ -31,7 +31,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/aaronmck/FlashFry/releases/download/1.8.3/FlashFry-assembly-1.8.3.jar
+wget https://github.com/aaronmck/FlashFry/releases/download/1.8.3/FlashFry-assembly-1.9.0.jar
 ```
 Download and then un-gzip the sample data for human chromosome 22:
 
@@ -44,8 +44,8 @@ Then run the database creation step (this should take a few minutes, it takes ~7
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
- --analysis index \
+java -Xmx4g -jar FlashFry-assembly-1.9.0.jar \
+ index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
  --reference chr22.fa.gz \
@@ -55,8 +55,8 @@ java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
 Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
- --analysis discover \
+java -Xmx4g -jar FlashFry-assembly-1.9.0.jar \
+ discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
  --output EMX1.output
@@ -65,8 +65,8 @@ java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
 Finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.8.3.jar \
- --analysis score \
+java -Xmx4g -jar FlashFry-assembly-1.9.0.jar \
+ score \
  --input EMX1.output \
  --output EMX1.output.scored \
  --scoringMetrics doench2014ontarget,doench2016cfd,dangerous,hsu2013,minot \
