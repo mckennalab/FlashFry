@@ -20,6 +20,7 @@
 package scoring
 import bitcoding.BitEncoding
 import crispr.CRISPRSiteOT
+import picocli.CommandLine.Command
 import standards.ParameterPack
 import utils.Utils
 
@@ -96,7 +97,7 @@ class DangerousSequences extends SingleGuideScoreModel {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = args
+  override def run() {}
 
   /**
     * set the bit encoder for this scoring metric

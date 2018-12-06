@@ -24,6 +24,7 @@ import java.io._
 import java.nio.ByteBuffer
 import java.nio.channels.{Channels, FileChannel, SeekableByteChannel}
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+
 import htsjdk.samtools.util.{BlockCompressedFilePointerUtil, BlockCompressedInputStream, BlockGunzipper}
 
 import scala.annotation._
@@ -34,6 +35,8 @@ import reference.binary.blocks.BlockManager
 import utils.{BaseCombinationGenerator, Utils}
 import reference.binary.{BinaryHeader, BlockOffset}
 import standards.ParameterPack
+
+import scala.util.Random
 
 /**
   * Created by aaronmck on 5/9/17.
@@ -50,14 +53,21 @@ object DumpAllGuides extends LazyLogging {
     * @param configuration our enzyme configuration
     * @param bitCoder      our bit encoder
     * @param posCoder      the position encoder
+    * @param minOccurances emitted targets can have this minimum number of occurrences
+    * @param maxOccurrences emitted targets can have this maximum number of occurrences
+    * @param subsampleProportion the downsampling proportion
     * @return a guide to OT hit array
     */
   def toFile(binaryFile: File,
-           header: BinaryHeader,
-           configuration: ParameterPack,
-           bitCoder: BitEncoding,
-           posCoder: BitPosition,
-           outputFile: String) {
+             header: BinaryHeader,
+             configuration: ParameterPack,
+             bitCoder: BitEncoding,
+             posCoder: BitPosition,
+             outputFile: String,
+             minOccurrences: Int,
+             maxOccurrences: Int,
+             subsampleProportion: Double
+            ) {
 
     val outputTargets = new PrintWriter(outputFile)
 
@@ -77,6 +87,9 @@ object DumpAllGuides extends LazyLogging {
 
     var totalKeptTargets = 0
     var totalTargets = 0
+
+    val random = new Random()
+
     // ------------------------------------------ traversal ------------------------------------------
     header.inputBinGenerator.iterator.foreach {
       binString => {
@@ -95,17 +108,12 @@ object DumpAllGuides extends LazyLogging {
           bitCoder,
           bitCoder.binToLongComparitor(binString))
 
-        targets.foreach{target => {
-          if (target.getOffTargetCount == 1) {
-            val sequence = bitCoder.bitDecodeString(target.sequence)
-            val longestPoly = Utils.longestHomopolymerRun(sequence.str)
-            val entropy = Utils.sequenceEntropy(sequence.str)
-            if (longestPoly < 5 && entropy >= 1.5 && sequence.count == 1) {
-              outputTargets.write(">" + sequence.str + "_" + sequence.count + "_" + longestPoly + "_" + entropy + "\n" + sequence.str + "\n")
-              totalKeptTargets += 1
+        targets.foreach { target => {
+          val sequence = bitCoder.bitDecodeString(target.sequence)
+          if (sequence.count <= maxOccurrences || sequence.count >= minOccurrences)
+            if (random.nextDouble() <= subsampleProportion) {
+              outputTargets.write(">" + sequence.str + "_" + sequence.count + "\n" + sequence.str + "\n")
             }
-            totalTargets += 1
-          }
         }}
 
         binIndex += 1

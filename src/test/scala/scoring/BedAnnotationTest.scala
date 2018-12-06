@@ -20,8 +20,8 @@ class BedAnnotationTest extends FlatSpec with Matchers {
     crisprOT.addOT(new CRISPRHit(bitEncoder.bitEncodeString(StringCount("CACTAGCATCCCAGGCCGGTGGG",1)),Array[Long]()))
     val bedAnnot = new BedAnnotation()
 
-    bedAnnot.inputBed = Some(Array[File](new File("test_data/test_overlap.bed")))
-    bedAnnot.inputBedNames = Some(Array[String]("test"))
+    bedAnnot.inputBedFiles = Array[File](new File("test_data/test_overlap.bed"))
+    bedAnnot.inputBedNames = Array[String]("test")
 
     val posEnc = new BitPosition()
     bedAnnot.scoreGuides(Array[crispr.CRISPRSiteOT](crisprOT), bitEncoder, posEnc, Cas9ParameterPack)
@@ -37,8 +37,8 @@ class BedAnnotationTest extends FlatSpec with Matchers {
     crisprOT.addOT(new CRISPRHit(bitEncoder.bitEncodeString(StringCount("CACTAGCATCCCAGGCCGGTGGG",1)),Array[Long]()))
     val bedAnnot = new BedAnnotation()
 
-    bedAnnot.inputBed = Some(Array[File](new File("test_data/test_overlap.bed")))
-    bedAnnot.inputBedNames = Some(Array[String]("test"))
+    bedAnnot.inputBedFiles = Array[File](new File("test_data/test_overlap.bed"))
+    bedAnnot.inputBedNames = Array[String]("test")
 
     val posEnc = new BitPosition()
     bedAnnot.scoreGuides(Array[crispr.CRISPRSiteOT](crisprOT), bitEncoder, posEnc, Cas9ParameterPack)
@@ -55,8 +55,8 @@ class BedAnnotationTest extends FlatSpec with Matchers {
     val bedAnnot = new BedAnnotation()
     bedAnnot.parseOutInterval("test_data/remap_1_to_chr8:10000-15000.bed")
 
-    bedAnnot.inputBed = Some(Array[File](new File("test_data/test_overlap.bed")))
-    bedAnnot.inputBedNames = Some(Array[String]("test"))
+    bedAnnot.inputBedFiles = Array[File](new File("test_data/test_overlap.bed"))
+    bedAnnot.inputBedNames = Array[String]("test")
     val posEnc = new BitPosition()
     bedAnnot.scoreGuides(Array[crispr.CRISPRSiteOT](crisprOT), bitEncoder, posEnc, Cas9ParameterPack)
 

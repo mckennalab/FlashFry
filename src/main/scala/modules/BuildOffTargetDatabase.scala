@@ -20,79 +20,65 @@
 package modules
 
 import java.io.File
+import java.util.concurrent.Callable
 
 import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.BinWriter
+import picocli.CommandLine.{Command, Option}
 import utils.BaseCombinationGenerator
 import reference.binary.DatabaseWriter
 import reference.{ReferenceDictReader, ReferenceEncoder}
 import standards.ParameterPack
-import scopt._
+
 
 /**
   * "give me a genome, and I'll give you ALL the potential off-targets, encoded into a binary representation" -this class
   *
   * Febuary 9th, 2017
   */
-class BuildOffTargetDatabase extends LazyLogging {
+@Command(name = "BuildOffTargetDatabase", description = Array("Build an off-target database from a reference file"))
+class BuildOffTargetDatabase extends Runnable with LazyLogging {
 
-  def runWithOptions(remainingOptions: Seq[String]) {
-    // parse the command line arguments
-    val parser = new OptionParser[TallyConfig]("index") {
-      head("index", "1.3")
+  @Option(names = Array("-reference", "--reference"), required = true, paramLabel = "FILE", description = Array("the reference file"))
+  private var reference: File = new File("UNKNOWN")
 
-      // *********************************** Inputs *******************************************************
-      opt[String]("analysis") required() valueName ("<string>") action {
-        (x, c) => c.copy(analysisType = Some(x))
-      } text ("The run type: one of: discovery, score")
+  @Option(names = Array("-database", "--database"), required = true, paramLabel = "FILE", description = Array("the output database file"))
+  private var output: File = new File("UNKNOWN")
 
-      // *********************************** Inputs *******************************************************
-      opt[String]("reference") required() valueName ("<string>") action { (x, c) => c.copy(reference = x) } text ("the reference file")
-      opt[String]("database") required() valueName ("<string>") action { (x, c) => c.copy(output = x) } text ("the output file")
-      opt[String]("tmpLocation") required() valueName ("<string>") action { (x, c) => c.copy(tmp = x) } text ("the output file")
-      opt[String]("enzyme") valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, spcas9, spcas9ngg)")
-      opt[Int]("binSize") valueName ("<int>") action { (x, c) => c.copy(binSize = x) } text ("how many bins (and subsequent open files) should we use when sorting our genome")
-    }
+  @Option(names = Array("-tmpLocation", "--tmpLocation"), required = true, paramLabel = "DIRECTORY", description = Array("the temporary file output"))
+  private var tmp: File = new File("UNKNOWN")
 
-    // discover off-targets
-    parser.parse(remainingOptions, TallyConfig()) map {
-      case(config,remainingParameters) => {
-        // setup a decent sized iterator over bases patterns for finding sites
-        val binGenerator = BaseCombinationGenerator(6)
+  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme to use"))
+  private var enzyme: String = "spCas9ngg"
 
-        // get our settings
-        val params = ParameterPack.nameToParameterPack(config.enzyme)
+  @Option(names = Array("-binSize", "--binSize"), required = false, paramLabel = "INT",
+    description = Array("how many bins (and subsequent open files) should we use when sorting our genome"))
+  private var binSize: Int = 7
 
-        // create out output bins
-        val outputBins = BinWriter(new File(config.tmp), binGenerator, params)
+  override def run() {
+    // setup a decent sized iterator over bases patterns for finding sites
+    val binGenerator = BaseCombinationGenerator(6)
 
-        // first discover sites in the target genome -- writing out in bins
-        val encoders = ReferenceEncoder.findTargetSites(new File(config.reference), outputBins, params, 0)
+    // get our settings
+    val params = ParameterPack.nameToParameterPack(enzyme)
 
-        logger.info("Closing the temporary binary output files...")
+    // create out output bins
+    val outputBins = BinWriter(tmp, binGenerator, params)
 
-        val binToFile = outputBins.close()
+    // first discover sites in the target genome -- writing out in bins
+    val encoders = ReferenceEncoder.findTargetSites(reference, outputBins, params, 0)
 
-        logger.info("Creating the final binary database file...")
+    logger.info("Closing the temporary binary output files...")
 
-        // setup our bin generator for the output
-        val searchBinGenerator = BaseCombinationGenerator(config.binSize)
+    val binToFile = outputBins.close()
 
-        // then process this total file into a binary file
-        DatabaseWriter.writeToBinnedFileSet(binToFile, binGenerator.width, config.output, encoders._1, encoders._2, searchBinGenerator, params)
+    logger.info("Creating the final binary database file...")
 
-      }
-    }
+    // setup our bin generator for the output
+    val searchBinGenerator = BaseCombinationGenerator(binSize)
+
+    // then process this total file into a binary file
+    DatabaseWriter.writeToBinnedFileSet(binToFile, binGenerator.width, output.getAbsolutePath, encoders._1, encoders._2, searchBinGenerator, params)
   }
 }
-
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class TallyConfig(analysisType: Option[String] = None,
-                       reference: String = "",
-                       output: String = "",
-                       tmp: String = "/tmp/",
-                       enzyme: String = "spCas9ngg",
-                       binSize: Int = 7)

@@ -1,6 +1,6 @@
 name := "FlashFry"
 
-version := "1.8.3"
+version := "1.9.0"
 
 scalaVersion := "2.12.1"
 
@@ -22,7 +22,7 @@ libraryDependencies += "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
-libraryDependencies += "com.typesafe.akka" % "akka-actor_2.12" % "2.4.14"
+libraryDependencies += "info.picocli" % "picocli" % "3.8.1"
 
 startYear := Some(2015)
 

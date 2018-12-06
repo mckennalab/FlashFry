@@ -23,6 +23,7 @@ import java.io.File
 
 import bitcoding.BitEncoding
 import crispr.{CRISPRHit, CRISPRSiteOT}
+import picocli.CommandLine.{Command, Option}
 import scopt.PeelParser
 import standards.{Cas9Type, ParameterPack}
 import standards.ParameterPack._
@@ -40,6 +41,8 @@ import scala.util.Random
   */
 class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
 
+  var countOnTargetInScore: Boolean = false
+
   // the coefficients for each position in the guide
   val offtargetCoeff = Array[Double](
     0.0, 0.0, 0.014, 0.0, 0.0,
@@ -54,7 +57,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
   val pamToAdjustment = Map("GG" -> 1.0, "AG" -> 0.26, "CG" -> 0.11, "TG" -> 0.01)
 
   // has to be setup before we do anything -- check with asserts
-  var bitEncoder: Option[BitEncoding] = None
+  var bitEncoder: scala.Option[BitEncoding] = scala.None
 
   override def scoreName(): String = "Hsu2013"
 
@@ -108,7 +111,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
 
     var mismatches = 0
     var distances = Array[Int]()
-    var lastMismatch: Option[Int] = None
+    var lastMismatch: scala.Option[Int] = scala.None
     val stringOTSeq = bitEncoder.get.bitDecodeString(offTarget.sequence)
     var equationPartOne = 1.0
 
@@ -122,7 +125,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
         lastMismatch.map { tk =>
           distances :+= index - tk
         }
-        lastMismatch = Some(index)
+        lastMismatch = scala.Some(index)
       }
     }}
 
@@ -159,21 +162,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
   /**
     * parse out any command line arguments that are optional or required for this scoring metric
     *
-    * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
-    val parser = new MITAnnotationOptionParser()
-
-    val remaining = parser.parse(args, CRISPRMITConfig()) map {
-      case (config, remainingParameters) => {
-        if (!config.countOnTargetInScore) {
-          considerOnTarget = true
-        }
-        remainingParameters
-      }
-    }
-    remaining.getOrElse(Seq[String]())
-    args
+  override def run() = {
+    // just parse the options
   }
 
   /**

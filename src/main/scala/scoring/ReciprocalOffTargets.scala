@@ -22,6 +22,7 @@ import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.CRISPRSiteOT
+import picocli.CommandLine.{Command, Option}
 import scopt.PeelParser
 import standards.ParameterPack
 
@@ -31,6 +32,7 @@ import standards.ParameterPack
   * region, which can be really confusing when looking at functional effects.
   */
 class ReciprocalOffTargets() extends ScoreModel {
+
   var maxMismatch = 1
 
   /**
@@ -83,17 +85,7 @@ class ReciprocalOffTargets() extends ScoreModel {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
-    val parser = new ROTOptions()
-
-    val remaining = parser.parse(args, ROTConfig()) map {
-      case(config,remainingParameters) => {
-        maxMismatch = config.maxMismatch
-        remainingParameters
-      }
-    }
-    remaining.getOrElse(Seq[String]())
-  }
+  override def run(){}
 
   /**
     * set the bit encoder for this scoring metric
@@ -108,13 +100,3 @@ class ReciprocalOffTargets() extends ScoreModel {
   override def headerColumns(): Array[String] = Array[String]("ReciprocalOffTargets")
 }
 
-
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class ROTConfig(maxMismatch: Int = 2)
-
-class ROTOptions extends PeelParser[ROTConfig]("") {
-  opt[Int]("maxReciprocalMismatch") required() valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("the maximum number of mismatches between two targets with the region to be highlighted in the output")
-
-}

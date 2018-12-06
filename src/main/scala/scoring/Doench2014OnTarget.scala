@@ -21,7 +21,8 @@ package scoring
 
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSiteOT}
+import crispr.CRISPRSiteOT
+import picocli.CommandLine.Command
 import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
 
 /**
@@ -76,10 +77,7 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with Ran
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
-    // we have no specific parameters to parse out here
-    args
-  }
+  override def run() {}
 
   /**
     * set the bit encoder for this scoring metric

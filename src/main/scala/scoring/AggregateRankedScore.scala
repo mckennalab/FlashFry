@@ -25,7 +25,7 @@ import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition, PositionInformation}
 import crispr.{CRISPRSite, CRISPRSiteOT}
-import modules.{DiscoverConfig, OffTargetBaseOptions}
+import picocli.CommandLine.Command
 import scoring.AggregateRankedScore.{scoreHighIsGood, scoreLowIsGood}
 import scoring._
 import standards.ParameterPack
@@ -135,9 +135,7 @@ class AggregateRankedScore(trancheCount: Int = 4) extends ScoreModel with Aggreg
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = {
-    Seq[String]()
-  }
+  override def run() {}
 
   /**
     * @return get a listing of the header columns for this score metric

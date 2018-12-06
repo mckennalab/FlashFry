@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import crispr.{CRISPRHit, CRISPRSite, CRISPRSiteOT}
-import scoring.{ScoreModel, ScoringManager, SingleGuideScoreModel}
+import scoring.{ScoreModel, SingleGuideScoreModel}
 import utils.Utils
 
 import scala.collection.mutable

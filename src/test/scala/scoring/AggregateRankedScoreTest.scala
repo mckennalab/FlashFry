@@ -180,7 +180,7 @@ class FakeRankedScore1 extends RankedScore {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = args
+  override def run(){}
 
   /**
     * set the bit encoder for this scoring metric
@@ -255,7 +255,7 @@ class FakeRankedScore2(tieTopX: Int = 0) extends RankedScore {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = args
+  override def run(){}
 
   /**
     * set the bit encoder for this scoring metric

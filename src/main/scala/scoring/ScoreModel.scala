@@ -28,7 +28,7 @@ import com.typesafe.scalalogging.LazyLogging
   * our trait object for scoring guides -- any method that implements this trait can be used to
   * score on and off-target effects
   */
-trait ScoreModel {
+trait ScoreModel extends Runnable with LazyLogging {
 
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
@@ -51,7 +51,6 @@ trait ScoreModel {
     * while considering all guides (like BED annotation)
     *
     * @param guide the guide with it's off-targets
-    * @return a score (as a string)
     */
   def scoreGuides(guide: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack)
 
@@ -78,7 +77,7 @@ trait ScoreModel {
     *
     * @param args the command line arguments
     */
-  def parseScoringParameters(args: Seq[String]): Seq[String]
+  def run()
 
   /**
     * set the bit encoder for this scoring metric

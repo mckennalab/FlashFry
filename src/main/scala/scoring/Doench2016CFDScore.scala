@@ -20,6 +20,7 @@
 package scoring
 import bitcoding.BitEncoding
 import crispr.CRISPRSiteOT
+import picocli.CommandLine.Command
 import utils.Utils
 import standards.{Cas9Type, ParameterPack}
 
@@ -111,7 +112,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     *
     * @param args the command line arguments
     */
-  override def parseScoringParameters(args: Seq[String]): Seq[String] = {args}
+  override def run(){}
 
   /**
     * set the bit encoder for this scoring metric

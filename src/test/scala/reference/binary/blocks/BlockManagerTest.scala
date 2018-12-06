@@ -2,16 +2,14 @@ package reference.binary.blocks
 
 import java.io.{DataInputStream, DataOutputStream, File}
 
-import bitcoding.{BinAndMask, BitEncoding, BitPosition}
+import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSite, CRISPRSiteOT, ResultsAggregator}
-import main.scala.Main.logger
 import org.scalatest.{FlatSpec, Matchers}
-import standards.{Cas9ParameterPack, Cpf1ParameterPack}
-import utils.{BaseCombinationGenerator, RandoCRISPR, Utils}
+import standards.{Cas9ParameterPack}
+import utils.{BaseCombinationGenerator, RandoCRISPR}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**

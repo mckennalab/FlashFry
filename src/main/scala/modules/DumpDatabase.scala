@@ -24,6 +24,7 @@ import java.io.{File, PrintWriter}
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
+import picocli.CommandLine.{Command, Option}
 import utils.BaseCombinationGenerator
 import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
 import reference.ReferenceEncoder
@@ -37,51 +38,44 @@ import scala.collection.mutable
 import scala.io.Source
 import scopt._
 
-/**
-  * Created by aaronmck on 4/27/17.
-  */
-class DumpDatabase extends LazyLogging with Module {
+@Command(name = "dump", description = Array("Dump targets from the database, given the filter parameters"))
+class DumpDatabase extends Runnable with LazyLogging {
 
-  def runWithOptions(remainingOptions: Seq[String]) {
-    // parse the command line arguments
-    val parser = new DatabaseDumpBaseOptions()
+  @Option(names = Array("-binaryOTFile", "--binaryOTFile"), required = true, paramLabel = "FILE",
+    description = Array("the binary off-target database to read from"))
+  private var binaryOTFile: File = new File("UNKNOWN")
 
-    parser.parse(remainingOptions, DatabaseDumpConfig()) map {
-      case(config,remainingParameters) => {
-        val formatter = java.text.NumberFormat.getIntegerInstance
+  @Option(names = Array("-outputFile", "--outputFile"), required = true, paramLabel = "FILE",
+    description = Array("the output file (in bed format)"))
+  private var outputFile: File = new File("UNKNOWN")
 
-        // load up their input file, and scan for any potential targets
-        logger.info("Reading the header....")
-        val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
+  @Option(names = Array("-minInGenome", "--minInGenome"), required = false, paramLabel = "INT",
+    description = Array("filter out in-genome sequences that have less than minInGenome count"))
+  private var minInGenome: Int = 0
 
-        DumpAllGuides.toFile(new File(config.binaryOTFile),header,header.inputParameterPack,header.bitCoder,header.bitPosition,config.outputFile)
-      }
-    }
+  @Option(names = Array("-maxInGenome", "--maxInGenome"), required = false, paramLabel = "INT",
+    description = Array("filter out in-genome sequences that have more than maxInGenome count"))
+  private var maxInGenome: Int = Int.MaxValue
+
+  @Option(names = Array("-subsampleProportion", "--subsampleProportion"), required = false, paramLabel = "INT",
+    description = Array("randomly subsample the matching entries to this proportion of the total"))
+  private var subsampleProportion: Double = 1.0
+
+  def run(): Unit = {
+    val formatter = java.text.NumberFormat.getIntegerInstance
+
+    // load up their input file, and scan for any potential targets
+    logger.info("Reading the header....")
+    val header = BinaryHeader.readHeader(binaryOTFile + BinaryHeader.headerExtension)
+
+    DumpAllGuides.toFile(binaryOTFile,
+      header,
+      header.inputParameterPack,
+      header.bitCoder,
+      header.bitPosition,
+      outputFile.getAbsolutePath,
+      minInGenome,
+      maxInGenome,
+      subsampleProportion)
   }
-}
-
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class DatabaseDumpConfig(analysisType: Option[String] = None,
-                              binaryOTFile: String = "",
-                              outputFile: String = "",
-                              enzyme: String = "cas9")
-
-
-class DatabaseDumpBaseOptions extends OptionParser[DatabaseDumpConfig]("DiscoverOTSites") {
-  head("DatabaseDumpConfig", "1.0")
-
-  // *********************************** Inputs *******************************************************
-  opt[String]("analysis") required() valueName ("<string>") action {
-    (x, c) => c.copy(analysisType = Some(x))
-  } text ("The run type: one of: discovery, score")
-
-  // *********************************** Inputs *******************************************************
-  opt[String]("binaryOTFile") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
-  opt[String]("outputFile") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
-
-  // some general command-line setup stuff
-  note("match off-targets for the specified guides to the genome of interest\n")
-  help("help") text ("prints the usage information you see here")
 }

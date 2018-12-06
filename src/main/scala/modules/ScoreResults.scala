@@ -24,8 +24,10 @@ import java.io.File
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.ResultsAggregator
+import picocli.CommandLine
+import picocli.CommandLine.{Command, Option}
 import reference.binary.BinaryHeader
-import scoring.{ScoreModel, ScoringManager}
+import scoring._
 import standards.ParameterPack
 import scopt._
 import targetio.{TabDelimitedInput, TabDelimitedOutput}
@@ -33,78 +35,152 @@ import targetio.{TabDelimitedInput, TabDelimitedOutput}
 /**
   * Given a results bed file from off-target discovery, annotate it with scores using established scoring schemes
   */
-class ScoreResults extends LazyLogging with Module {
+@Command(name = "score", description = Array("Score candidate targets with various community-developed metrics"))
+class ScoreResults extends Runnable with LazyLogging {
 
-  def runWithOptions(args: Seq[String]) {
-    // parse the command line arguments
-    val parser = new ScoreBaseOptions()
+  @Option(names = Array("-input", "--input"), required = true, paramLabel = "FILE", description = Array("the reference file to scan for putitive targets"))
+  private var inputBED: String = ""
 
-    parser.parse(args, ScoreConfig()) map {
-      case(config,remainingParameters) => {
+  @Option(names = Array("-output", "--output"), required = true, paramLabel = "FILE", description = Array("the output file (in bed format)"))
+  private var outputBED: String = ""
 
-        // get our settings
-        val header = BinaryHeader.readHeader(config.binaryOTFile + BinaryHeader.headerExtension)
+  @Option(names = Array("-scoringMetrics", "--scoringMetrics"), required = true, paramLabel = "STRING", description = Array("scoring methods to include, seperated by a comma (no spaces)"))
+  private var scoringMetrics = ""
 
-        // make ourselves a bit encoder
-        val bitEnc = new BitEncoding(header.parameterPack)
+  @Option(names = Array("-maxMismatch", "--maxMismatch"), required = false, paramLabel = "INT", description = Array("only consider off-targets that have a maximum mismatch the guide of X"))
+  private var maxMismatch: Int = Int.MaxValue
 
-        // load up the scored sites into a container
-        logger.info("Loading CRISPR objects (filtering out overflow guides).. ")
-        val guides = (new TabDelimitedInput(new File(config.inputBED),bitEnc,header.bitPosition,config.maxMismatch, true)).guides.toArray
+  @Option(names = Array("-database", "--database"), required = true, paramLabel = "FILE", description = Array("the binary off-target file"))
+  private var binaryOTFile: String = ""
 
-        // get a scoring manager
-        val scoringManager = new ScoringManager(bitEnc, header.bitPosition, config.scoringMetrics, args.toArray)
+  @Option(names = Array("-includeOTs", "--includeOTs"), required = false, paramLabel = "FLAG", description = Array("include the off-target hits in our output"))
+  private var writeOTsToOutput: Boolean = false
 
-        // score all the sites
-        logger.info("Scoring all guides...")
-        scoringManager.scoreGuides(guides, config.maxMismatch, header)
 
-        logger.info("Aggregating results...")
-        val results = new ResultsAggregator(guides)
+  // parameters inherited from scoring modules
+  // -----------------------------------------
+  @Option(names = Array("-inputAnnotationBed", "--inputAnnotationBed"), required = false, paramLabel = "FILE", description = Array("the bed file we'd like to annotate with, and an associated name (name:bedfile)"))
+  var inputBed = ""
 
-        // output a new data file with the scored results
-        logger.info("Writing annotated guides to the output file...")
+  @Option(names = Array("-transformPositions", "--transformPositions"), required = false, paramLabel = "FILE", description = Array("ry to find our genome location by using matching zero-mismatch in-genome targets"))
+  var genomeTransform = ""
 
-        // now output the scores per site
-        val output = new TabDelimitedOutput(new File(config.outputBED),
-          header.bitCoder,
-          header.bitPosition,
-          scoringManager.scoringModels.toArray,
-          config.includeOTs,
-          true)
+  @Option(names = Array("-countOnTargetInScore", "--countOnTargetInScore"), required = false, paramLabel = "FILE", description = Array("do we consider exact matches when calculating the off-target scores"))
+  private var countOnTargetInScore: Boolean = false
 
-        results.wrappedGuides.foreach{gd => {
-          output.write(gd.otSite)
-        }}
-        output.close()
+  @Option(names = Array("-maxReciprocalMismatch", "--maxReciprocalMismatch"), required = false, paramLabel = "INT",
+    description = Array("the maximum number of mismatches between two targets with the region to be highlighted in the output"))
+  private var maxReciprocalMismatch = 1
 
+
+  def run() {
+    // get our settings
+    val header = BinaryHeader.readHeader(binaryOTFile + BinaryHeader.headerExtension)
+
+    // make ourselves a bit encoder
+    val bitEnc = new BitEncoding(header.parameterPack)
+
+    // load up the scored sites into a container
+    logger.info("Loading CRISPR objects (filtering out overflow guides).. ")
+    val guides = (new TabDelimitedInput(new File(inputBED), bitEnc, header.bitPosition, maxMismatch, true)).guides.toArray
+
+    // setup the scoring modules as requested
+    var scoringModels = List[ScoreModel]()
+    def scoringAnnotations = scoringModels.map { mdl => mdl.scoreName() }.toArray
+
+    scoringMetrics.split(",").foreach { modelParameter => {
+      val model = ScoreResults.getRegisteredScoringMetric(modelParameter, bitEnc, inputBed, genomeTransform, countOnTargetInScore, maxReciprocalMismatch)
+
+      if (model.validOverScoreModel(bitEnc.mParameterPack)) {
+        logger.info("adding score: " + model.scoreName())
+        model.bitEncoder(bitEnc)
+        scoringModels :+= model
+      } else {
+        logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack.enzyme)
       }
     }
+    }
+
+    // feed any aggregate scoring metrics the full list of other metrics
+    val nonAggregate = scoringModels.filter { case (m) => m.isInstanceOf[RankedScore] }.map { e => e.asInstanceOf[RankedScore] }
+    val aggregate = scoringModels.filter { case (m) => m.isInstanceOf[AggregateScore] }
+    aggregate.foreach { case (e) => e.asInstanceOf[AggregateScore].initializeScoreNames(nonAggregate) }
+
+    // score all the sites
+    logger.info("Scoring all guides...")
+    scoringModels.foreach {
+      model => {
+        logger.info("Scoring with model " + model.scoreName())
+        model.scoreGuides(guides, bitEnc, header.bitPosition, header.parameterPack)
+      }
+    }
+
+    logger.info("Aggregating results...")
+    val results = new ResultsAggregator(guides)
+
+    // output a new data file with the scored results
+    logger.info("Writing annotated guides to the output file...")
+
+    // now output the scores per site
+    val output = new TabDelimitedOutput(new File(outputBED),
+      header.bitCoder,
+      header.bitPosition,
+      scoringModels.toArray,
+      writeOTsToOutput,
+      true)
+
+    results.wrappedGuides.foreach { gd => {
+      output.write(gd.otSite)
+    }
+    }
+    output.close()
+
   }
 }
 
+object ScoreResults {
 
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class ScoreConfig(inputBED: String = "",
-                       outputBED: String = "",
-                       binaryOTFile: String = "",
-                       maxMismatch: Int = Int.MaxValue,
-                       scoringMetrics: Seq[String] = Seq(),
-                        includeOTs: Boolean = false)
-
-
-class ScoreBaseOptions extends PeelParser[ScoreConfig]("score") {
-  // *********************************** Inputs *******************************************************
-  opt[String]("input") required() valueName ("<string>") action { (x, c) => c.copy(inputBED = x) } text ("the reference file to scan for putitive targets")
-  opt[String]("output") required() valueName ("<string>") action { (x, c) => c.copy(outputBED = x) } text ("the output file (in bed format)")
-  opt[Seq[String]]("scoringMetrics") required() valueName("<scoringMethod1>,<scoringMethod1>...") action{ (x,c) => c.copy(scoringMetrics = x) } text ("scoring methods to include")
-  opt[Int]("maxMismatch") valueName ("<int>") action { (x, c) => c.copy(maxMismatch = x) } text ("only consider off-targets that have a maximum mismatch the guide of X")
-  opt[String]("database") required() valueName ("<string>") action { (x, c) => c.copy(binaryOTFile = x) } text ("the binary off-target file")
-  opt[Unit]("includeOTs") valueName ("<string>") action { (x, c) => c.copy(includeOTs = true) } text ("include the off-target hits")
-
-  // some general command-line setup stuff
-  note("match off-targets for the specified guides to the genome of interest\n")
-  help("help") text ("match off-targets for the specified guides to the genome of interest\n")
+  def getRegisteredScoringMetric(name: String, bitEncoder: BitEncoding, inputBed: String, genomeTransform: String, countOnTargetInScore: Boolean, maxReciprocalMismatch: Int): ScoreModel = {
+    val newMetric : ScoreModel = name.toLowerCase() match {
+      case "hsu2013" => {
+        val sm = new CrisprMitEduOffTarget()
+        sm.bitEncoder(bitEncoder)
+        sm.countOnTargetInScore = countOnTargetInScore
+        sm
+      }
+      case "doench2014ontarget" => {
+        new Doench2014OnTarget()
+      }
+      case "doench2016cfd" => {
+        new Doench2016CFDScore()
+      }
+      case "moreno2015" => {
+        new CRISPRscan()
+      }
+      case "bedannotator" => {
+        val sm = new BedAnnotation()
+        sm.inputBed = inputBed
+        sm.genomeTransform = genomeTransform
+        sm
+      }
+      case "dangerous" => {
+        new DangerousSequences()
+      }
+      case "minot" => {
+        new ClosestHit()
+      }
+      case "reciprocalofftargets" => {
+        val sm = new ReciprocalOffTargets()
+        sm.maxMismatch = maxReciprocalMismatch
+        sm
+      }
+      case "rank" => {
+        new AggregateRankedScore()
+      }
+      case _ => {
+        throw new IllegalArgumentException("Unknown scoring metric: " + name)
+      }
+    }
+    newMetric
+  }
 }

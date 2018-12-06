@@ -24,6 +24,7 @@ import java.io.{File, PrintWriter}
 import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSite, CRISPRSiteOT, GuideMemoryStorage}
+import picocli.CommandLine.{Command, Option}
 import utils.BaseCombinationGenerator
 import reference.traverser.SeekTraverser
 import reference.ReferenceEncoder
@@ -38,83 +39,64 @@ import scopt._
 /**
   * Given the enyzme of interest, generate a series of random target sequences that pass our filtering criteria
   */
-class GenerateRandomFasta extends LazyLogging with Module {
+@Command(name = "random", description = Array("Given the enyzme of interest, generate a series of random target sequences that pass our initial filtering criteria"))
+class GenerateRandomFasta extends Runnable with LazyLogging {
 
-  def runWithOptions(remainingOptions: Seq[String]) {
-    // parse the command line arguments
-    val parser = new OptionParser[RanomdFastaConfig]("DiscoverOTSites") {
-      head("DiscoverOTSites", "1.0")
+  @Option(names = Array("-outputFile", "--outputFile"), required = true, paramLabel = "FILE", description = Array("the output file"))
+  private var outputFile: File = new File("")
 
-      // *********************************** Inputs *******************************************************
-      opt[String]("analysis") required() valueName ("<string>") action {
-        (x, c) => c.copy(analysisType = Some(x))
-      } text ("The run type: one of: discovery, score")
+  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme"))
+  private var enzyme: String = ""
 
-      // *********************************** Inputs *******************************************************
-      opt[String]("outputFile") required() valueName ("<string>") action { (x, c) => c.copy(outputFile = x) } text ("the output file (in bed format)")
-      opt[String]("enzyme") required() valueName ("<string>") action { (x, c) => c.copy(enzyme = x) } text ("which enzyme to use (cpf1, cas9)")
-      opt[Unit]("onlyUnidirectional") valueName ("<string>") action { (x, c) => c.copy(onlyUnidirectional = true) } text ("should we ensure that the guides only work in one direction?")
-      opt[Int]("randomCount") required() valueName ("<int>") action { (x, c) => c.copy(randomCount = x) } text ("how many surviving random sequences should we have")
-      opt[Int]("sequenceContextLeft") valueName ("<int>") action { (x, c) => c.copy(randomFront = x) } text ("how many surviving random sequences should we have")
-      opt[Int]("sequenceContextRight") valueName ("<int>") action { (x, c) => c.copy(randomBack = x) } text ("how many surviving random sequences should we have")
+  @Option(names = Array("-onlyUnidirectional", "--onlyUnidirectional"), required = false, paramLabel = "FLAG", description = Array("should we ensure that the guides only work in one direction?"))
+  private var onlyUnidirectional: Boolean = false
 
-      // some general command-line setup stuff
-      note("Given the enyzme of interest, generate a series of random target sequences that pass our initial filtering criteria\n")
-      help("help") text ("prints the usage information you see here")
-    }
+  @Option(names = Array("-randomCount", "--randomCount"), required = true, paramLabel = "INT", description = Array("how many surviving random sequences should we have"))
+  private var randomCount: Int = 1000
 
-    parser.parse(remainingOptions, RanomdFastaConfig()) map {
-      case(config,remainingParameters) => {
+  @Option(names = Array("-sequenceContextLeft", "--sequenceContextLeft"), required = false, paramLabel = "INT", description = Array("sequence context to add on the left"))
+  private var randomFront: Int = 0
 
-        // get our enzyme's (cas9, cpf1) settings
-        val params = ParameterPack.nameToParameterPack(config.enzyme)
+  @Option(names = Array("-sequenceContextRight", "--sequenceContextRight"), required = false, paramLabel = "INT", description = Array("sequence context to add on the right"))
+  private var randomBack: Int = 0
 
-        // get our position encoder and bit encoder setup
-        val bitEcoding = new BitEncoding(params)
+  def run() {
 
-        // our collection of random CRISPR sequences
-        val sequences = new ArrayBuffer[CRISPRSite]()
+    // get our enzyme's (cas9, cpf1) settings
+    val params = ParameterPack.nameToParameterPack(enzyme)
 
-        val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength,
-          params.paddedPam,
-          params.fivePrimePam,
-          "",
-          config.randomFront,
-          config.randomBack)
+    // get our position encoder and bit encoder setup
+    val bitEcoding = new BitEncoding(params)
 
-        while (sequences.size < config.randomCount) {
-          val randomSeq = crisprMaker.next()
-          val crisprSeq = new CRISPRSite(randomSeq, randomSeq, true, 0, None)
+    // our collection of random CRISPR sequences
+    val sequences = new ArrayBuffer[CRISPRSite]()
 
-          // it's valid, and check to make sure there's only one hit, and not a secret reverse sequence hit
-          if ((!config.onlyUnidirectional ||
-              (config.onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
-            sequences.append(crisprSeq)
-          } else {
-            logger.debug("Tossing " + crisprSeq.bases + " as its contains more than one CRISPR site")
-          }
-        }
+    val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength,
+      params.paddedPam,
+      params.fivePrimePam,
+      "",
+      randomFront,
+      randomBack)
 
-        logger.info("Writing final output for " + sequences.size + " guides")
-        val outputFasta = new PrintWriter(config.outputFile)
-        sequences.foreach { sequence =>
-          outputFasta.write(">random" + sequence.contig + "\n" + sequence.bases + "\n")
-        }
-        outputFasta.close()
+    while (sequences.size < randomCount) {
+      val randomSeq = crisprMaker.next()
+      val crisprSeq = new CRISPRSite(randomSeq, randomSeq, true, 0, None)
+
+      // it's valid, also now check to make sure there's only one hit if they asked for the filter
+      if ((!onlyUnidirectional ||
+        (onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
+        sequences.append(crisprSeq)
+      } else {
+        logger.debug("Tossing " + crisprSeq.bases + " as its contains more than one CRISPR site")
       }
     }
-  }
 
+    logger.info("Writing final output for " + sequences.size + " guides")
+    val outputFasta = new PrintWriter(outputFile)
+    sequences.foreach { sequence =>
+      outputFasta.write(">random" + sequence.contig + "\n" + sequence.bases + "\n")
+    }
+    outputFasta.close()
+  }
 }
 
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class RanomdFastaConfig(analysisType: Option[String] = None,
-                             inputFasta: String = "",
-                             outputFile: String = "",
-                             enzyme: String = "",
-                             onlyUnidirectional: Boolean = false,
-                             randomCount: Int = 1000,
-                             randomFront: Int = 0,
-                             randomBack: Int = 0)

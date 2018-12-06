@@ -21,59 +21,45 @@ package main.scala
 
 import java.io.{File, PrintWriter}
 
+import picocli.CommandLine.{Command, Option, Parameters}
+import java.io.File
+import java.util.concurrent.Callable
+
+import com.typesafe.scalalogging.LazyLogging
 import modules._
-import org.slf4j._
-import scopt._
+import org.slf4j.LoggerFactory
+import picocli.CommandLine
 
-object Main extends App {
-  // parse the command line arguments
-  val parser = new PeelParser[Config]("FlashFry") {
-    head("FlashFry", "1.2")
+import collection.JavaConverters._
 
-    // *********************************** Inputs *******************************************************
-    opt[String]("analysis") required() valueName ("<string>") action {
-      (x, c) => c.copy(analysisType = Some(x))
-    } text ("The run type: one of: index (create database), discover (characterization), or score (your guides) or random (create random sequences)")
+@Command(name = "FlashFry", version = Array("1.9.0"), sortOptions = false,
+  description = Array("@|bold FlashFry|@ Discover CRISPR targets within arbitrary","nucleotide sequences"))
+class Main() extends Runnable with LazyLogging {
 
-    // some general command-line setup stuff
-    note("Find CRISPR targets across the specified genome. Specify individual analysis options for more detailed help information\n")
-    help("help") text ("prints the usage information you see here")
-  }
-
-  val logger = LoggerFactory.getLogger("Main")
-
-  parser.parse(args, Config()) map {
-    case(config, remainingArgs) => {
-
-      val initialTime = System.nanoTime()
-
-      config.analysisType.get match {
-        case "index" => {
-          (new BuildOffTargetDatabase()).runWithOptions(args)
-        }
-        case "discover" => {
-          (new OffTargetDiscovery()).runWithOptions(args)
-        }
-        case "random" => {
-          (new GenerateRandomFasta()).runWithOptions(args)
-        }
-        case "score" => {
-          (new ScoreResults()).runWithOptions(args)
-        }
-        case "dump" => {
-          (new DumpDatabase()).runWithOptions(args)
-        }
-        case _ => {
-          throw new IllegalStateException("")
-        }
-      }
-
-      logger.info("Total runtime " + "%.2f".format((System.nanoTime() - initialTime) / 1000000000.0) + " seconds")
-    }
+  def run(): Unit = {
   }
 }
 
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class Config(analysisType: Option[String] = None, scoringMetrics: Seq[File] = Seq())
+object Main {
+  def main(args: Array[String]) {
+    val main = new Main()
+    val commandLine = new CommandLine(main)
+    val logger = LoggerFactory.getLogger("Main")
+
+    val initialTime = System.nanoTime()
+
+    commandLine.addSubcommand("index", new BuildOffTargetDatabase())
+    commandLine.addSubcommand("discover", new OffTargetDiscovery())
+    commandLine.addSubcommand("random", new GenerateRandomFasta())
+    commandLine.addSubcommand("score", new ScoreResults())
+    commandLine.addSubcommand("dump", new DumpDatabase())
+
+    commandLine.parseWithHandler(new CommandLine.RunAll, args)
+
+    logger.info("Total runtime " + "%.2f".format((System.nanoTime() - initialTime) / 1000000000.0) + " seconds")
+  }
+}
+
+trait CommandLineParser {
+  def addSubCommands(cmdLine: CommandLine)
+}
