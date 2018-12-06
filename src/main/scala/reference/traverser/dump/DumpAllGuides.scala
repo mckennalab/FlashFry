@@ -110,7 +110,7 @@ object DumpAllGuides extends LazyLogging {
 
         targets.foreach { target => {
           val sequence = bitCoder.bitDecodeString(target.sequence)
-          if (sequence.count <= maxOccurrences || sequence.count >= minOccurrences)
+          if (sequence.count <= maxOccurrences && sequence.count >= minOccurrences)
             if (random.nextDouble() <= subsampleProportion) {
               outputTargets.write(">" + sequence.str + "_" + sequence.count + "\n" + sequence.str + "\n")
             }
