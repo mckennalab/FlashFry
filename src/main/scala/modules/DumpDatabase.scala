@@ -19,26 +19,15 @@
 
 package modules
 
-import java.io.{File, PrintWriter}
+import java.io.{File}
 
-import bitcoding.{BitEncoding, BitPosition, StringCount}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
 import picocli.CommandLine.{Command, Option}
-import utils.BaseCombinationGenerator
-import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
-import reference.ReferenceEncoder
-import reference.binary.{BinaryHeader, DatabaseWriter}
-import reference.traversal.{LinearTraversal, OrderedBinTraversalFactory}
-import reference.traverser.SeekTraverser._
+import reference.binary.{BinaryHeader}
 import reference.traverser.dump.DumpAllGuides
-import standards.ParameterPack
 
-import scala.collection.mutable
-import scala.io.Source
-import scopt._
 
-@Command(name = "dump", description = Array("Dump targets from the database, given the filter parameters"))
+@Command(name = "extract", description = Array("Dump targets from the database, given the filter parameters"))
 class DumpDatabase extends Runnable with LazyLogging {
 
   @Option(names = Array("-binaryOTFile", "--binaryOTFile"), required = true, paramLabel = "FILE",

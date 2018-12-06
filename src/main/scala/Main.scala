@@ -52,7 +52,7 @@ object Main {
     commandLine.addSubcommand("discover", new OffTargetDiscovery())
     commandLine.addSubcommand("random", new GenerateRandomFasta())
     commandLine.addSubcommand("score", new ScoreResults())
-    commandLine.addSubcommand("dump", new DumpDatabase())
+    commandLine.addSubcommand("extract", new DumpDatabase())
 
     commandLine.parseWithHandler(new CommandLine.RunAll, args)
 
