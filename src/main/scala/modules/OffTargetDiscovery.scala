@@ -21,21 +21,15 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import bitcoding.{BitEncoding, BitPosition, StringCount}
+import bitcoding.{StringCount}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
 import picocli.CommandLine.{Command, Option}
-import utils.BaseCombinationGenerator
 import reference.traverser.{LinearTraverser, SeekTraverser, Traverser}
 import reference.ReferenceEncoder
 import reference.binary.BinaryHeader
 import reference.traversal.{LinearTraversal, OrderedBinTraversalFactory}
-import reference.traverser.SeekTraverser._
-import standards.ParameterPack
 
-import scala.collection.mutable
-import scala.io.Source
-import scopt._
 import scoring.ScoreModel
 import targetio.TabDelimitedOutput
 

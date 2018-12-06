@@ -24,12 +24,10 @@ import java.io.File
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.ResultsAggregator
-import picocli.CommandLine
 import picocli.CommandLine.{Command, Option}
 import reference.binary.BinaryHeader
 import scoring._
-import standards.ParameterPack
-import scopt._
+
 import targetio.{TabDelimitedInput, TabDelimitedOutput}
 
 /**

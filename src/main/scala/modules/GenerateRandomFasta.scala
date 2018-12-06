@@ -21,20 +21,17 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import bitcoding.{BitEncoding, BitPosition, StringCount}
+import bitcoding.{BitEncoding}
 import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSite, CRISPRSiteOT, GuideMemoryStorage}
+import crispr.{CRISPRSite}
 import picocli.CommandLine.{Command, Option}
-import utils.BaseCombinationGenerator
-import reference.traverser.SeekTraverser
-import reference.ReferenceEncoder
+
 import standards.ParameterPack
 import utils.RandoCRISPR
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
-import scopt._
+
+
 
 /**
   * Given the enyzme of interest, generate a series of random target sequences that pass our filtering criteria

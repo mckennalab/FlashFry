@@ -23,8 +23,6 @@ import java.io.File
 
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.{CRISPRSite, CRISPRSiteOT}
-import picocli.CommandLine.{Command, Option}
-import scopt.PeelParser
 import standards.ParameterPack
 import utils.BEDFile
 

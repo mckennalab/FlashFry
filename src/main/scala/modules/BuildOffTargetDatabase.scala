@@ -20,15 +20,12 @@
 package modules
 
 import java.io.File
-import java.util.concurrent.Callable
-
-import bitcoding.{BitEncoding, BitPosition}
 import com.typesafe.scalalogging.LazyLogging
 import crispr.BinWriter
 import picocli.CommandLine.{Command, Option}
 import utils.BaseCombinationGenerator
 import reference.binary.DatabaseWriter
-import reference.{ReferenceDictReader, ReferenceEncoder}
+import reference.{ReferenceEncoder}
 import standards.ParameterPack
 
 

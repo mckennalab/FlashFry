@@ -23,12 +23,8 @@ import java.io.File
 
 import bitcoding.BitEncoding
 import crispr.{CRISPRHit, CRISPRSiteOT}
-import picocli.CommandLine.{Command, Option}
-import scopt.PeelParser
 import standards.{Cas9Type, ParameterPack}
-import standards.ParameterPack._
 
-import scala.util.Random
 
 /**
   * for more information about this scoring scheme check out their documentation:
@@ -193,14 +189,4 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @return true, a high score is good
     */
   override def highScoreIsGood: Boolean = true
-}
-
-/*
- * the configuration class, it stores the user's arguments from the command line, set defaults here
- */
-case class CRISPRMITConfig(countOnTargetInScore: Boolean = false)
-
-class MITAnnotationOptionParser extends PeelParser[CRISPRMITConfig]("") {
-  opt[Boolean]("countOnTargetInScore") valueName ("<string>") action { (x, c) => c.copy(countOnTargetInScore = x) } text ("do we consider exact matches when calculating the off-target scores")
-
 }
