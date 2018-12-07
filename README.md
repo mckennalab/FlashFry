@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1291646.svg)](https://doi.org/10.5281/zenodo.1291646)
 
-
+*Of note: If you've been using FlashFry before version 1.9, the command-line system has changed slightly.*
 <p align="center">
 <img src="https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png" width="500">
 </p>
