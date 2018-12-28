@@ -28,7 +28,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 
 # Quickstart
 
-From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
+First, make sure you're running Java version 8 (type ```java -version``` on the command line to see the version). From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
 wget https://github.com/aaronmck/FlashFry/releases/download/1.9.0/FlashFry-assembly-1.9.0.jar
