@@ -54,7 +54,11 @@ object Main {
     commandLine.addSubcommand("score", new ScoreResults())
     commandLine.addSubcommand("extract", new DumpDatabase())
 
-    commandLine.parseWithHandler(new CommandLine.RunAll, args)
+    commandLine.parseWithHandler(new CommandLine.RunLast, args)
+
+    // check to make sure we ran a subcommand
+    if (!commandLine.getParseResult.hasSubcommand)
+      System.err.println(commandLine.getUsageMessage)
 
     logger.info("Total runtime " + "%.2f".format((System.nanoTime() - initialTime) / 1000000000.0) + " seconds")
   }

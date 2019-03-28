@@ -42,7 +42,7 @@ class ScoreResults extends Runnable with LazyLogging {
   @Option(names = Array("-output", "--output"), required = true, paramLabel = "FILE", description = Array("the output file (in bed format)"))
   private var outputBED: String = ""
 
-  @Option(names = Array("-scoringMetrics", "--scoringMetrics"), required = true, paramLabel = "STRING", description = Array("scoring methods to include, seperated by a comma (no spaces)"))
+  @Option(names = Array("-scoringMetrics", "--scoringMetrics"), required = true, paramLabel = "STRING", description = Array("scoring methods to include, separated by a comma (no spaces). \nCurrently supported scoring metrics: AggregateRankedScore,BedAnnotator,closest,Hsu2013,Moreno-Mateos2015OnTarget\ndangerous,Doench2014OnTarget,Doench2016CFDScore,ReciprocalOffTargets"))
   private var scoringMetrics = ""
 
   @Option(names = Array("-maxMismatch", "--maxMismatch"), required = false, paramLabel = "INT", description = Array("only consider off-targets that have a maximum mismatch the guide of X"))
@@ -60,7 +60,7 @@ class ScoreResults extends Runnable with LazyLogging {
   @Option(names = Array("-inputAnnotationBed", "--inputAnnotationBed"), required = false, paramLabel = "FILE", description = Array("the bed file we'd like to annotate with, and an associated name (name:bedfile)"))
   var inputBed = ""
 
-  @Option(names = Array("-transformPositions", "--transformPositions"), required = false, paramLabel = "FILE", description = Array("ry to find our genome location by using matching zero-mismatch in-genome targets"))
+  @Option(names = Array("-transformPositions", "--transformPositions"), required = false, paramLabel = "FILE", description = Array("try to locate each target's genome location by using matching (zero-mismatch) in-genome targets"))
   var genomeTransform = ""
 
   @Option(names = Array("-countOnTargetInScore", "--countOnTargetInScore"), required = false, paramLabel = "FILE", description = Array("do we consider exact matches when calculating the off-target scores"))
@@ -80,7 +80,7 @@ class ScoreResults extends Runnable with LazyLogging {
 
     // load up the scored sites into a container
     logger.info("Loading CRISPR objects (filtering out overflow guides).. ")
-    val guides = (new TabDelimitedInput(new File(inputBED), bitEnc, header.bitPosition, maxMismatch, true)).guides.toArray
+    val guides = (new TabDelimitedInput(new File(inputBED), bitEnc, header.bitPosition, maxMismatch, writeOTsToOutput, true)).guides.toArray
 
     // setup the scoring modules as requested
     var scoringModels = List[ScoreModel]()

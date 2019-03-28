@@ -160,7 +160,8 @@ class TabDelimitedInput(inputFile: File,
                         bitEncoding: BitEncoding,
                         bitPosition: BitPosition,
                         maximumMismatches: Int,
-                        filterOutOverflowedGuides: Boolean = false) extends LazyLogging {
+                        requirePositionInfo: Boolean,
+                        filterOutOverflowedGuides: Boolean) extends LazyLogging {
 
   val input = if (inputFile.getAbsolutePath().endsWith(".gz")) {
     Source.fromInputStream(Utils.gis(inputFile.getAbsolutePath)).getLines()
@@ -180,9 +181,11 @@ class TabDelimitedInput(inputFile: File,
 
   val withOTs = (remainingColumns(remainingColumns.size - 2) == TabDelimitedOutput.final_columns(0) &&
     remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(1))
+
   val withOTTokenLength = headerLine.size
 
   assert(withOTs || (remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(0)), "Unable to parse out the final columns in the header")
+  println("withOTs " + withOTs + " other thing " + (remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(0)))
 
   val annotations = if (withOTs) remainingColumns.slice(0, remainingColumns.size - 2) else remainingColumns.slice(0, remainingColumns.size - 1)
 
@@ -190,6 +193,16 @@ class TabDelimitedInput(inputFile: File,
   val guides = new ArrayBuffer[CRISPRSiteOT]()
 
   input.foreach { ln => {
+    extractCRISPRSiteOT(ln).map{gd => guides += gd}
+  }
+  }
+
+  /**
+    * extract an crispr file entry
+    * @param ln the line
+    * @return
+    */
+  private def extractCRISPRSiteOT(ln: String): Option[CRISPRSiteOT] = {
     try {
       val sp = ln.split(TabDelimitedOutput.sep)
 
@@ -212,43 +225,14 @@ class TabDelimitedInput(inputFile: File,
 
       if (withOTs && sp.size == withOTTokenLength) {
         sp(sp.size - 1).split(Pattern.quote(TabDelimitedOutput.offTargetSeparator)).foreach { token => {
-          val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeparator)(0)
-          val offTargetCount = token.split(TabDelimitedOutput.withinOffTargetSeparator)(1).toInt
-          val offTargetMismatches = if (token.split(TabDelimitedOutput.withinOffTargetSeparator)(2) contains TabDelimitedOutput.positionListTerminatorFront)
-            token.split(TabDelimitedOutput.withinOffTargetSeparator)(2).split(TabDelimitedOutput.positionListTerminatorFront)(0).toInt
-          else
-            token.split(TabDelimitedOutput.withinOffTargetSeparator)(2).toInt
-
-          if (offTargetMismatches <= maximumMismatches) {
-
-            // we're encoding positional information
-            if (token contains TabDelimitedOutput.positionListTerminatorFront) {
-              val targetAndPositions = token.split(TabDelimitedOutput.positionListTerminatorFront)
-
-              val positions = targetAndPositions(1).stripSuffix(TabDelimitedOutput.positionListTerminatorBack).split(TabDelimitedOutput.positionListSeparatorInput).map { positionEncoded => {
-                bitPosition.encode(positionEncoded.split(TabDelimitedOutput.contigSeparatorInput)(0),
-                  positionEncoded.split(TabDelimitedOutput.contigSeparatorInput)(1).split(TabDelimitedOutput.strandSeparatorInput)(0).toInt,
-                  offTargetSeq.size,
-                  positionEncoded.split(TabDelimitedOutput.strandSeparatorInput)(1) == "F")
-              }
-              }
-
-              assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-              val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
-              if (!ot.full)
-                ot.addOT(otHit)
-            } else {
-              assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-              val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), new Array[Long](offTargetCount))
-              if (!ot.full)
-                ot.addOT(otHit)
-            }
-          }
+          addOffTargets(ot, token)
         }
         }
       }
       if ((!filterOutOverflowedGuides) || (!ot.inheritedOverflow && !ot.full))
-        guides += ot
+        Some(ot)
+      else
+        None
     } catch {
       case e: Exception => {
         logger.error("Unable to parse line: " + ln.slice(0, 100) + "... with error: ")
@@ -257,6 +241,46 @@ class TabDelimitedInput(inputFile: File,
       }
     }
   }
+
+  /**
+    * add an off-target to the sequence to our entry
+ *
+    * @param ot the off target to add too
+    * @param token the string containing off-target tokens
+    */
+  private def addOffTargets(ot: CRISPRSiteOT, token: String) = {
+    val offTargetSeq = token.split(TabDelimitedOutput.withinOffTargetSeparator)(0)
+    val offTargetCount = token.split(TabDelimitedOutput.withinOffTargetSeparator)(1).toInt
+    val offTargetMismatches = if (token.split(TabDelimitedOutput.withinOffTargetSeparator)(2) contains TabDelimitedOutput.positionListTerminatorFront)
+      token.split(TabDelimitedOutput.withinOffTargetSeparator)(2).split(TabDelimitedOutput.positionListTerminatorFront)(0).toInt
+    else
+      token.split(TabDelimitedOutput.withinOffTargetSeparator)(2).toInt
+
+    if (offTargetMismatches <= maximumMismatches) {
+
+      // we're encoding positional information
+      if (token contains TabDelimitedOutput.positionListTerminatorFront) {
+        val targetAndPositions = token.split(TabDelimitedOutput.positionListTerminatorFront)
+
+        val positions = targetAndPositions(1).stripSuffix(TabDelimitedOutput.positionListTerminatorBack).split(TabDelimitedOutput.positionListSeparatorInput).map { positionEncoded => {
+          bitPosition.encode(positionEncoded.split(TabDelimitedOutput.contigSeparatorInput)(0),
+            positionEncoded.split(TabDelimitedOutput.contigSeparatorInput)(1).split(TabDelimitedOutput.strandSeparatorInput)(0).toInt,
+            offTargetSeq.size,
+            positionEncoded.split(TabDelimitedOutput.strandSeparatorInput)(1) == "F")
+        }
+        }
+
+        assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
+        val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
+        if (!ot.full)
+          ot.addOT(otHit)
+      } else {
+        assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
+        val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), new Array[Long](offTargetCount), false)
+        if (!ot.full)
+          ot.addOT(otHit)
+      }
+    }
   }
 }
 

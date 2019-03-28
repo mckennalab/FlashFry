@@ -34,7 +34,7 @@ import standards.ParameterPack
   *
   * Febuary 9th, 2017
   */
-@Command(name = "BuildOffTargetDatabase", description = Array("Build an off-target database from a reference file"))
+@Command(name = "index", description = Array("Build an off-target database from a reference file"))
 class BuildOffTargetDatabase extends Runnable with LazyLogging {
 
   @Option(names = Array("-reference", "--reference"), required = true, paramLabel = "FILE", description = Array("the reference file"))
@@ -46,7 +46,7 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
   @Option(names = Array("-tmpLocation", "--tmpLocation"), required = true, paramLabel = "DIRECTORY", description = Array("the temporary file output"))
   private var tmp: File = new File("UNKNOWN")
 
-  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme to use"))
+  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme to use; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
   private var enzyme: String = "spCas9ngg"
 
   @Option(names = Array("-binSize", "--binSize"), required = false, paramLabel = "INT",
@@ -62,6 +62,8 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
 
     // create out output bins
     val outputBins = BinWriter(tmp, binGenerator, params)
+
+    logger.info("Discovering target sites in the input genome file...")
 
     // first discover sites in the target genome -- writing out in bins
     val encoders = ReferenceEncoder.findTargetSites(reference, outputBins, params, 0)

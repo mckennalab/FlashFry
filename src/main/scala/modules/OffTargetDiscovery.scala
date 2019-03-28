@@ -39,13 +39,13 @@ import targetio.TabDelimitedOutput
 @Command(name = "discover", description = Array("Discover off-targets for the specified sequences within the genome of interest"))
 class OffTargetDiscovery extends Runnable with LazyLogging {
 
-  @Option(names = Array("-fasta", "--fasta"), required = false, paramLabel = "FILE", description = Array("the reference file to scan for putative targets"))
+  @Option(names = Array("-fasta", "--fasta"), required = true, paramLabel = "FILE", description = Array("the reference file to scan for putative targets"))
   private var inputFasta: String = ""
 
-  @Option(names = Array("-database", "--database"), required = false, paramLabel = "FILE", description = Array("the binary off-target file"))
+  @Option(names = Array("-database", "--database"), required = true, paramLabel = "FILE", description = Array("the binary off-target file"))
   private var binaryOTFile: String = ""
 
-  @Option(names = Array("-output", "--output"), required = false, paramLabel = "FILE", description = Array("the output file (in bed format)"))
+  @Option(names = Array("-output", "--output"), required = true, paramLabel = "FILE", description = Array("the output file (in bed format)"))
   private var outputFile: String = ""
 
   @Option(names = Array("-positionOutput", "--positionOutput"), required = false, paramLabel = "FLAG", description = Array("include the position information of off-target hits"))

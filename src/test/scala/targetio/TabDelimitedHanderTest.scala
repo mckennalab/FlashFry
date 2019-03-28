@@ -19,7 +19,7 @@ class TabDelimitedHanderTest extends FlatSpec with Matchers {
     val outputTemp = new File("test_data/fake.sites_temp")
     //outputTemp.deleteOnExit()
 
-    val input = new TabDelimitedInput(inputFile,bitEncoder,posEnc,4)
+    val input = new TabDelimitedInput(inputFile,bitEncoder,posEnc,4, false, true)
     val output = new TabDelimitedOutput(outputTemp,bitEncoder,posEnc,Array[ScoreModel](),true,true)
 
     input.guides.foreach{g => output.write(g)}

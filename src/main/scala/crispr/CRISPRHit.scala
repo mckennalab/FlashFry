@@ -27,26 +27,30 @@ import targetio.{TabDelimitedOutput}
   *
   * @param sq the sequence
   * @param coord it's coordinates
-  * @param coord it's coordinates
+  * @param validOffTargetCoordinates do we encode the positional information about off targets? What happens is that
+  *                                  we have to pass off-target information through from input files that don't contain
+  *                                  positional information. Since we've erased that information we have to mark it here
+  *
+  *
   */
-class CRISPRHit(sq: Long, coord: Array[Long], validCoordinates: Boolean = true) {
+class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean = true) {
   val sequence = sq
   private val coordinates = coord
   def getOffTargetCount = coordinates.size
-
 
   def toOutput(bitEncoding: BitEncoding, posEnc: BitPosition, guide: Long, outputPositions: Boolean): String = {
     // now output the off-target information --
     if (outputPositions) {
         val otDecoded = bitEncoding.bitDecodeString(sequence)
-        val positions = coordinates.map { otPos => {
+
+        val positions = if (validOffTargetCoordinates) coordinates.map { otPos => {
           val decoded = posEnc.decode(otPos)
           decoded.contig + TabDelimitedOutput.contigSeparator + decoded.start + TabDelimitedOutput.strandSeparator +
             (if (decoded.forwardStrand) TabDelimitedOutput.positionForward else TabDelimitedOutput.positionReverse)
         }
-        }
+        } else Array[Long]()
 
-        if (positions.size == 0) {
+        if (positions.size == 0 || !validOffTargetCoordinates) {
           otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator +
             otDecoded.count + TabDelimitedOutput.withinOffTargetSeparator +
             bitEncoding.mismatches(guide, sequence)
