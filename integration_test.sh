@@ -1,5 +1,5 @@
 UNZIPED=./data_package
-JAR=target/scala-2.12/FlashFry-assembly-1.9.0.jar
+JAR=target/scala-2.12/FlashFry-assembly-1.9.1.jar
 TEST_DATABASE=$UNZIPED/chr22_cas9ngg_database
 mkdir tmp
 
