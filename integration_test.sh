@@ -21,10 +21,8 @@ java -Xmx4g -jar $JAR \
      score \
      --input $UNZIPED/EMX1.output \
      --output $UNZIPED/EMX1.output.scored \
-     --scoringMetrics doench2014ontarget,doench2016cfd,dangerous,hsu2013,minot \
+     --scoringMetrics doench2014ontarget,doench2016cfd,DanGerous,hsu2013,minot \
      --database $UNZIPED/chr22_cas9ngg_database
-
-
 
 java \
     -jar $JAR \
@@ -34,6 +32,16 @@ java \
     --scoringMetrics doench2014ontarget,doench2016cfd,dangerous,hsu2013,minot \
     --database $UNZIPED/chr22_cas9ngg_database \
     --includeOTs
+
+java \
+    -jar $JAR \
+    score  \
+    --input $UNZIPED/EMX1.output \
+    --output $UNZIPED/EMX1.output.scored_with_ots.all \
+    --scoringMetrics hsu2013,doench2014ontarget,doench2016cfd,moreno2015,bedannotator,dangerous,minot,reciprocalofftargets,rank  \
+    --database $UNZIPED/chr22_cas9ngg_database \
+    --includeOTs
+
 
 # check all three output files
 md5 -q $UNZIPED/EMX1.output | xargs -I {} test 895e282bf486c359667e2c3e0e0e0260 = {}

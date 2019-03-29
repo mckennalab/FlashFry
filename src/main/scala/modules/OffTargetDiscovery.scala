@@ -54,13 +54,10 @@ class OffTargetDiscovery extends Runnable with LazyLogging {
   @Option(names = Array("-forceLinear", "--forceLinear"), required = false, paramLabel = "FLAG", description = Array("force the run to use a linear traversal of the bins; really only good for testing"))
   private var forceLinear: Boolean = false
 
-  @Option(names = Array("-markExactGenomeHits", "--markExactGenomeHits"), required = false, paramLabel = "FLAG", description = Array("should we add a column to indicate that a target has a exact genome hit"))
-  private var markTargetsWithExactGenomeHits: Boolean = false
-
   @Option(names = Array("-maxMismatch", "--maxMismatch"), required = false, paramLabel = "INT", description = Array("the maximum number of mismatches we allow"))
   private var maxMismatch: Int = 4
 
-  @Option(names = Array("-flankingSequence", "--flankingSequence"), required = false, paramLabel = "INT", description = Array("number of bases we should save on each side of the target, used in some scoring schemes (default is 10 on each side)"))
+  @Option(names = Array("-flankingSequence", "--flankingSequence"), required = false, paramLabel = "INT", description = Array("number of bases we should save on each side of the target, used in some scoring schemes"))
   private var flankingSequence: Int = 6
 
   @Option(names = Array("-maximumOffTargets", "--maximumOffTargets"), required = false, paramLabel = "INT", description = Array("the maximum number of off-targets for a guide, after which we stop adding new off-targets"))
