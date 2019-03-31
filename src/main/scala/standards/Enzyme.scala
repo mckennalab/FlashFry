@@ -29,11 +29,11 @@ sealed trait Enzyme{
 
 case object SpCAS9 extends Enzyme{
   override def stringEncoding: String = "spCas9"
-  override def enzymeParent = Cas9Type
+  override def enzymeParent: EnzymeType = Cas9Type
 }
 case object CPF1 extends Enzyme{
   override def stringEncoding: String = "Cpf1"
-  override def enzymeParent = Cpf1Type
+  override def enzymeParent: EnzymeType = Cpf1Type
 }
 
 sealed trait EnzymeType

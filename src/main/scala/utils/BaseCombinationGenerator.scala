@@ -22,8 +22,12 @@ package utils
 
 // makes iterators of Bases; from AAAA to TTTT for example
 case class BaseCombinationGenerator(width: Int) extends Iterable[String] {
+
   override def iterator: Iterator[String] = new BaseCombinationIterator(width)
-  def totalSearchSpace: Long = math.pow(4,width).toLong
+
+  val numberOfLetters = 4
+
+  def totalSearchSpace: Long = math.pow(numberOfLetters,width).toLong
 }
 
 class BaseCombinationIterator(count: Int) extends Iterator[String] {
@@ -39,24 +43,27 @@ class BaseCombinationIterator(count: Int) extends Iterator[String] {
   override def hasNext: Boolean =
     if (terminalStr == lst.mkString) {
       isLast = true
-      return true
+      true
     }
-    else return !isLast
+    else {
+      !isLast
+    }
 
   def incr(pos: Int): Unit = {
     if (lst(pos) == Base.T) {
       lst(pos) = Base.A
-      if (pos - 1 >= 0)
+      if (pos - 1 >= 0) {
         incr(pos - 1)
+      }
     }
-    else
+    else {
       lst(pos) = Base(Base.baseToInt(lst(pos)) + 1)
+    }
   }
 
   override def next(): String = {
     val ret = lst.mkString
     incr(count - 1)
-    return ret
-
+    ret
   }
 }

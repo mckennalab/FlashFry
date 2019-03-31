@@ -43,7 +43,8 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
   def calcScore(guide: CRISPRSiteOT): Double = {
     1.0 * (CRISPRscan.modelIntercept + CRISPRscan.paramsCRISPRscan.map{case(modelSeq,position,weight) => {
       val guideSubSeq = guide.target.sequenceContext.get.slice((position - 1),(position - 1) + modelSeq.length)
-      assert(guideSubSeq.length == modelSeq.length,"Our comparison should have the same length: " + guideSubSeq + " and " + modelSeq + " for position " + position)
+      assert(guideSubSeq.length == modelSeq.length,
+        "Our comparison should have the same length: " + guideSubSeq + " and " + modelSeq + " for position " + position)
 
       if (guideSubSeq.toUpperCase() == modelSeq.toUpperCase()) weight else 0.0
     }}.sum)
@@ -104,17 +105,22 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    if (enzyme.enzyme != SpCAS9) return false
-    if (!guide.target.sequenceContext.isDefined) return false
+    if (enzyme.enzyme != SpCAS9) {
+      false
+    }
+    else if (!guide.target.sequenceContext.isDefined) {
+      false
+    } else {
 
-    // find the guide within the context, and determine if we have enough flanking sequence for the scoring metric
-    val guidePos = SingleGuideScoreModel.findGuideSequenceWithinContext(guide)
+      // find the guide within the context, and determine if we have enough flanking sequence for the scoring metric
+      val guidePos = SingleGuideScoreModel.findGuideSequenceWithinContext(guide)
 
-    // do we have enough sequence?
-    val enoughContextOnTheLeft = guidePos >= 6
-    val enoughContextOnTheRight = guide.target.sequenceContext.get.size - (guidePos + guide.target.bases.size) >= 6
+      // do we have enough sequence?
+      val enoughContextOnTheLeft = guidePos >= 6
+      val enoughContextOnTheRight = guide.target.sequenceContext.get.size - (guidePos + guide.target.bases.size) >= 6
 
-    enoughContextOnTheLeft & enoughContextOnTheRight
+      enoughContextOnTheLeft & enoughContextOnTheRight
+    }
   }
 
   /**

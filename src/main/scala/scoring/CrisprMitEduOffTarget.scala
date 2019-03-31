@@ -87,8 +87,9 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
 
     var scores = Array[Double]()
     cRISPRHit.offTargets.foreach { offTarget => {
-      if (considerOnTarget | bitEncoder.get.mismatches(cRISPRHit.longEncoding,offTarget.sequence) != 0)
+      if (considerOnTarget | bitEncoder.get.mismatches(cRISPRHit.longEncoding,offTarget.sequence) != 0) {
         scores :+= scoreOffTarget(cRISPRHit, offTarget)
+      }
     }}
     scores
   }
@@ -112,7 +113,8 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     var equationPartOne = 1.0
 
     // first part of the equation -- score each mismatch from the target compared to the off target with their scoring matrix
-    stringOTSeq.str.slice(0,20).zip(crispr.target.bases.slice(0,20)).zipWithIndex.foreach { case (bases, index) => {
+    stringOTSeq.str.slice(0,CrisprMitEduOffTarget.guideSize).zip(crispr.target.bases.slice(0,CrisprMitEduOffTarget.guideSize)).zipWithIndex.foreach {
+      case (bases, index) => {
 
       if (bases._1 != bases._2) {
         equationPartOne = equationPartOne * (1.0 - offtargetCoeff(index))
@@ -136,10 +138,10 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     val equationPartThree = if (mismatches == 0) { 1.0 } else { 1.0 / math.pow(mismatches.toDouble,2) }
 
     val totalScore = equationPartOne * equationPartTwo * equationPartThree * 100.0
-    val pamAdj = if (pamToAdjustment contains stringOTSeq.str.slice(21,23)) {
-      pamToAdjustment(stringOTSeq.str.slice(21, 23))
+    val pamAdj = if (pamToAdjustment contains stringOTSeq.str.slice(CrisprMitEduOffTarget.pamStart, CrisprMitEduOffTarget.pamStop)) {
+      pamToAdjustment(stringOTSeq.str.slice(CrisprMitEduOffTarget.pamStart, CrisprMitEduOffTarget.pamStop))
     } else {
-      0.01
+      CrisprMitEduOffTarget.defaultValue
     }
 
     totalScore * pamAdj
@@ -159,7 +161,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * parse out any command line arguments that are optional or required for this scoring metric
     *
     */
-  override def run() = {
+  override def run(): Unit = {
     // just parse the options
   }
 
@@ -189,4 +191,11 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @return true, a high score is good
     */
   override def highScoreIsGood: Boolean = true
+}
+
+object CrisprMitEduOffTarget {
+  val guideSize = 20
+  val pamStart = 21 // for the NGG pams
+  val pamStop = 23
+  val defaultValue = 0.01
 }

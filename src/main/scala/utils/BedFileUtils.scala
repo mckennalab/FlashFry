@@ -28,16 +28,19 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
   val inputLines = Source.fromFile(inputBed).getLines()
   var currentLine: Option[String] = None
   val tokensPerBedLine = 4
-  
+
   if (inputLines.hasNext) currentLine = Some(inputLines.next())
 
   override def hasNext: Boolean = currentLine.isDefined
 
   override def next(): Option[BedEntry] = {
-    if (!currentLine.isDefined)
+    if (!currentLine.isDefined) {
       throw new IllegalStateException("Next called when there is no next")
+    }
     while (currentLine.get.startsWith("#")) {
-      if (!inputLines.hasNext) return None
+      if (!inputLines.hasNext) {
+        return None
+      }
       currentLine = Some(inputLines.next())
     }
     val break = currentLine.get.split("\t")
@@ -45,12 +48,15 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
     val mp = new mutable.HashMap[String,String]()
 
 
-    if (break.length > tokensPerBedLine)
-      break(tokensPerBedLine).split(BedEntry.entriesSeperator).map{case(tl) => {
+    if (break.length > tokensPerBedLine) {
+      break(tokensPerBedLine).split(BedEntry.entriesSeperator).map { case (tl) => {
         val tk = tl.split(BedEntry.kvSeperator)
-        if (tk.length == 2)
+        if (tk.length == 2) {
           mp(tk(0)) = tk(1)
-      }}
+        }
+      }
+      }
+    }
 
     val ret = BedEntry(break(0),
       break(1).toInt,
@@ -58,8 +64,12 @@ class BEDFile(inputBed: File) extends Iterator[Option[BedEntry]] {
       break(3),
       mp)
 
-    if (!inputLines.hasNext) currentLine = None
-    else currentLine = Some(inputLines.next())
+    if (!inputLines.hasNext) {
+      currentLine = None
+    }
+    else {
+      currentLine = Some(inputLines.next())
+    }
 
     Some(ret)
   }
@@ -88,8 +98,9 @@ case class BedEntry(contig: String, start: Int, stop: Int, name: String, rest: m
         allOptions(option) = allOptions(option) + BedEntry.valSeperator + value
       }
     }
-    else
+    else {
       allOptions(option) = value
+    }
   }
 
   def outputString: String = "BED:" + contig + ":" + start + "-" + stop + "_" + name

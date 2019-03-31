@@ -26,10 +26,10 @@ class RandoCRISPR(sz: Int,
                   randomFront: Int,
                   randomRear: Int) extends Iterator[String] {
 
-  def hasNext() = true
+  def hasNext(): Boolean = true
   val seed = System.currentTimeMillis
   val r = new scala.util.Random(seed)
-
+  val numberOfBases = 4
   /**
     * generate a random sequence according to the rules of the CRISPR enzyme we're interested in
     * @return
@@ -37,7 +37,13 @@ class RandoCRISPR(sz: Int,
   def next(): String = {
     val randomFrt = randomString(randomFront)
     val randomRvs = randomString(randomRear)
-    val unpaddedPam = pams(r.nextInt(pams.length)).map{base => if (base == 'N') numberToBase(r.nextInt(4)) else base}.mkString("")
+    val unpaddedPam = pams(r.nextInt(pams.length)).map { base => {
+      if (base == 'N') {
+        numberToBase(r.nextInt(numberOfBases))
+      } else {
+        base
+      }
+    }}.mkString("")
 
     if (pamFivePrime) {
       randomFrt + unpaddedPam + stringPrefix + randomString(sz - stringPrefix.size) + randomRvs

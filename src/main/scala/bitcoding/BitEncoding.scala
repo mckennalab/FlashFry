@@ -190,7 +190,7 @@ class BitEncoding(parameterPack: ParameterPack) {
   * handle encoding and decoding strings into packed bit vectors (currently a long -- 64 bits)
   */
 object BitEncoding {
-  var allComparisons = 0l
+  var allComparisons = 0L
 
   val encodeA = 0x0
   val encodeC = 0x1
@@ -201,10 +201,10 @@ object BitEncoding {
 
   val stringLimit = 24
 
-  val stringMask = 0xFFFFFFFFFFFFl
-  val upperBits = 0xAAAAAAAAAAAAl
-  val stringMaskHighBits = 0xAAAAAAAAAAAAl
-  val stringMaskLowBits = 0x555555555555l
+  val stringMask = 0xFFFFFFFFFFFFL
+  val upperBits = 0xAAAAAAAAAAAAL
+  val stringMaskHighBits = 0xAAAAAAAAAAAAL
+  val stringMaskLowBits = 0x555555555555L
 
   type TargetLong = Long
 }
@@ -216,7 +216,9 @@ object BitEncoding {
   * @param count it's count
   */
 case class StringCount(str: String, count: Short) {
-  require(str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " + BitEncoding.stringLimit + ", size is: " + str.size + " for string " + str + ")")
+  require(str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " +
+    BitEncoding.stringLimit + ", size is: " + str.size + " for string " + str + ")")
+  
   require(count >= 1, "the count for a string should be greater than 0, not " + count + " for string " + str)
 
   def toStr: String = str + " - " + count

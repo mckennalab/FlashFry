@@ -42,22 +42,24 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
                         bitPosition: BitPosition,
                         blockOffsets: mutable.HashMap[String,BlockOffset]) {
 
-  def binWidth = inputBinGenerator.width
+  def binWidth: Int = inputBinGenerator.width
 
   def binMask: Long = bitCoder.compBitmaskForBin(binWidth)
 
-  def parameterPack = inputParameterPack
+  def parameterPack: ParameterPack = inputParameterPack
 
   def binGenerator: BaseCombinationGenerator = inputBinGenerator
 }
 
 case class BlockOffset(blockPosition: Long, uncompressedSize: Int, numberOfTargets: Int) {
-  def prettyString = "BLOCKPOS:" + blockPosition + ",UNCOMPSIZE:" + uncompressedSize + ",NUMTARGET:" + numberOfTargets
+  def prettyString: String = "BLOCKPOS:" + blockPosition + ",UNCOMPSIZE:" + uncompressedSize + ",NUMTARGET:" + numberOfTargets
 }
 
 
 object BinaryHeader extends LazyLogging {
   val headerExtension = ".header"
+  val unitBase = 4
+
 
   /**
     * write the header information to the binary format
@@ -78,14 +80,15 @@ object BinaryHeader extends LazyLogging {
 
     // write a number of longs equal to the block lookup table size -- we'll come back and fill these in later
     header.binGenerator.iterator.zipWithIndex.foreach { case(bin,index) => {
-      if (header.blockOffsets contains bin)
+      if (header.blockOffsets contains bin) {
         writer.write(bin + "=" +
           header.blockOffsets(bin).blockPosition + "," +
           header.blockOffsets(bin).uncompressedSize + "," +
           header.blockOffsets(bin).numberOfTargets + "\n"
         )
-      else
+      } else {
         writer.write(bin + "=0,0,0,0\n")
+      }
     }}
 
     (1 until header.bitPosition.nextSeqId).foreach{ index => {
@@ -115,8 +118,10 @@ object BinaryHeader extends LazyLogging {
     val inputText = Source.fromFile(filename).getLines()
 
     // some header checks
-    assert(inputText.next.toLong == BinaryConstants.magicNumber, "Binary file " + filename + " doesn't have the magic number expected at the top of the file")
-    assert(inputText.next.toLong == BinaryConstants.version, "Binary file " + filename + " doesn't have the correct version, expecting " + BinaryConstants.version)
+    assert(inputText.next.toLong == BinaryConstants.magicNumber,
+      "Binary file " + filename + " doesn't have the magic number expected at the top of the file")
+    assert(inputText.next.toLong == BinaryConstants.version,
+      "Binary file " + filename + " doesn't have the correct version, expecting " + BinaryConstants.version)
 
     // get the enzyme type
     val enzymeType = ParameterPack.indexToParameterPack(inputText.next.toInt)
@@ -124,7 +129,7 @@ object BinaryHeader extends LazyLogging {
 
     // now process the bins
     val binCount = inputText.next.toLong
-    val binWidth = (math.log(binCount) / math.log(4)).toInt
+    val binWidth = (math.log(binCount) / math.log(unitBase)).toInt
     logger.debug("Number of characters used to generate this lookup file: " + binWidth)
 
     val binGenerator = BaseCombinationGenerator(binWidth)

@@ -40,34 +40,40 @@ case class CRISPRSite(contig: String,
   val sep = "\t"
   val strandOutput = if (forwardStrand) CRISPRSite.forwardStrandEncoding else CRISPRSite.reverseStrandEncoding
 
-  def to_output = contig + sep + position + sep + (position + bases.length) + sep + bases + sep + strandOutput
+  def toOutputString(): String = {
+    contig + sep + position + sep + (position + bases.length) + sep + bases + sep + strandOutput
+  }
 
   def compare(that: CRISPRSite): Int = (this.bases) compare (that.bases)
 
-  def start = position
+  def start: Int = position
 
-  def length = bases.size
+  def length: Int  = bases.size
 
 }
 
 object CRISPRSite {
   val forwardStrandEncoding = "F"
   val reverseStrandEncoding = "R"
-  def header = "contig\tposition\tcutsite\tbases\tstrand\n"
+  val contigPosition = 0
+  val offsetPosition = 1
+  val baseStringPosition = 3
+  val forwardReversePosition = 4
+
+  def header: String = "contig\tposition\tcutsite\tbases\tstrand\n"
 
   def fromLine(line: String): CRISPRSite = {
     val sp = line.split("\t")
     try {
-      val strandEncoding = sp(4) match {
+      val strandEncoding = sp(forwardReversePosition) match {
         case `forwardStrandEncoding` => true
         case `reverseStrandEncoding` => false
-        case _ => throw new IllegalStateException("Unable to parse strand encoding: " + sp(4))
+        case _ => throw new IllegalStateException("Unable to parse strand encoding: " + sp(forwardReversePosition))
       }
-      CRISPRSite(sp(0), sp(3), strandEncoding, sp(1).toInt, None)
+      CRISPRSite(sp(contigPosition), sp(baseStringPosition), strandEncoding, sp(offsetPosition).toInt, None)
     } catch {
       case e: Exception => {
-        println("Unable to parse line: " + line)
-        throw e
+        throw new IllegalStateException("Unable to parse line: " + line)
       }
     }
   }

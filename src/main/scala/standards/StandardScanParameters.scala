@@ -72,17 +72,25 @@ object ParameterPack {
     case _ => throw new IllegalStateException("Unable to find the correct parameter pack for enzyme: " + pack.toString)
 
   }
+
+  val cas9ScanLength = 23
+  val cas9PAMLength = 3
+  val cpf1ScanLength = 23
+  val cpf1PAMLength = 4
 }
 
 
 case object Cas9ParameterPack extends ParameterPack {
-  def enzyme = SpCAS9
-  def pam = Array[String]("GG","AG")
-  def paddedPam = Array[String]("NGG","NAG")
-  def pamLength: Int = 3
+  def enzyme: Enzyme = SpCAS9
+  def pam: Array[String] = Array[String]("GG","AG")
+  def paddedPam: Array[String] = Array[String]("NGG","NAG")
+  def pamLength: Int = ParameterPack.cas9PAMLength
 
-  def totalScanLength: Int = 23
-  def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+  def totalScanLength: Int = ParameterPack.cas9ScanLength
+
+  // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+  def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0L
+
   // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG or NAG
   def fivePrimePam: Boolean = false
 
@@ -90,18 +98,21 @@ case object Cas9ParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=([CT][ACGTacgt]{21}))""".r
 
-  override def guideRange = (0,20)
+  override def guideRange: (Int,Int) = (0,ParameterPack.cas9ScanLength - ParameterPack.cas9PAMLength)
 }
 
 
 case object Cas9NGGParameterPack extends ParameterPack {
-  def enzyme = SpCAS9
-  def pam = Array[String]("GG")
-  def paddedPam = Array[String]("NGG")
+  def enzyme: Enzyme= SpCAS9
+  def pam: Array[String] = Array[String]("GG")
+  def paddedPam: Array[String] = Array[String]("NGG")
   def pamLength: Int = 3
 
-  def totalScanLength: Int = 23
-  def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+  def totalScanLength: Int = ParameterPack.cas9ScanLength
+
+  // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+  def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0L
+
   // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NGG
   def fivePrimePam: Boolean = false
 
@@ -109,18 +120,21 @@ case object Cas9NGGParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=(C[ACGTacgt]{21}))""".r
 
-  override def guideRange = (0,20)
+  override def guideRange: (Int,Int) = (0,ParameterPack.cas9ScanLength)
 }
 
 
 case object Cas9NAGParameterPack extends ParameterPack {
-  def enzyme = SpCAS9
-  def pam = Array[String]("AG")
-  def paddedPam = Array[String]("NAG")
-  def pamLength: Int = 3
+  def enzyme: Enzyme = SpCAS9
+  def pam: Array[String] = Array[String]("AG")
+  def paddedPam: Array[String] = Array[String]("NAG")
+  def pamLength: Int = ParameterPack.cas9PAMLength
 
-  def totalScanLength: Int = 23
-  def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0l // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+  def totalScanLength: Int = ParameterPack.cas9ScanLength
+
+  // be super careful with this value!! the cas9 mask only considers the lower 46 bites (23 of 24 bases are used)
+  def comparisonBitEncoding: Long = 0x3FFFFFFFFFC0L
+
   // and doesn't care about the NGG or NAG (3 prime) -- it's assumed all OT have the NAG
   def fivePrimePam: Boolean = false
 
@@ -128,16 +142,16 @@ case object Cas9NAGParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=(T[ACGTacgt]{21}))""".r
 
-  override def guideRange = (0,20)
+  override def guideRange: (Int,Int) = (0,ParameterPack.cas9ScanLength - ParameterPack.cas9PAMLength)
 }
 
 case object Cpf1ParameterPack extends ParameterPack {
-  def enzyme = CPF1
-  def pam = Array[String]("TTT")
-  def paddedPam = Array[String]("TTTN")
-  def pamLength: Int = 4
-  def totalScanLength: Int = 24
-  def comparisonBitEncoding: Long = 0x00FFFFFFFFFFl // be super careful with this value!!
+  def enzyme: Enzyme = CPF1
+  def pam: Array[String] = Array[String]("TTT")
+  def paddedPam: Array[String] = Array[String]("TTTN")
+  def pamLength: Int = ParameterPack.cpf1PAMLength
+  def totalScanLength: Int = ParameterPack.cpf1ScanLength
+  def comparisonBitEncoding: Long = 0x00FFFFFFFFFFL // be super careful with this value!!
   def fivePrimePam: Boolean = true
 
 
@@ -145,7 +159,7 @@ case object Cpf1ParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([ACGTacgt])(?=([ACGTacgt]{20}AAA))""".r
 
-  override def guideRange = (4,24)
+  override def guideRange: (Int,Int) = (ParameterPack.cpf1PAMLength,ParameterPack.cpf1ScanLength)
 
 }
 

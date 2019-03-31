@@ -19,19 +19,27 @@
 
 package utils
 
-import scala.annotation._, elidable._
+import scala.annotation._
+import elidable._
 import java.io._
 import java.math.BigInteger
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 import com.typesafe.scalalogging.LazyLogging
 
-import scala.io.Source
+import scala.io.{BufferedSource, Source}
 
 /**
  * just basic / general utilities that don't really have any other home
  */
 object Utils extends LazyLogging {
+
+  val numLetters = 4
+  val aInt = 0
+  val cInt = 1
+  val gInt = 2
+  val tInt = 3
+  val unknownBase = 4
 
   // get the GC content of the a string
   def gcContent(guide: String): Double = guide.toUpperCase.map{b => if (b == 'C' || b == 'G') 1 else 0}.sum.toDouble / guide.length.toDouble
@@ -48,19 +56,23 @@ object Utils extends LazyLogging {
   }
 
   // input and output shortcuts
-  def gis(s: String) = new GZIPInputStream(new BufferedInputStream(new FileInputStream(s)))
-  def gos(s: String, append: Boolean = false) = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(s,append)))
+  def gis(s: String): GZIPInputStream = new GZIPInputStream(new BufferedInputStream(new FileInputStream(s)))
+  def gos(s: String, append: Boolean = false): GZIPOutputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(s,append)))
 
-  def inputSource(s: String) = s match {
-    case gz if s endsWith ".gz" => Source.fromInputStream(gis(s))
-    case _ => Source.fromFile(s)
+  def inputSource(s: String): BufferedSource = s match {
+    case gz if s endsWith ".gz" => {
+      Source.fromInputStream(gis(s))
+    }
+    case _ => {
+      Source.fromFile(s)
+    }
   }
 
   implicit def fileToString(fl: File): String = fl.getAbsolutePath
 
   def longToBitString(long: Long): String = {
     val str = String.format("%064d", new BigInteger(java.lang.Long.toBinaryString(long)))
-    str.grouped(4).mkString(" ")
+    str.grouped(numLetters).mkString(" ")
   }
 
 
@@ -75,15 +87,15 @@ object Utils extends LazyLogging {
   def reverseCompString(str: String): String = compString(str).reverse
 
   def baseToIndex(base: Char): Int = base match {
-    case 'A' => 0
-    case 'a' => 0
-    case 'C' => 1
-    case 'c' => 1
-    case 'G' => 2
-    case 'g' => 2
-    case 'T' => 3
-    case 't' => 3
-    case _ => 4
+    case 'A' => aInt
+    case 'a' => aInt
+    case 'C' => cInt
+    case 'c' => cInt
+    case 'G' => gInt
+    case 'g' => gInt
+    case 'T' => tInt
+    case 't' => tInt
+    case _ => unknownBase
   }
 
   /**
@@ -92,10 +104,14 @@ object Utils extends LazyLogging {
     * @return the entropy
     */
   def sequenceEntropy(sequence: String): Double = {
-    if (sequence.size == 0) return 0.0
-    val probs = Array.fill[Double](4)(0.0)
-    sequence.map{base => baseToIndex(base)}.filter(b => b < 4).foreach{ind => probs(ind) += 1.0}
-    -1.0 * probs.map{prob => if (prob == 0) 0 else prob/probs.sum * (math.log(prob/probs.sum)/math.log(2.0))}.sum
+    if (sequence.size == 0) {
+      0.0
+    }
+    else {
+      val probs = Array.fill[Double](numLetters)(0.0)
+      sequence.map { base => baseToIndex(base) }.filter(b => b < 4).foreach { ind => probs(ind) += 1.0 }
+      -1.0 * probs.map { prob => if (prob == 0) 0 else prob / probs.sum * (math.log(prob / probs.sum) / math.log(2.0)) }.sum
+    }
   }
 
   /**
@@ -108,13 +124,14 @@ object Utils extends LazyLogging {
     var currentRun = 1
     var index = 1
     while (index < sequence.length) {
-      if (sequence(index -1) == sequence(index))
+      if (sequence(index -1) == sequence(index)) {
         currentRun += 1
-      else
+      } else {
         currentRun = 1
-
-      if (currentRun > longestRun)
+      }
+      if (currentRun > longestRun) {
         longestRun = currentRun
+      }
       index += 1
     }
     longestRun
@@ -174,8 +191,9 @@ object Utils extends LazyLogging {
     */
   @elidable(WARNING)
   def verificationAssert(assertionFunction: Boolean) {
-    if (!assertionFunction)
+    if (!assertionFunction) {
       throw new java.lang.AssertionError("assertion failed")
+    }
   }
 
   /**
@@ -187,10 +205,12 @@ object Utils extends LazyLogging {
     */
   def median[T](s: Seq[T])(implicit n: Fractional[T]): T = {
     assert(s.size != 0)
-    if (s.size == 1) return s(0)
-
-    import n._
-    val (lower, upper) = s.sortWith(_<_).splitAt(s.size / 2)
-    if (s.size % 2 == 0) (lower.last + upper.head) / fromInt(2) else upper.head
+    if (s.size == 1) {
+      s(0)
+    } else {
+      import n._
+      val (lower, upper) = s.sortWith(_ < _).splitAt(s.size / 2)
+      if (s.size % 2 == 0) (lower.last + upper.head) / fromInt(2) else upper.head
+    }
   }
 }

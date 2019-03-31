@@ -34,22 +34,27 @@ class SchulzeRank[T](votes: Array[Tuple2[Array[Int],T]]) {
   // set the preferences
   votes.indices.foreach{ i => {
     votes.indices.foreach { j => {
-      if (i != j)
-        if (inputPreferences(i)(j) > inputPreferences(j)(i))
+      if (i != j) {
+        if (inputPreferences(i)(j) > inputPreferences(j)(i)) {
           output(i)(j) = inputPreferences(i)(j)
-        else
+        } else {
           output(i)(j) = 0
+        }
+      }
     }
     }
   }}
 
   votes.indices.foreach{ i => {
     votes.indices.foreach { j => {
-      if (i != j)
+      if (i != j) {
         votes.indices.foreach { k => {
-          if (i != k && j != k)
-            output(j)(k) = Math.max(output(j)(k), Math.min(output(j)(i),output(i)(k)))
-        }}
+          if (i != k && j != k) {
+            output(j)(k) = Math.max(output(j)(k), Math.min(output(j)(i), output(i)(k)))
+          }
+        }
+        }
+      }
     }
     }
   }}

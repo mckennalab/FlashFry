@@ -68,7 +68,7 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator,
       val fw = new FileWriter(binToFile(putToBin), true)
       val bw = new BufferedWriter(fw)
       val output = new PrintWriter(bw)
-      binToBuffer(putToBin).toArray.foreach{hit => output.write(hit.to_output + "\n")}
+      binToBuffer(putToBin).toArray.foreach{hit => output.write(hit.toOutputString + "\n")}
       binToBuffer(putToBin).clear()
       output.close()
     }
@@ -84,7 +84,7 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator,
       val fw = new FileWriter(binToFile(bin), true)
       val bw = new BufferedWriter(fw)
       val output = new PrintWriter(bw)
-      binToBuffer(bin).toArray.foreach{hit => output.write(hit.to_output + "\n")}
+      binToBuffer(bin).toArray.foreach{hit => output.write(hit.toOutputString + "\n")}
 
       // make sure everything gets flushed out
       output.flush()

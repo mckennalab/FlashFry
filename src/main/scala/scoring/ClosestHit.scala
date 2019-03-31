@@ -47,15 +47,17 @@ class ClosestHit extends SingleGuideScoreModel {
         if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) < closest && bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) > 0) {
           closest = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
           count = 1
-        } else if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) == closest)
+        } else if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) == closest) {
           count += 1
+        }
       }
     }
 
-    if (closest == Int.MaxValue)
-      Array[Array[String]](Array[String]("UNK"),Array[String]("0"))
-    else
-      Array[Array[String]](Array[String](closest.toString),Array[String](count.toString))
+    if (closest == Int.MaxValue) {
+      Array[Array[String]](Array[String]("UNK"), Array[String]("0"))
+    } else {
+      Array[Array[String]](Array[String](closest.toString), Array[String](count.toString))
+    }
   }
 
   /**

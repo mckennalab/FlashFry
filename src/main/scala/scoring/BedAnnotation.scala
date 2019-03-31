@@ -47,7 +47,6 @@ class BedAnnotation() extends ScoreModel {
   var isRemapping = false
   val oldContigTag = "oldContig"
 
-  //val invervalRegex: Regex = """([\w\d]+)\t(\d+)\t(\d+)\t([\w\d]+)""".r
   var mappingIntervals: scala.Option[mutable.HashMap[String, Tuple4[String, Int, Int, String]]] = None
 
   /**
@@ -69,8 +68,8 @@ class BedAnnotation() extends ScoreModel {
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     // remap the intervals given the genome offset
     if (mappingIntervals.isDefined) {
-      mappingIntervals.map { intervals =>
-        intervals.map { interval => {
+      mappingIntervals.foreach { intervals =>
+        intervals.foreach { interval => {
 
           guides.foreach { guide => {
             // can we find a mapping of the guide position to the original position in the reference
@@ -97,10 +96,11 @@ class BedAnnotation() extends ScoreModel {
     assert(inputBedFiles.size == inputBedNames.size)
     inputBedFiles.zip(inputBedNames).foreach { case (bedObj, bedName) => {
       (new BEDFile(bedObj)).foreach(bedEntry => {
-        bedEntry.map { entry => {
+        bedEntry.foreach { entry => {
           guides.foreach { guide => {
-            if (guide.target.overlap(entry.contig, entry.start, entry.stop))
+            if (guide.target.overlap(entry.contig, entry.start, entry.stop)) {
               guide.namedAnnotations(bedName) = guide.namedAnnotations.getOrElse(bedName, Array[String]()) :+ entry.name
+            }
           }
           }
         }
@@ -138,7 +138,7 @@ class BedAnnotation() extends ScoreModel {
     *
     * @param args the command line arguments
     */
-  override def run() = {
+  override def run(): Unit = {
     if (inputBed != "") {
       inputBed.split(",").foreach { bedFile => {
         assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
@@ -193,10 +193,10 @@ class BedAnnotation() extends ScoreModel {
   /**
     * @return get a listing of the header columns for this score metric
     */
-
-  override def headerColumns(): Array[String] = if (isRemapping)
+  override def headerColumns(): Array[String] = if (isRemapping) {
     inputBedNames :+ oldContigTag
-  else
+  } else {
     inputBedNames
+  }
 }
 

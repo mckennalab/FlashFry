@@ -56,7 +56,7 @@ class BitPosition extends LazyLogging {
 
     val contigShifted   = contigMap(refName).toLong << BitPosition.shiftToIntContig
     val positionShifted = position.toLong << BitPosition.shiftToIntPos
-    val strandShifted   = if (forwardStrand) 0l else 1l << BitPosition.shiftToIntStrand
+    val strandShifted   = if (forwardStrand) BitPosition.forwardStrand else BitPosition.reverseStrand << BitPosition.shiftToIntStrand
     val sizeShifted     = targetLength.toLong << BitPosition.shiftToIntSize
 
     contigShifted | positionShifted | strandShifted | sizeShifted
@@ -79,15 +79,18 @@ class BitPosition extends LazyLogging {
 
 object BitPosition {
   // there's a dependency between these 8 values, dont change unless you look at effect on all values
-  var strandMask   = 0xF000000000000000l
-  var sizeMask     = 0x0FF0000000000000l
-  var contigMask   = 0x000FFFFF00000000l
-  var positionMask = 0x00000000FFFFFFFFl
+  val strandMask   = 0xF000000000000000L
+  val sizeMask     = 0x0FF0000000000000L
+  val contigMask   = 0x000FFFFF00000000L
+  val positionMask = 0x00000000FFFFFFFFL
 
-  var shiftToIntStrand = 60
-  var shiftToIntSize   = 52
-  var shiftToIntContig = 32
-  var shiftToIntPos    =  0
+  val shiftToIntStrand = 60
+  val shiftToIntSize   = 52
+  val shiftToIntContig = 32
+  val shiftToIntPos    =  0
+
+  val forwardStrand = 0L
+  val reverseStrand = 1L
 
   type PositionLong = Long
 }

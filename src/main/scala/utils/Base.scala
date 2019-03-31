@@ -30,8 +30,12 @@ object Base extends Enumeration {
   def baseToInt(d: Base): Int = d.id
 
   def intToBase(v: Int): Base = {
-    if (Base.values.size <= v) throw new IllegalAccessError("Base value = " + v + " out of range: our limit is " + Base.values.size)
-    else Base(v)
+    if (Base.values.size <= v) {
+      throw new IllegalAccessError("Base value = " + v + " out of range: our limit is " + Base.values.size)
+    }
+    else {
+      Base(v)
+    }
   }
 
   def randomBase(rand: Random): Base = intToBase(rand.nextInt(Base.values.size))
