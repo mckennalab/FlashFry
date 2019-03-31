@@ -36,38 +36,45 @@ import targetio.{TabDelimitedInput, TabDelimitedOutput}
 @Command(name = "score", description = Array("Score candidate targets with various community-developed metrics"))
 class ScoreResults extends Runnable with LazyLogging {
 
-  @Option(names = Array("-input", "--input"), required = true, paramLabel = "FILE", description = Array("the reference file to scan for putitive targets"))
+  @Option(names = Array("-input", "--input"), required = true, paramLabel = "FILE", description = Array("the file from the discovery phase we'll score"))
   private var inputBED: String = ""
 
-  @Option(names = Array("-output", "--output"), required = true, paramLabel = "FILE", description = Array("the output file (in bed format)"))
+  @Option(names = Array("-output", "--output"), required = true, paramLabel = "FILE", description = Array("the output file"))
   private var outputBED: String = ""
 
-  @Option(names = Array("-scoringMetrics", "--scoringMetrics"), required = true, paramLabel = "STRING", description = Array("scoring methods to include, separated by a comma (no spaces). \nCurrently supported scoring metrics: hsu2013,doench2014ontarget,doench2016cfd,moreno2015,bedannotator,dangerous,minot,reciprocalofftargets,rank"))
+  @Option(names = Array("-scoringMetrics", "--scoringMetrics"), required = true, paramLabel = "STRING",
+    description = Array("scoring methods to include, separated by a comma (no spaces). " +
+      "\nCurrently supported scoring metrics: hsu2013,doench2014ontarget,doench2016cfd,moreno2015,bedannotator,dangerous,minot,reciprocalofftargets,rank"))
   private var scoringMetrics = ""
 
-  @Option(names = Array("-maxMismatch", "--maxMismatch"), required = false, paramLabel = "INT", description = Array("only consider off-targets that have a maximum mismatch the guide of X"))
+  @Option(names = Array("-maxMismatch", "--maxMismatch"), required = false, paramLabel = "INT",
+    description = Array("only consider off-targets that have this maximum mismatch the guide of X"))
   private var maxMismatch: Int = Int.MaxValue
 
-  @Option(names = Array("-database", "--database"), required = true, paramLabel = "FILE", description = Array("the binary off-target file"))
+  @Option(names = Array("-database", "--database"), required = true, paramLabel = "FILE", description = Array("the database of off-targets"))
   private var binaryOTFile: String = ""
 
-  @Option(names = Array("-includeOTs", "--includeOTs"), required = false, paramLabel = "FLAG", description = Array("include the off-target hits in our output"))
+  @Option(names = Array("-includeOTs", "--includeOTs"), required = false, paramLabel = "FLAG",
+    description = Array("include the off-target hits in the output file"))
   private var writeOTsToOutput: Boolean = false
 
 
   // parameters inherited from scoring modules
   // -----------------------------------------
-  @Option(names = Array("-inputAnnotationBed", "--inputAnnotationBed"), required = false, paramLabel = "FILE", description = Array("the bed file we'd like to annotate with and an associated name (name:bedfile)"))
+  @Option(names = Array("-inputAnnotationBed", "--inputAnnotationBed"), required = false, paramLabel = "FILE",
+    description = Array("the bed file to annotate overlapping targets with in the format name:bedfile"))
   var inputBed = ""
 
-  @Option(names = Array("-transformPositions", "--transformPositions"), required = false, paramLabel = "FILE", description = Array("try to locate each target's genome location by using matching (zero-mismatch) in-genome targets"))
+  @Option(names = Array("-transformPositions", "--transformPositions"), required = false, paramLabel = "FILE",
+    description = Array("attempt to annotate each target with its genomic location by using matching (zero-mismatch) in-genome targets"))
   var genomeTransform = ""
 
-  @Option(names = Array("-countOnTargetInScore", "--countOnTargetInScore"), required = false, paramLabel = "FILE", description = Array("do we consider exact matches when calculating the off-target scores"))
+  @Option(names = Array("-countOnTargetInScore", "--countOnTargetInScore"), required = false, paramLabel = "FILE",
+    description = Array("we consider exact matches when calculating the off-target scores, default is false to stay consistent with Hsu 2013"))
   private var countOnTargetInScore: Boolean = false
 
   @Option(names = Array("-maxReciprocalMismatch", "--maxReciprocalMismatch"), required = false, paramLabel = "INT",
-    description = Array("the maximum number of mismatches between two targets with the region to be highlighted in the output"))
+    description = Array("the maximum number of mismatches between two targets to be marked reciprocal in the output"))
   private var maxReciprocalMismatch = 1
 
 
@@ -138,7 +145,13 @@ class ScoreResults extends Runnable with LazyLogging {
 
 object ScoreResults {
 
-  def getRegisteredScoringMetric(name: String, bitEncoder: BitEncoding, inputBed: String, genomeTransform: String, countOnTargetInScore: Boolean, maxReciprocalMismatch: Int): ScoreModel = {
+  def getRegisteredScoringMetric(name: String,
+                                 bitEncoder: BitEncoding,
+                                 inputBed: String,
+                                 genomeTransform: String,
+                                 countOnTargetInScore: Boolean,
+                                 maxReciprocalMismatch: Int): ScoreModel = {
+
     val newMetric : ScoreModel = name.toLowerCase() match {
       case "hsu2013" => {
         val sm = new CrisprMitEduOffTarget()

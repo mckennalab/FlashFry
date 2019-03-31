@@ -46,7 +46,8 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
   @Option(names = Array("-tmpLocation", "--tmpLocation"), required = true, paramLabel = "DIRECTORY", description = Array("the temporary file output"))
   private var tmp: File = new File("UNKNOWN")
 
-  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme to use; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
+  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING",
+    description = Array("the CRISPR enzyme to use; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
   private var enzyme: String = "spCas9ngg"
 
   @Option(names = Array("-binSize", "--binSize"), required = false, paramLabel = "INT",

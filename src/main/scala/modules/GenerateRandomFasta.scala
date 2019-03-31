@@ -42,7 +42,7 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
   @Option(names = Array("-outputFile", "--outputFile"), required = true, paramLabel = "FILE", description = Array("the output file"))
   private var outputFile: File = new File("")
 
-  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme"))
+  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
   private var enzyme: String = ""
 
   @Option(names = Array("-onlyUnidirectional", "--onlyUnidirectional"), required = false, paramLabel = "FLAG", description = Array("should we ensure that the guides only work in one direction?"))
@@ -80,8 +80,8 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
       val crisprSeq = new CRISPRSite(randomSeq, randomSeq, true, 0, None)
 
       // it's valid, also now check to make sure there's only one hit if they asked for the filter
-      if ((!onlyUnidirectional ||
-        (onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1)))) {
+      if (!onlyUnidirectional ||
+        (onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1))) {
         sequences.append(crisprSeq)
       } else {
         logger.debug("Tossing " + crisprSeq.bases + " as its contains more than one CRISPR site")
