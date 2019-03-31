@@ -75,7 +75,7 @@ object ParameterPack {
 
   val cas9ScanLength = 23
   val cas9PAMLength = 3
-  val cpf1ScanLength = 23
+  val cpf1ScanLength = 24
   val cpf1PAMLength = 4
 }
 
@@ -106,7 +106,7 @@ case object Cas9NGGParameterPack extends ParameterPack {
   def enzyme: Enzyme= SpCAS9
   def pam: Array[String] = Array[String]("GG")
   def paddedPam: Array[String] = Array[String]("NGG")
-  def pamLength: Int = 3
+  def pamLength: Int = ParameterPack.cas9PAMLength
 
   def totalScanLength: Int = ParameterPack.cas9ScanLength
 
@@ -120,7 +120,7 @@ case object Cas9NGGParameterPack extends ParameterPack {
 
   override def revRegex: Regex = """([C])(?=(C[ACGTacgt]{21}))""".r
 
-  override def guideRange: (Int,Int) = (0,ParameterPack.cas9ScanLength)
+  override def guideRange: (Int,Int) = (0,ParameterPack.cas9ScanLength - ParameterPack.cas9PAMLength)
 }
 
 
