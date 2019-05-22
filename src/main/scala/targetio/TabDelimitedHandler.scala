@@ -185,7 +185,6 @@ class TabDelimitedInput(inputFile: File,
   val withOTTokenLength = headerLine.size
 
   assert(withOTs || (remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(0)), "Unable to parse out the final columns in the header")
-  println("withOTs " + withOTs + " other thing " + (remainingColumns(remainingColumns.size - 1) == TabDelimitedOutput.final_columns(0)))
 
   val annotations = if (withOTs) remainingColumns.slice(0, remainingColumns.size - 2) else remainingColumns.slice(0, remainingColumns.size - 1)
 

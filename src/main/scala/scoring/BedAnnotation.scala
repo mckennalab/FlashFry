@@ -83,8 +83,6 @@ class BedAnnotation() extends ScoreModel {
               guide.target = newTarget
               guide.namedAnnotations(oldContigTag) = guide.namedAnnotations.getOrElse(oldContigTag, Array[String]()) :+ ref
             }
-
-
           }
           }
         }
@@ -92,7 +90,7 @@ class BedAnnotation() extends ScoreModel {
       }
     }
 
-    // are there annotations that overlap it? -- this is a bit ugly, but I like the isDefined approach over the zip then map here -- probably wrong
+    // are there annotations that overlap it? -- this is a bit ugly, but I like the isDefined approach over the zip then map here
     assert(inputBedFiles.size == inputBedNames.size)
     inputBedFiles.zip(inputBedNames).foreach { case (bedObj, bedName) => {
       (new BEDFile(bedObj)).foreach(bedEntry => {
@@ -138,7 +136,7 @@ class BedAnnotation() extends ScoreModel {
     *
     * @param args the command line arguments
     */
-  override def run(): Unit = {
+  override def setup(): Unit = {
     if (inputBed != "") {
       inputBed.split(",").foreach { bedFile => {
         assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
@@ -161,7 +159,7 @@ class BedAnnotation() extends ScoreModel {
 
 
   /**
-    * store the specified interval to adjustment to the fasta positions
+    * store the specified adjustments to the fasta positions
     *
     * @param interval
     */
@@ -189,7 +187,8 @@ class BedAnnotation() extends ScoreModel {
     * @param bitEncoding
     */
   override def bitEncoder(bitEncoding: BitEncoding): Unit = {
-  } // we don't need one
+    // we don't need one
+  }
   /**
     * @return get a listing of the header columns for this score metric
     */

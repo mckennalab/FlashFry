@@ -97,7 +97,7 @@ class DangerousSequences extends SingleGuideScoreModel {
     *
     * @param args the command line arguments
     */
-  override def run() {}
+  override def setup() {}
 
   /**
     * set the bit encoder for this scoring metric

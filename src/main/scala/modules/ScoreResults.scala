@@ -79,54 +79,43 @@ class ScoreResults extends Runnable with LazyLogging {
 
 
   def run() {
-    // get our settings
     val header = BinaryHeader.readHeader(binaryOTFile + BinaryHeader.headerExtension)
-
-    // make ourselves a bit encoder
     val bitEnc = new BitEncoding(header.parameterPack)
 
-    // load up the scored sites into a container
     logger.info("Loading CRISPR objects (filtering out overflow guides).. ")
     val guides = (new TabDelimitedInput(new File(inputBED), bitEnc, header.bitPosition, maxMismatch, writeOTsToOutput, true)).guides.toArray
 
-    // setup the scoring modules as requested
     var scoringModels = List[ScoreModel]()
     def scoringAnnotations = scoringModels.map { mdl => mdl.scoreName() }.toArray
 
     scoringMetrics.split(",").foreach { modelParameter => {
       val model = ScoreResults.getRegisteredScoringMetric(modelParameter, bitEnc, inputBed, genomeTransform, countOnTargetInScore, maxReciprocalMismatch)
-
       if (model.validOverScoreModel(bitEnc.mParameterPack)) {
         logger.info("adding score: " + model.scoreName())
         model.bitEncoder(bitEnc)
+        model.setup()
         scoringModels :+= model
-      } else {
-        logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack.enzyme)
-      }
-    }
-    }
+      } else { logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack.enzyme)}
+    }}
 
     // feed any aggregate scoring metrics the full list of other metrics
     val nonAggregate = scoringModels.filter { case (m) => m.isInstanceOf[RankedScore] }.map { e => e.asInstanceOf[RankedScore] }
     val aggregate = scoringModels.filter { case (m) => m.isInstanceOf[AggregateScore] }
     aggregate.foreach { case (e) => e.asInstanceOf[AggregateScore].initializeScoreNames(nonAggregate) }
 
-    // score all the sites
     logger.info("Scoring all guides...")
     scoringModels.foreach {
       model => {
         logger.info("Scoring with model " + model.scoreName())
         model.scoreGuides(guides, bitEnc, header.bitPosition, header.parameterPack)
-      }
-    }
+      }}
 
     logger.info("Aggregating results...")
     val results = new ResultsAggregator(guides)
 
-    // output a new data file with the scored results
-    logger.info("Writing annotated guides to the output file...")
 
     // now output the scores per site
+    logger.info("Writing annotated guides to the output file...")
     val output = new TabDelimitedOutput(new File(outputBED),
       header.bitCoder,
       header.bitPosition,
@@ -136,10 +125,8 @@ class ScoreResults extends Runnable with LazyLogging {
 
     results.wrappedGuides.foreach { gd => {
       output.write(gd.otSite)
-    }
-    }
+    }}
     output.close()
-
   }
 }
 

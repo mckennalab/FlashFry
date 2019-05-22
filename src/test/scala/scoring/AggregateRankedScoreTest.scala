@@ -180,7 +180,7 @@ class FakeRankedScore1 extends RankedScore {
     *
     * @param args the command line arguments
     */
-  override def run(){}
+  override def setup(){}
 
   /**
     * set the bit encoder for this scoring metric
@@ -255,7 +255,7 @@ class FakeRankedScore2(tieTopX: Int = 0) extends RankedScore {
     *
     * @param args the command line arguments
     */
-  override def run(){}
+  override def setup(){}
 
   /**
     * set the bit encoder for this scoring metric

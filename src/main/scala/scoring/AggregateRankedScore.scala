@@ -135,7 +135,7 @@ class AggregateRankedScore(trancheCount: Int = 4) extends ScoreModel with Aggreg
     *
     * @param args the command line arguments
     */
-  override def run() {}
+  override def setup() {}
 
   /**
     * @return get a listing of the header columns for this score metric

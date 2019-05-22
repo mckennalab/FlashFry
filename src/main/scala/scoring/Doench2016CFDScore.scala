@@ -112,7 +112,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     *
     * @param args the command line arguments
     */
-  override def run(){}
+  override def setup(){}
 
   /**
     * set the bit encoder for this scoring metric

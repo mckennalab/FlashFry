@@ -161,7 +161,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * parse out any command line arguments that are optional or required for this scoring metric
     *
     */
-  override def run(): Unit = {
+  override def setup(): Unit = {
     // just parse the options
   }
 

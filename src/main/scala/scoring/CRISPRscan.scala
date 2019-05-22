@@ -86,7 +86,7 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
     *
     * @param args the command line arguments
     */
-  override def run() {}
+  override def setup() {}
 
   /**
     * set the bit encoder for this scoring metric

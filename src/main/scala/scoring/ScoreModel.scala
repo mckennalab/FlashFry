@@ -28,7 +28,7 @@ import com.typesafe.scalalogging.LazyLogging
   * our trait object for scoring guides -- any method that implements this trait can be used to
   * score on and off-target effects
   */
-trait ScoreModel extends Runnable with LazyLogging {
+trait ScoreModel extends LazyLogging {
 
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
@@ -77,7 +77,7 @@ trait ScoreModel extends Runnable with LazyLogging {
     *
     * @param args the command line arguments
     */
-  def run()
+  def setup()
 
   /**
     * set the bit encoder for this scoring metric
