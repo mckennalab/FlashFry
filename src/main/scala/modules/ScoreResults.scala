@@ -175,6 +175,9 @@ object ScoreResults {
       case "rank" => {
         new AggregateRankedScore()
       }
+      case "JostAndSantos" => {
+        new JostAndSantosCRISPRi()
+      }
       case _ => {
         throw new IllegalArgumentException("Unknown scoring metric: " + name)
       }

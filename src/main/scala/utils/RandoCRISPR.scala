@@ -37,6 +37,7 @@ class RandoCRISPR(sz: Int,
   def next(): String = {
     val randomFrt = randomString(randomFront)
     val randomRvs = randomString(randomRear)
+
     val unpaddedPam = pams(r.nextInt(pams.length)).map { base => {
       if (base == 'N') {
         numberToBase(r.nextInt(numberOfBases))
@@ -55,5 +56,5 @@ class RandoCRISPR(sz: Int,
 
   def numberToBase(nt: Int): Char = if (nt == 0) 'A' else if (nt == 1) 'C' else if (nt == 2) 'G' else 'T'
   def baseToNumber(nt: Char): Int = if (nt == 'A') 0 else if (nt == 'C') 1 else if (nt == 'G') 2 else 3
-  def randomString(bases: Int): String = (0.until(bases)).map { ct => numberToBase(r.nextInt(4)) }.mkString("")
+  def randomString(bases: Int): String = (0.until(bases)).map { ct => numberToBase(r.nextInt(numberOfBases)) }.mkString("")
 }

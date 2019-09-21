@@ -95,7 +95,8 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
     * score an individual guide
     *
     * @param guide the guide with it's off-targets
-    * @return a score (as a string)
+    * @return an array of arrays (ugh). For each column the scoring method can return multiple pieces of information
+    *         which are then merged at the output stage
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]]
 
