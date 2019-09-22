@@ -175,7 +175,7 @@ object ScoreResults {
       case "rank" => {
         new AggregateRankedScore()
       }
-      case "JostAndSantos" => {
+      case "jostandsantos" => {
         new JostAndSantosCRISPRi()
       }
       case _ => {
