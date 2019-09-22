@@ -29,8 +29,9 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     val scores = guide.offTargets.map { ot => (calc_score(sequence.str,
       bitEncoder.get.bitDecodeString(ot.sequence).str),ot.getOffTargetCount) }
 
-    val specificity_score = 1.0 / scores.map{case(score,count) => score * count}.sum
-    Array[Array[String]](Array[String](scores.map{st => st._1}.max.toString),Array[String](specificity_score.toString))
+    val specificity_score = 1.0 / 1.0 + scores.map{case(score,count) => score * count}.sum
+    val maxscore = if (scores.size == 0) 1 else scores.map{st => st._1}.max.toString
+    Array[Array[String]](Array[String](maxscore.toString),Array[String](specificity_score.toString))
   }
 
   /**
@@ -68,17 +69,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverGuideSequence(pack: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    if (pack.enzyme != SpCAS9) return false
-    if (!guide.target.sequenceContext.isDefined) return false
-
-    // find the guide within the context, and determine if we have enough flanking sequence for the scoring metric
-    val guidePos = SingleGuideScoreModel.findGuideSequenceWithinContext(guide)
-
-    // do we have enough sequence?
-    val enoughContextOnTheLeft = guidePos >= 4
-    val enoughContextOnTheRight = guide.target.sequenceContext.get.size - (guidePos + guide.target.bases.size) >= 3
-
-    enoughContextOnTheLeft & enoughContextOnTheRight
+    if (pack.enzyme == SpCAS9) true else false
   }
 
   /**
@@ -91,7 +82,6 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
       if (target(index+1) != base) {
         val originalPair = Utils.compBase(target(index+1))
         val lookup = ScoreLookup(index+1, base, originalPair)
-        println(lookup)
         val conversion = JostAndSantosCRISPRi.scoreMapping(lookup)
 
         totalScore *= conversion.mean
