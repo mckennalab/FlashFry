@@ -91,6 +91,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
       if (target(index+1) != base) {
         val originalPair = Utils.compBase(target(index+1))
         val lookup = ScoreLookup(index+1, base, originalPair)
+        println(lookup)
         val conversion = JostAndSantosCRISPRi.scoreMapping(lookup)
 
         totalScore *= conversion.mean
