@@ -30,7 +30,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
       bitEncoder.get.bitDecodeString(ot.sequence).str),ot.getOffTargetCount) }
 
     val specificity_score = 1.0 / (1.0 + scores.map{case(score,count) => score * count}.sum)
-    val maxscore = if (scores.size == 0) 1 else scores.map{st => st._1}.max.toString
+    val maxscore = if (scores.size == 0) 0.0 else scores.map{st => st._1}.max.toString
     Array[Array[String]](Array[String](maxscore.toString),Array[String](specificity_score.toString))
   }
 
