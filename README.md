@@ -9,7 +9,7 @@
 <img src="https://raw.githubusercontent.com/aaronmck/FlashFry/master/images/fries.png" width="500">
 </p>
 
-FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. FlashFry can be used with any genome, and can run against non-traditional model organisms or transcriptomes. If you're looking to characterize a smaller region or would like a nice web interface we recommend the [crispor.org](http://crispor.org) website.
+FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. FlashFry can be used with any genome, and can run against non-traditional model organisms or transcriptomes. If you're looking to characterize a smaller region or would like a nice web interface we recommend the [GT-scan](http://gt-scan.csiro.au) or [crispor.org](http://crispor.org) websites.
 
 The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry.
 
