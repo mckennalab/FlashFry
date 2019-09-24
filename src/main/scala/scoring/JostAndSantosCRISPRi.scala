@@ -26,11 +26,14 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     require(validOverGuideSequence(Cas9ParameterPack, guide), "We're not a valid score over this guide: " + guide.target.bases)
 
     val sequence = bitEncoder.get.bitDecodeString(guide.longEncoding)
-    val scores = guide.offTargets.map { ot => (calc_score(sequence.str,
-      bitEncoder.get.bitDecodeString(ot.sequence).str),ot.getOffTargetCount) }
 
-    val specificity_score = 1.0 / (1.0 + scores.map{case(score,count) => score * count}.sum)
+    val scores = guide.offTargets.map { ot =>
+      (calc_score(sequence.str, bitEncoder.get.bitDecodeString(ot.sequence).str),ot.getOffTargetCount, ot.sequence == sequence.str)
+    }.filter{case(score,otCount,areEqual) => !areEqual}
+
+    val specificity_score = 1.0 / (1.0 + scores.map{case(score,count,areEqual) => score * count}.sum)
     val maxscore = if (scores.size == 0) 0.0 else scores.map{st => st._1}.max.toString
+
     Array[Array[String]](Array[String](maxscore.toString),Array[String](specificity_score.toString))
   }
 
