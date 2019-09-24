@@ -17,7 +17,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
   override def scoreDescription(): String = "CRISPRi score developed by Jost and Santos (BioRxiv, 2019)"
 
   /**
-    * score an individual guide
+    * score an individual guide's off-targets
     *
     * @param guide the guide with it's off-targets
     * @return an array of scores
@@ -28,7 +28,9 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     val sequence = bitEncoder.get.bitDecodeString(guide.longEncoding)
 
     val scores = guide.offTargets.map { ot =>
-      (calc_score(sequence.str, bitEncoder.get.bitDecodeString(ot.sequence).str),ot.getOffTargetCount, ot.sequence == sequence.str)
+      (calc_score(sequence.str, bitEncoder.get.bitDecodeString(ot.sequence).str),
+        ot.getOffTargetCount,
+        bitEncoder.get.bitDecodeString(ot.sequence).str == sequence.str)
     }.filter{case(score,otCount,areEqual) => !areEqual}
 
     val specificity_score = 1.0 / (1.0 + scores.map{case(score,count,areEqual) => score * count}.sum)

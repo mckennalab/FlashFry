@@ -36,4 +36,21 @@ class JoistAndSantosCRISPRiTest extends FlatSpec with Matchers {
 
     (dScore.calc_score(target, offTarget)) should be(0.7952747759038213 * 0.03182081449682617)
   }
+
+  "JostAndSantosCRISPRi" should "not consider an exact match in the scoring scheme" in {
+    val crispr = CRISPRSite("test", "AAAAAAAAAAAAAAAAAAAAGGG", true, 0, None)
+    val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("AAAAAAAAAAAAAAAAAAAAGGG", 1)),1000)
+    val otHit2 = new CRISPRHit(bitEncoder.bitEncodeString(StringCount("AAAAAAAAAAAAAAAAAAAAGGG", 1)),Array[Long](1L))
+    otHit.offTargets.append(otHit2)
+
+    (dScore.scoreGuide(otHit)(0)) should be(Array[String]((0.00).toString))
+  }
+  "JostAndSantosCRISPRi" should "consider a slight mismatch in the scoring scheme" in {
+    val crispr = CRISPRSite("test", "AAAAAAAAAAAAAAAAAAAAGGG", true, 0, None)
+    val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("AAAAAAAAAAAAAAAAAAAAGGG", 1)),1000)
+    val otHit2 = new CRISPRHit(bitEncoder.bitEncodeString(StringCount("AAAATAAAATAAAAGAAAAAGGG", 1)),Array[Long](1L))
+    otHit.offTargets.append(otHit2)
+
+    (dScore.scoreGuide(otHit)(0)) should be(Array[String]((0.6947382165440157 * 0.31016952886752025 * 0.26865890093507167).toString))
+  }
 }
