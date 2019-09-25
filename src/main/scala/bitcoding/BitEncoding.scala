@@ -158,7 +158,7 @@ class BitEncoding(parameterPack: ParameterPack) {
 
 
   /**
-    * create a bitshifting for a bin comparison.
+    * create a bitshifting mask for a binary comparison.
     *
     * @param binSize          the size of the bin
     * @param rightShiftXBases if the bin isn't the first bin, we need to offset by this many bases (bits * 2)

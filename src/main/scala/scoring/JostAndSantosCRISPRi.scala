@@ -27,11 +27,14 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
 
     val sequence = bitEncoder.get.bitDecodeString(guide.longEncoding)
 
-    val scores = guide.offTargets.map { ot =>
+    val scores = guide.offTargets.map { ot => {
+      // compare the targets, only considering their active bases
+      val baseDifferences = bitEncoder.get.mismatches(ot.sequence,guide.longEncoding)
+
       (calc_score(sequence.str, bitEncoder.get.bitDecodeString(ot.sequence).str),
         ot.getOffTargetCount,
-        bitEncoder.get.bitDecodeString(ot.sequence).str == sequence.str)
-    }.filter{case(score,otCount,areEqual) => !areEqual}
+        baseDifferences)
+    }}.filter{case(score,otCount,baseDifferences) => (baseDifferences > 0)}
 
     val specificity_score = 1.0 / (1.0 + scores.map{case(score,count,areEqual) => score * count}.sum)
     val maxscore = if (scores.size == 0) 0.0 else scores.map{st => st._1}.max.toString
