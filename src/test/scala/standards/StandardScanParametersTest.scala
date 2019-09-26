@@ -83,4 +83,32 @@ class StandardScanParametersTest extends FlatSpec with Matchers {
 
     (Cpf1ParameterPack.revRegex.findAllMatchIn(string).size) should be (1)
   }
+
+  "StandardScanParameters" should "use the parameter pack forward regex match for cas9 19bp version correctly" in {
+    val string = "TTTA AAAAA CCCCC GGGGG GGG".filter{c => c != ' '}.mkString("")
+
+
+    (Cas9ParameterPack19bp.fwdRegex.findAllMatchIn(string).size) should be (1)
+  }
+
+  "StandardScanParameters" should "use the parameter pack to find two forward 19 bp regex matches" in {
+    val string = "TTTA AAAAA CCCCC GGGGG CGGG".filter{c => c != ' '}.mkString("")
+
+
+    (Cas9ParameterPack19bp.fwdRegex.findAllMatchIn(string).size) should be (2)
+  }
+
+  "StandardScanParameters" should "use the parameter pack reverse regex match for cas9 19bp version correctly" in {
+    val string = "CCTAA AAAAA CCCCC GGGGG GG".filter{c => c != ' '}.mkString("")
+
+
+    (Cas9ParameterPack19bp.revRegex.findAllMatchIn(string).size) should be (1)
+  }
+
+  "StandardScanParameters" should "use the parameter pack to find two reverse 19 bp regex matches" in {
+    val string = "CCCTAA AAAAA CCCCC GGGGG GG".filter{c => c != ' '}.mkString("")
+
+
+    (Cas9ParameterPack19bp.revRegex.findAllMatchIn(string).size) should be (2)
+  }
 }

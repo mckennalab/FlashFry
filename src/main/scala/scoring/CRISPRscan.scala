@@ -22,7 +22,7 @@ import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
 import picocli.CommandLine.Command
-import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
+import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
 
 /**
   * Implementation of Moreno-Mateos et. al. 2015 Nature Methods. Much (or all) credit goes to the team behind CRISPOR who's
@@ -76,9 +76,8 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = enzyme.enzyme match {
-    case _: SpCAS9.type => true
-    case _ => false
+  override def validOverScoreModel(enzyme: ParameterPack): Boolean = {
+    enzyme.enzyme.enzymeParent == Cas9Type && enzyme.totalScanLength == ParameterPack.cas9ScanLength20mer
   }
 
   /**

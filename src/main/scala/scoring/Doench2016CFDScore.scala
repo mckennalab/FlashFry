@@ -24,12 +24,15 @@ import picocli.CommandLine.Command
 import utils.Utils
 import standards.{Cas9Type, ParameterPack}
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
   * implementation of the Doench 2016 CFD score from their python code
   * doi:10.1038/nbt.3437
   */
 class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
   var bitCode: Option[BitEncoding] = None
+
 
   /**
     * @return the name of this score model, used to look up the models when initalizing scoring
@@ -52,7 +55,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     assert(bitCode.isDefined, "Our bitEncoder has not been set")
 
     val bases = guide.target.bases
-    var totalScore = 0.0
+    val scores = new ArrayBuffer[Tuple2[Double,Int]]()
 
     guide.offTargets.foreach{ ot => {
 
@@ -63,28 +66,24 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
       // since we're only dealing with Cas9 we can slice the first 20 bases
       if (otScore.str.slice(0,20) != guide.target.bases.slice(0,20)) {
 
-        // Alternate approach commented out: scale the score from 0 to 100
-        //1st alternative: val candidateScore = 100.0 * (1.0 - scoreCFD(bases.slice(0,20), otScore.str.slice(0,20)))
-        //totalScore += candidateScore
         var pam = Doench2016CFDScore.pamLookup(otScore.str.slice(otScore.str.length - 2, otScore.str.length))
 
         val candidateScore = scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20))
-        //println("GUIDE SCORE " + otScore.str + " " + (pam * candidateScore) + " pam " + pam + " pam seq " + otScore.str.slice(otScore.str.length - 2,otScore.str.length))
-        totalScore = math.max(totalScore, pam * scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20)))
+        scores += Tuple2[Double,Int](pam * scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20)),bitCode.get.getCount(ot.sequence))
       }
       //val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
       //totalScore *= candidateScore
     }}
 
-    // take the same approach as the crispr.mit.edu folks?
-    // ((100.0 * (100.0 / (100.0 + (pam + totalScore))))).toString
-    //(pam * totalScore).toString
+    val specificity_score = if (scores.size > 0) 1.0 / (1.0 + scores.map { case (score, count) => score * count }.sum) else 1.0
+    val maxScore = if (scores.size > 0) scores.map{case(score,count) => score}.max else 0.0
 
     // guided by CRISPOR paper -- thresholding at 0.023
-    if (totalScore >= 0.023)
-      Array[Array[String]](Array[String]((totalScore).toString))
-    else
-      Array[Array[String]](Array[String]("0.0"))
+    if (maxScore >= Doench2016CFDScore.cfdMinimumThreshold) {
+      Array[Array[String]](Array[String](maxScore.toString),Array[String](specificity_score.toString))
+    } else {
+      Array[Array[String]](Array[String]("0.0"),Array[String](specificity_score.toString))
+    }
   }
 
   /**
@@ -93,7 +92,9 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = enzyme.enzyme.enzymeParent == Cas9Type
+  override def validOverScoreModel(enzyme: ParameterPack): Boolean = {
+    enzyme.enzyme.enzymeParent == Cas9Type && enzyme.totalScanLength == ParameterPack.cas9ScanLength20mer
+  }
 
   /**
     * given a enzyme and guide information, can we score this sequence? For instance the on-target sequence
@@ -151,7 +152,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String](scoreName)
+  override def headerColumns(): Array[String] = Array[String](scoreName,"Doench2016aggregateCFD")
 
 
   def specialReverseCompBase(c: Char): Char = if (c == 'A') 'T' else if (c == 'C') 'G' else if (c == 'G') 'C' else if (c == 'U') 'A' else c
@@ -164,6 +165,10 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
 
 // constants for the CDF score --- taken from their Python Pickle files
 object Doench2016CFDScore {
+
+  // guided by CRISPOR paper -- thresholding at 0.023
+  val cfdMinimumThreshold = 0.023
+
   val mmLookup = Map("rC:dC,9" -> 0.619047619, "rC:dC,8" -> 0.642857143, "rG:dA,8" -> 0.625, "rG:dG,19" -> 0.448275862, "rG:dG,18" -> 0.476190476,
     "rG:dG,15" -> 0.272727273, "rG:dG,14" -> 0.428571429, "rG:dG,17" -> 0.235294118, "rG:dG,16" -> 0.0, "rC:dC,20" -> 0.058823529, "rG:dT,20" -> 0.9375,
     "rG:dG,13" -> 0.421052632, "rG:dG,12" -> 0.529411765, "rC:dT,13" -> 0.384615385, "rC:dT,18" -> 0.538461538, "rC:dC,3" -> 0.5, "rU:dG,12" -> 0.947368421,

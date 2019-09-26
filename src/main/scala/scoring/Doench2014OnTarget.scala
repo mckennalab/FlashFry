@@ -23,7 +23,7 @@ import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
 import picocli.CommandLine.Command
-import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
+import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
 
 /**
   * Implementation of:
@@ -67,9 +67,8 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with Ran
     *
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(pack: ParameterPack): Boolean = pack.enzyme match {
-    case _ : SpCAS9.type => true
-    case _ => false
+  override def validOverScoreModel(pack: ParameterPack): Boolean = {
+    pack.enzyme.enzymeParent == Cas9Type && pack.totalScanLength == ParameterPack.cas9ScanLength20mer
   }
 
   /**

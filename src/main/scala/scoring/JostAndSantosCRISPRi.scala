@@ -3,7 +3,7 @@ package scoring
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, CRISPRSiteOT}
-import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
+import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
 import utils.Utils
 
 import scala.collection.mutable
@@ -15,6 +15,8 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
   override def scoreName(): String = "JostAndSantosCRISPRi"
 
   override def scoreDescription(): String = "CRISPRi score developed by Jost and Santos (BioRxiv, 2019)"
+
+  private var parameterPack: Option[ParameterPack] = None
 
   /**
     * score an individual guide's off-targets
@@ -29,17 +31,18 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
 
     val scores = guide.offTargets.map { ot => {
       // compare the targets, only considering their active bases
-      val baseDifferences = bitEncoder.get.mismatches(ot.sequence,guide.longEncoding)
+      val baseDifferences = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
 
       (calc_score(sequence.str, bitEncoder.get.bitDecodeString(ot.sequence).str),
         ot.getOffTargetCount,
         baseDifferences)
-    }}.filter{case(score,otCount,baseDifferences) => (baseDifferences > 0)}
+    }
+    }.filter { case (score, otCount, baseDifferences) => (baseDifferences > 0) }
 
-    val specificity_score = 1.0 / (1.0 + scores.map{case(score,count,areEqual) => score * count}.sum)
-    val maxscore = if (scores.size == 0) 0.0 else scores.map{st => st._1}.max.toString
+    val specificity_score = 1.0 / (1.0 + scores.map { case (score, count, areEqual) => score * count }.sum)
+    val maxscore = if (scores.size == 0) 0.0 else scores.map { st => st._1 }.max.toString
 
-    Array[Array[String]](Array[String](maxscore.toString),Array[String](specificity_score.toString))
+    Array[Array[String]](Array[String](maxscore.toString), Array[String](specificity_score.toString))
   }
 
   /**
@@ -47,9 +50,11 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     *
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(pack: ParameterPack): Boolean = pack.enzyme match {
-    case _: SpCAS9.type => true
-    case _ => false
+  override def validOverScoreModel(pack: ParameterPack): Boolean = {
+    this.parameterPack = Some(pack)
+
+    pack.enzyme.enzymeParent == Cas9Type &&
+      (pack.totalScanLength == ParameterPack.cas9ScanLength20mer || pack.totalScanLength == ParameterPack.cas9ScanLength19mer)
   }
 
   /**
@@ -86,28 +91,51 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     */
   def calc_score(target: String, offTargetString: String): Double = {
     var totalScore = 1.0
-    offTargetString.slice(1, 20).zipWithIndex.foreach { case (base, index) => {
-      if (target(index+1) != base) {
-        val originalPair = Utils.compBase(target(index+1))
-        val lookup = ScoreLookup(index+1, base, originalPair)
-        val conversion = JostAndSantosCRISPRi.scoreMapping(lookup)
 
-        totalScore *= conversion.mean
+    parameterPack.get.totalScanLength match {
+      case ParameterPack.cas9ScanLength20mer => {
+        offTargetString.slice(1, 20).zipWithIndex.foreach { case (base, index) => {
+          if (target(index + 1) != base) {
+            val originalPair = Utils.compBase(target(index + 1))
+            val lookup = ScoreLookup(index + 1, base, originalPair)
+            val conversion = JostAndSantosCRISPRi.scoreMapping(lookup)
+
+            totalScore *= conversion.mean
+          }
+        }
+        }
+        totalScore
       }
+      case ParameterPack.cas9ScanLength19mer => {
+        offTargetString.slice(0, 19).zipWithIndex.foreach { case (base, index) => {
+          if (target(index) != base) {
+            val originalPair = Utils.compBase(target(index))
+            val lookup = ScoreLookup(index, base, originalPair)
+            val conversion = JostAndSantosCRISPRi.scoreMapping(lookup)
+
+            totalScore *= conversion.mean
+          }
+        }
+        }
+        totalScore
+      }
+      case _ => throw new IllegalStateException("Unable to match parameter pack: " + parameterPack)
     }
-    }
-    totalScore
   }
 
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("Jost2019_maxOT","Jost2019_specificityscore")
+  override def headerColumns(): Array[String]
+
+  = Array[String]("Jost2019_maxOT", "Jost2019_specificityscore")
 
   /**
     * @return true, a high score is good
     */
-  override def highScoreIsGood: Boolean = true
+  override def highScoreIsGood: Boolean
+
+  = true
 }
 
 case class ScoreLookup(position: Int, baseA: Char, baseB: Char)
@@ -116,7 +144,6 @@ case class CRISPRiEntry(position: Int, baseTransistion: String, mean: Double, st
 
 // constants they use in the paper
 object JostAndSantosCRISPRi {
-
 
 
   val scores: Array[CRISPRiEntry] = Array[CRISPRiEntry](
@@ -353,8 +380,8 @@ object JostAndSantosCRISPRi {
 
   // provide a mapping from a scoring looking to the entries above, converting to DNA
   scores.foreach { score => {
-    val baseFrom = if(score.baseTransistion(1) == 'U') 'T' else score.baseTransistion(1)
-    val baseTo = if(score.baseTransistion(4) == 'U') 'T' else score.baseTransistion(4)
+    val baseFrom = if (score.baseTransistion(1) == 'U') 'T' else score.baseTransistion(1)
+    val baseTo = if (score.baseTransistion(4) == 'U') 'T' else score.baseTransistion(4)
     scoreMapping(ScoreLookup(score.position, baseFrom, baseTo)) = score
   }
   }

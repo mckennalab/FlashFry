@@ -95,7 +95,7 @@ class ScoreResults extends Runnable with LazyLogging {
         model.bitEncoder(bitEnc)
         model.setup()
         scoringModels :+= model
-      } else { logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack.enzyme)}
+      } else { logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack)}
     }}
 
     // feed any aggregate scoring metrics the full list of other metrics

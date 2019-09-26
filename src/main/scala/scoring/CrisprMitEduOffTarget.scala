@@ -154,7 +154,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @return truth about our ability to score this enzyme
     */
   override def validOverScoreModel(params: ParameterPack): Boolean = {
-    params.enzyme.enzymeParent == Cas9Type
+    params.enzyme.enzymeParent == Cas9Type && params.totalScanLength == ParameterPack.cas9ScanLength20mer
   }
 
   /**
