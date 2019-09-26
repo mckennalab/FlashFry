@@ -79,6 +79,12 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
     val searchBinGenerator = BaseCombinationGenerator(binSize)
 
     // then process this total file into a binary file
-    DatabaseWriter.writeToBinnedFileSet(binToFile, binGenerator.width, output.getAbsolutePath, encoders._1, encoders._2, searchBinGenerator, params)
+    DatabaseWriter.writeToBinnedFileSet(binToFile,
+      binGenerator.width,
+      output.getAbsolutePath,
+      encoders._1,
+      encoders._2,
+      searchBinGenerator,
+      params)
   }
 }

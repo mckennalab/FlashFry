@@ -52,9 +52,13 @@ object ReferenceEncoder extends LazyLogging {
 
     fileToSource(reference).getLines().foreach { line => {
       if (line.startsWith(">")) {
-        //logger.info("Switching to chromosome " + line)
-        posEncoder.addReference(line.stripPrefix(">").replace(' ','_').replace('\t','_'))
-        cls.reset(line.split(" ")(0).slice(1, line.split(" ")(0).length))
+
+        val convertedReferenceName = line.stripPrefix(">").replace(' ','_').replace('\t','_')
+
+        logger.info("Switching to chromosome " + line)
+
+        posEncoder.addReference(convertedReferenceName)
+        cls.reset(convertedReferenceName)
       } else {
         cls.addLine(line.toUpperCase)
       }

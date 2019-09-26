@@ -58,7 +58,7 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
     val binComparitor = bitEncoding.binToLongComparitor(bin)
 
     // if we need to, load the block in question
-    if (!activeBlock.isDefined || activeBlock.get != binSlice)
+    if ((!activeBlock.isDefined) || (activeBlock.get != binSlice))
       loadBlock(binsToFile(binSlice),binSlice)
 
     val ret = new mutable.ArrayBuffer[TargetPos]()
