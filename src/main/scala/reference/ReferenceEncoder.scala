@@ -163,8 +163,6 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
 
       }
       }
-      logger.info("Done looking for targets on chromosome " + currentContig.getOrElse("UKNOWN") + "...")
-
     }
     // now handle the reset part -- change the contig to the the new sequence name and clear the buffer
     currentContig = Some(contig)

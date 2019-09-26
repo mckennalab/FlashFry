@@ -143,8 +143,6 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
   // while loop for speed here -- for each guide create a traversal of bins -- this code is ugly
   var index = 0
 
-
-
   while (index < binArray.size) {
 
     var guideIndex = 0
@@ -161,11 +159,11 @@ class OrderedBinTraversalFactory(binGenerator: BaseCombinationGenerator,
       binToTargets(binArray(index)._2) = guideResult.toArray
 
     if (index % statusInterval == 0) {
-      val currentBinSaturation = binToTargets.size.toDouble / totalPossibleBins.toDouble
-      val binPropSeen = index.toDouble / totalPossibleBins.toDouble
-      logger.info("Comparing guides against bin prefix " + binArray(index)._2 + " the " + index + "th bin prefix we've looked at, total bin saturation = " + currentBinSaturation + ", proportion of bins seen = " + binPropSeen)
+      val currentBinSaturation = binToTargets.size / (if (index > 0) (index + 1) else 1.0)
+
+      logger.info("Comparing guides against bin prefix " + binArray(index)._2 + " the " + index + "th bin prefix we've looked at, total bin saturation = " + currentBinSaturation)
       if (currentBinSaturation >= upperBinProportionToJustSearchAll && index >= lookAtThisManyBins) {
-        logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal ( saturation = " + currentBinSaturation + ", proportion = " + math.min(1.0,currentBinSaturation / binPropSeen) + " )")
+        logger.info("Stopping bin lookup early, as we've already exceeded the maximum threshold of bins before we move over to a linear traversal; saturation = " + currentBinSaturation)
         index = binArray.size
         isSaturated = true
       }
