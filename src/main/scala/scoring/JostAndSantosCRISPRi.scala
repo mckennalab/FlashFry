@@ -91,6 +91,9 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     */
   def calc_score(target: String, offTargetString: String): Double = {
     var totalScore = 1.0
+    assert(target.size == parameterPack.get.totalScanLength, "target should be length " + parameterPack.get.totalScanLength + " we saw " + target.size)
+    assert(offTargetString.size == parameterPack.get.totalScanLength, "off-target should be length " + parameterPack.get.totalScanLength + " we saw " + offTargetString.size)
+
 
     parameterPack.get.totalScanLength match {
       case ParameterPack.cas9ScanLength20mer => {
@@ -110,7 +113,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
         offTargetString.slice(0, 19).zipWithIndex.foreach { case (base, index) => {
           if (target(index) != base) {
             val originalPair = Utils.compBase(target(index))
-            val lookup = ScoreLookup(index, base, originalPair)
+            val lookup = ScoreLookup(index+1, base, originalPair)
             val conversion = JostAndSantosCRISPRi.scoreMapping(lookup)
 
             totalScore *= conversion.mean

@@ -70,16 +70,16 @@ class JoistAndSantosCRISPRiTest extends FlatSpec with Matchers {
     val bitEncoder19 = new BitEncoding(Cas9ParameterPack19bp)
     val dScore19 = new JostAndSantosCRISPRi()
     dScore19.validOverScoreModel(Cas9ParameterPack19bp)
-    dScore19.bitEncoder(bitEncoder)
+    dScore19.bitEncoder(bitEncoder19)
 
 
 
-    val crispr = CRISPRSite("test", "AAAAAAAAAAAAAAAAAAAAGGG", true, 0, None)
-    val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount(crispr.bases, 1)),1000)
-    val otHit2 = new CRISPRHit(bitEncoder.bitEncodeString(StringCount("AAAATAAAATAAAAGAAAAAGGG", 1)),Array[Long](1L))
+    val crispr = CRISPRSite("test", "AAAAAAAAAAAAAAAAAAAGGG", true, 0, None)
+    val otHit = new CRISPRSiteOT(crispr, bitEncoder19.bitEncodeString(StringCount(crispr.bases, 1)),1000)
+    val otHit2 = new CRISPRHit(bitEncoder19.bitEncodeString(StringCount("AAATAAAATAAAAGAAAAAGGG", 1)),Array[Long](1L))
     otHit.offTargets.append(otHit2)
 
-    (dScore19.scoreGuide(otHit)(0)) should be(Array[String]((0.6947382165440157 * 0.31016952886752025 * 0.26865890093507167).toString))
+    (dScore19.scoreGuide(otHit)(0)) should be (Array[String]((0.6947382165440157 * 0.31016952886752025 * 0.26865890093507167).toString))
   }
 
 
