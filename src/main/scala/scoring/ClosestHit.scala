@@ -25,6 +25,8 @@ import picocli.CommandLine.Command
 import standards.ParameterPack
 import utils.Utils
 
+import scala.collection.mutable
+
 /**
   * what's the closest off-target in mismatch space? a convenience class
   * to make guide selection easier
@@ -41,22 +43,34 @@ class ClosestHit extends SingleGuideScoreModel {
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     var closest = Int.MaxValue
     var count = 0
+    val maxMisMatch = 5
+
+    val otCounts = new mutable.LinkedHashMap[Int, Int]()
+    (0 until maxMisMatch).foreach{cnt => otCounts(cnt) = 0}
 
     if (guide.offTargets.size > 0) {
-      guide.offTargets.foreach { ot =>
-        if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) < closest && bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) > 0) {
-          closest = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
-          count = 1
-        } else if (bitEncoder.get.mismatches(ot.sequence, guide.longEncoding) == closest) {
-          count += 1
+      guide.offTargets.foreach { ot => {
+        val mismatches = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
+        val otCount = bitEncoder.get.getCount(guide.longEncoding)
+
+        if (mismatches < maxMisMatch) {
+          otCounts(mismatches) += otCount
         }
+
+        if (mismatches < closest && mismatches > 0) {
+          closest = mismatches
+          count = otCount
+        } else if (mismatches == closest) {
+          count += otCount
+        }
+      }
       }
     }
 
     if (closest == Int.MaxValue) {
-      Array[Array[String]](Array[String]("UNK"), Array[String]("0"))
+      Array[Array[String]](Array[String]("UNK"), Array[String]("0"), Array[String](otCounts.values.mkString(",")))
     } else {
-      Array[Array[String]](Array[String](closest.toString), Array[String](count.toString))
+      Array[Array[String]](Array[String](closest.toString), Array[String](count.toString), Array[String](otCounts.values.mkString(",")))
     }
   }
 
@@ -105,5 +119,5 @@ class ClosestHit extends SingleGuideScoreModel {
   /**
     * @return get a listing of the header columns for this score metric
     */
-  override def headerColumns(): Array[String] = Array[String]("basesDiffToClosestHit","closestHitCount")
+  override def headerColumns(): Array[String] = Array[String]("basesDiffToClosestHit","closestHitCount","offTargetCountByMismatch")
 }
