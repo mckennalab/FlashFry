@@ -51,7 +51,7 @@ class ClosestHit extends SingleGuideScoreModel {
     if (guide.offTargets.size > 0) {
       guide.offTargets.foreach { ot => {
         val mismatches = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
-        val otCount = bitEncoder.get.getCount(guide.longEncoding)
+        val otCount = bitEncoder.get.getCount(ot.sequence)
 
         if (mismatches < maxMisMatch) {
           otCounts(mismatches) += otCount
