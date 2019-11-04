@@ -24,9 +24,9 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
 libraryDependencies += "info.picocli" % "picocli" % "3.8.1"
 
-startYear := Some(2015)
+//startYear := Some(2015)
 
-headerLicense := Some(HeaderLicense.MIT("2015", "Aaron McKenna"))
+//headerLicense := Some(HeaderLicense.MIT("2015", "Aaron McKenna"))
 
 mainClass in (Compile, packageBin) := Some("main.scala.Main")
 

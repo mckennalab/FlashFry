@@ -43,17 +43,17 @@ class ClosestHit extends SingleGuideScoreModel {
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     var closest = Int.MaxValue
     var count = 0
-    val maxMisMatch = 5
+    val maxMisMatch = 4
 
     val otCounts = new mutable.LinkedHashMap[Int, Int]()
-    (0 until maxMisMatch).foreach{cnt => otCounts(cnt) = 0}
+    (0 until (maxMisMatch + 1)).foreach{cnt => otCounts(cnt) = 0}
 
     if (guide.offTargets.size > 0) {
       guide.offTargets.foreach { ot => {
         val mismatches = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
         val otCount = bitEncoder.get.getCount(ot.sequence)
 
-        if (mismatches < maxMisMatch) {
+        if (mismatches <= maxMisMatch) {
           otCounts(mismatches) += otCount
         }
 

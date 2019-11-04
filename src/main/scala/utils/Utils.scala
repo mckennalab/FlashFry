@@ -98,6 +98,14 @@ object Utils extends LazyLogging {
     case _ => unknownBase
   }
 
+  def indexToBase(index: Int): Char = index match {
+    case `aInt` => 'A'
+    case `cInt` => 'C'
+    case `gInt` => 'G'
+    case `tInt` => 'T'
+    case _ => 'N'
+  }
+
   /**
     * the entropy of a base sequence (non ACGT bases removed from the calculation)
     * @param sequence the sequence
