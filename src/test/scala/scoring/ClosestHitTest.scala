@@ -35,7 +35,7 @@ class ClosestHitTest extends FlatSpec with Matchers {
 
   "ClosestHit" should "count a higher count off-target correctly" in {
     val singleOffTarget = ClosestHitTest.generateOffTargetArray(sequence, 0, 20, Array[Int](1), Array[Short](40), bitEncoder)
-    
+
     val closestHit = new ClosestHit()
     closestHit.bitEncoder(bitEncoder)
     val scored = closestHit.scoreGuide(singleOffTarget)
