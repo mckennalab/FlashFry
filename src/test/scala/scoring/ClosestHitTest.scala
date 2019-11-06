@@ -85,11 +85,11 @@ object ClosestHitTest {
     offTargetMismatches.zip(offTargetCounts).zipWithIndex.foreach { case ((mismatches, count), index) =>
 
       // make a mismatched sequence
-      val positions = Random.shuffle((start to stop).toList).take(mismatches)
+      val positions = Random.shuffle(List.range(start,stop)).take(mismatches)
       var newRandoString = randomizeString(sequence, positions)
-      while (generatedSequences contains newRandoString)
+      while (generatedSequences contains newRandoString) {
         newRandoString = randomizeString(sequence, positions)
-
+      }
       crisprOT.addOT(new CRISPRHit(bitEncoder.bitEncodeString(StringCount(newRandoString, count)), Array[Long]()))
     }
     crisprOT
