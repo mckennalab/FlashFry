@@ -1,5 +1,5 @@
 UNZIPED=./data_package
-JAR=target/scala-2.12/FlashFry-assembly-1.9.8.jar
+JAR=target/scala-2.12/FlashFry-assembly-1.9.9_RC2.jar
 TEST_DATABASE=$UNZIPED/chr22_cas9ngg_database
 MD5SUM=md5 # this is mac specific, change for linux
 
@@ -77,17 +77,17 @@ java \
     --includeOTs
 
 
-# check all three output files - this uses 
+# check all three output files - this uses
 $MD5SUM -q $UNZIPED/EMX1.output | xargs -I {} test 895e282bf486c359667e2c3e0e0e0260 = {}
-echo "discovery OK if 0 == " $?
+echo "checking " $UNZIPED/EMX1.output " discovery OK if 0 == " $?
 
-$MD5SUM -q $UNZIPED/EMX1.output.scored | xargs -I {} test d8ba6c2e619cfa811d63992436ccbf7d = {}
-echo "scoring without OTs OK if 0 == " $?
+$MD5SUM -q $UNZIPED/EMX1.output.scored | xargs -I {} test 804bf3c1ff38b077f31f12f51d733aa4 = {}
+echo "checking " $UNZIPED/EMX1.output.scored " scoring without OTs OK if 0 == " $?
 
-$MD5SUM -q $UNZIPED/EMX1.output.scored_with_ots | xargs -I {} test 9b6ef85f0e54b8ff017cedcc8c7ceb15 = {}
-echo "scoring with OT output  OK if 0 == " $?
+$MD5SUM -q $UNZIPED/EMX1.output.scored_with_ots | xargs -I {} test a5a67351bc389b4b6d0c944588d2749b = {}
+echo "checking " $UNZIPED/EMX1.output.scored_with_ots "scoring with OT output  OK if 0 == " $?
 
-$MD5SUM -q $UNZIPED/EMX1.output.with_positions.scored | xargs -I {} test 5d260a04bdf98166c7500690ee092476 = {}
-echo "scoring with OT output and position OK if 0 == " $?
+$MD5SUM -q $UNZIPED/EMX1.output.with_positions.scored | xargs -I {} test bfd136f684011f1dc1ff2906265d1408 = {}
+echo "checking " $UNZIPED/EMX1.output.with_positions.scored "scoring with OT output and position OK if 0 == " $?
 
 rm -r ./tmp

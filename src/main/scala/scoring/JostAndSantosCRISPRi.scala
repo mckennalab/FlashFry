@@ -131,7 +131,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     */
   override def headerColumns(): Array[String]
 
-  = Array[String]("Jost2019_maxOT", "Jost2019_specificityscore")
+  = Array[String]("JostCRISPRi_maxOT", "JostCRISPRi_specificityscore")
 
   /**
     * @return true, a high score is good
