@@ -1,5 +1,5 @@
 UNZIPED=./data_package
-JAR=target/scala-2.12/FlashFry-assembly-1.9.9_RC2.jar
+JAR=target/scala-2.12/FlashFry-assembly-1.9.9.1.jar
 TEST_DATABASE=$UNZIPED/chr22_cas9ngg_database
 MD5SUM=md5 # this is mac specific, change for linux
 
