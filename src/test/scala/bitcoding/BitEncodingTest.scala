@@ -318,6 +318,22 @@ class BitEncodingTest extends FlatSpec with Matchers {
     (difference) should be (0)
   }
 
+  "A Bit Encoder" should "calculate a bin mismatch correctly for five-prime guides/targets (cpf1), where it drops the PAM" in {
+
+    val strCount =  StringCount("TTTT CGAGC AGAAG AAGAA GGGAC".filter{c => c != ' '}.mkString(""),1)
+
+    val encodeDevice = new BitEncoding(Cpf1ParameterPack)
+
+    val encoding = encodeDevice.bitEncodeString(strCount)
+    var difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("CGAGCAG"), encoding)
+    (difference) should be (0)
+
+    difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("CAAGCAG"), encoding)
+    (difference) should be (1)
+
+    difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("AGAGCAA"), encoding)
+    (difference) should be (2)
+  }
 
   "A Bit Encoder" should "calculate another bin mismatch correctly" in {
 
@@ -329,7 +345,6 @@ class BitEncodingTest extends FlatSpec with Matchers {
     val difference = encodeDevice.mismatchBin(encodeDevice.binToLongComparitor("GAGTCCG"), encoding)
     (difference) should be (2)
   }
-
 
 
   "A Bit Encoder" should "calculate very distant bin mismatch correctly" in {

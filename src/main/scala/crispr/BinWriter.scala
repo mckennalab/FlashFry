@@ -56,20 +56,20 @@ case class BinWriter(tempLocation: File, binGenerator: BaseCombinationGenerator,
     * @param cRISPRSite the site to add
     */
   def addHit(cRISPRSite: CRISPRSite): Unit = {
-    val putToBin =
+    val binSequence =
       if (parameterPack.fivePrimePam) {
         cRISPRSite.bases.slice(parameterPack.pamLength, binGenerator.width + parameterPack.pamLength)
       } else {
         cRISPRSite.bases.slice(0,binGenerator.width)
       }
 
-    binToBuffer(putToBin) += cRISPRSite
-    if (binToBuffer(putToBin).size > bufferedHits) {
-      val fw = new FileWriter(binToFile(putToBin), true)
+    binToBuffer(binSequence) += cRISPRSite
+    if (binToBuffer(binSequence).size > bufferedHits) {
+      val fw = new FileWriter(binToFile(binSequence), true)
       val bw = new BufferedWriter(fw)
       val output = new PrintWriter(bw)
-      binToBuffer(putToBin).toArray.foreach{hit => output.write(hit.toOutputString + "\n")}
-      binToBuffer(putToBin).clear()
+      binToBuffer(binSequence).toArray.foreach{hit => output.write(hit.toOutputString + "\n")}
+      binToBuffer(binSequence).clear()
       output.close()
     }
   }

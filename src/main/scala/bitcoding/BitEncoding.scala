@@ -117,7 +117,7 @@ class BitEncoding(parameterPack: ParameterPack) {
   /**
     * return the number of mismatches between two strings (encoded in longs), given both our set comparison mask
     * as well as an additional mask (optional). This uses the Java bitCount, which on any modern platform should call out
-    * to the underlying POPCNT instructios. With bitshifting it's about 20X faster than any loop you'll come up with
+    * to the underlying POPCNT instruction. With bit-shifting it's about 20X faster than any loop you'll come up with
     *
     * @param encoding1      the first string encoded as a long
     * @param encoding2      the second string

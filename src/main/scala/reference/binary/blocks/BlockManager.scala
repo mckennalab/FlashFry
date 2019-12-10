@@ -441,19 +441,5 @@ object BlockManager extends LazyLogging {
     res
   }
 
-  // http://stackoverflow.com/questions/34627179/how-to-pass-scalacoptions-xelide-below-to-sbt-via-command-line
-  /*
-  @elidable(ALL) def elidableGPUCall(blockOfTargetsAndPositions: Array[Long],
-                      numberOfTargets: Int,
-                      guides: Array[GuideIndex],
-                      aggregator: ResultsAggregator,
-                      bitEncoding: BitEncoding,
-                      maxMismatches: Int) {
-
-    import bitcoding.GPUBitBlockCompare
-
-    GPUBitBlockCompare.compareLinearBlock(blockOfTargetsAndPositions,
-      numberOfTargets, guides, aggregator, bitEncoding, maxMismatches)
-  }*/
 }
 

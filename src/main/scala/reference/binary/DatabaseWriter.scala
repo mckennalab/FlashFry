@@ -81,7 +81,8 @@ object DatabaseWriter extends LazyLogging {
 
       val nextBlock = blockReader.fetchBin(bin)
 
-      val encodedBlock = if (nextBlock.size > maxTargetsPerLinearBin) {
+      // don't make indexed blocks for Cpf1, it's too much of a mess
+      val encodedBlock = if (nextBlock.size > maxTargetsPerLinearBin && !parameterPack.fivePrimePam) {
         BlockManager.createIndexedBlock(nextBlock, bin, bitEncoder, 4)
       } else {
         BlockManager.createLinearBlock(nextBlock, bin, bitEncoder)
