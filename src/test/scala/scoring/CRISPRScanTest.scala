@@ -46,22 +46,22 @@ class CRISPRScanTest extends FlatSpec with Matchers {
     val crispr = CRISPRSite("test", "GGTGGGGCTGAAAGATGGACGGG", true, 0, Some("TCCTCTGGTGGGGCTGAAAGATGGACGGGTTTGTA"))
     val otHit = new CRISPRSiteOT(crispr, bitEncoder.bitEncodeString(StringCount("GGTGGGGCTGAAAGATGGACGGG", 1)),1000)
 
-    (mmScore.validOverGuideSequence(Cas9ParameterPack, otHit)) should be(true)
+    (mmScore.validOverTargetSequence(Cas9ParameterPack, otHit)) should be(true)
 
     val crispr2 = CRISPRSite("test", "GGTGGGGCTGAAAGATGGACGGG", true, 0, Some("CCTCTGGTGGGGCTGAAAGATGGACGGGTTTGTA"))
     val otHit2 = new CRISPRSiteOT(crispr2, bitEncoder.bitEncodeString(StringCount("GGTGGGGCTGAAAGATGGACGGG", 1)),1000)
 
-    (mmScore.validOverGuideSequence(Cas9ParameterPack, otHit2)) should be(false)
+    (mmScore.validOverTargetSequence(Cas9ParameterPack, otHit2)) should be(false)
 
     val crispr3 = CRISPRSite("test", "GGTGGGGCTGAAAGATGGACGGG", true, 0, Some("TCCTCTGGTGGGGCTGAAAGATGGACGGGTTTGT"))
     val otHit3 = new CRISPRSiteOT(crispr3, bitEncoder.bitEncodeString(StringCount("GGTGGGGCTGAAAGATGGACGGG", 1)),1000)
 
-    (mmScore.validOverGuideSequence(Cas9ParameterPack, otHit2)) should be(false)
+    (mmScore.validOverTargetSequence(Cas9ParameterPack, otHit2)) should be(false)
 
     val crispr4 = CRISPRSite("test", "GGTGGGGCTGAAAGATGGACGGG", true, 0, Some("CCTCTGGTGGGGCTGAAAGATGGACGGGTTTGT"))
     val otHit4 = new CRISPRSiteOT(crispr4, bitEncoder.bitEncodeString(StringCount("GGTGGGGCTGAAAGATGGACGGG", 1)),1000)
 
-    (mmScore.validOverGuideSequence(Cas9ParameterPack, otHit2)) should be(false)
+    (mmScore.validOverTargetSequence(Cas9ParameterPack, otHit2)) should be(false)
 
   }
 }

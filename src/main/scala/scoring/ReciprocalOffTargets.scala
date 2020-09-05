@@ -67,7 +67,7 @@ class ReciprocalOffTargets() extends ScoreModel {
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = true
+  override def validOverEnzyme(enzyme: ParameterPack): Boolean = true
 
   /**
     * always true for ReciprocalOffTargets
@@ -76,7 +76,7 @@ class ReciprocalOffTargets() extends ScoreModel {
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
+  override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
 
   /**
     * parse out any command line arguments that are optional or required for this scoring metric

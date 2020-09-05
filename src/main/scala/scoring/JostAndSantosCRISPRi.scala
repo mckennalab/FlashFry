@@ -25,7 +25,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     * @return an array of scores
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
-    require(validOverGuideSequence(Cas9ParameterPack, guide), "We're not a valid score over this guide: " + guide.target.bases)
+    require(validOverTargetSequence(Cas9ParameterPack, guide), "We're not a valid score over this guide: " + guide.target.bases)
 
     val sequence = bitEncoder.get.bitDecodeString(guide.longEncoding)
 
@@ -50,7 +50,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     *
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(pack: ParameterPack): Boolean = {
+  override def validOverEnzyme(pack: ParameterPack): Boolean = {
     this.parameterPack = Some(pack)
 
     pack.enzyme.enzymeParent == Cas9Type &&
@@ -81,7 +81,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(pack: ParameterPack, guide: CRISPRSiteOT): Boolean = {
+  override def validOverTargetSequence(pack: ParameterPack, guide: CRISPRSiteOT): Boolean = {
     if (pack.enzyme == SpCAS9) true else false
   }
 

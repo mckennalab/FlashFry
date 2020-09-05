@@ -28,7 +28,6 @@ import utils.BEDFile
 
 import scala.collection.mutable
 import scala.io.Source
-import scala.util.matching.Regex
 
 
 /**
@@ -114,7 +113,7 @@ class BedAnnotation() extends ScoreModel {
     * @param enzyme the enzyme
     * @return
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = true
+  override def validOverEnzyme(enzyme: ParameterPack): Boolean = true
 
   /**
     * given a enzyme and guide information, can we score this sequence? For instance the on-target sequence
@@ -124,18 +123,8 @@ class BedAnnotation() extends ScoreModel {
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
+  override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
 
-  /**
-    * Our parameters:
-    *
-    * inputBedFile         the bed file to annotate with
-    * useInGenomeLocations sometimes we don't encode an input fasta with the appropriate contig info (so it doesn't have)
-    * the real genome positions - if this parameter is set lookup any 0 mismatch hits and put their
-    * annotation info onto the guide. A way to recover genomic info
-    *
-    * @param args the command line arguments
-    */
   override def setup(): Unit = {
     if (inputBed != "") {
       inputBed.split(",").foreach { bedFile => {

@@ -92,7 +92,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = {
+  override def validOverEnzyme(enzyme: ParameterPack): Boolean = {
     enzyme.enzyme.enzymeParent == Cas9Type && enzyme.totalScanLength == ParameterPack.cas9ScanLength20mer
   }
 
@@ -104,7 +104,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
+  override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
     (enzyme.totalScanLength == 23) && enzyme.enzyme.enzymeParent == Cas9Type
   }
 

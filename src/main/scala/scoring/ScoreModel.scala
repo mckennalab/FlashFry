@@ -60,7 +60,7 @@ trait ScoreModel extends LazyLogging {
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  def validOverScoreModel(enzyme: ParameterPack): Boolean
+  def validOverEnzyme(enzyme: ParameterPack): Boolean
 
   /**
     * given a enzyme and guide information, can we score this sequence? For instance the on-target sequence
@@ -68,9 +68,9 @@ trait ScoreModel extends LazyLogging {
     *
     * @param enzyme the enzyme of choice, with parameters
     * @param guide  the guide sequence we want to score
-    * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
+    * @return if we can score this target. Scoring methods should also log a warning that guides will be dropped, and why
     */
-  def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean
+  def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean
 
   /**
     * parse out any command line arguments that are optional or required for this scoring metric
@@ -116,7 +116,7 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
         logger.info("For scoing metric " + this.scoreName() + " we're scoring our " + index + " guide")
       }
 
-      if (this.validOverGuideSequence(pack, hit)) {
+      if (this.validOverTargetSequence(pack, hit)) {
         val scores = scoreGuide(hit)
         assert(scores.size == this.headerColumns().size)
         this.headerColumns().zip(scores).foreach{ case(col,scores) =>

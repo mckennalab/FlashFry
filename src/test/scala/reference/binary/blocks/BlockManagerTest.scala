@@ -27,10 +27,10 @@ class BlockManagerTest extends FlatSpec with Matchers with LazyLogging {
   val testFile = new File("test_data/test_block" + prefix + ".binary")
 
   "BlockTest" should "search a linear and indexed array and produce the same results" in {
-    val randoGenerator = new RandoCRISPR(20, Array[String]("CGG"), false, prefix, 0, 0)
+    val randoGenerator = new RandoCRISPR(20, Array[String]("CGG"), false, prefix, 0, 0,None)
 
     val guides = (0 until 1000).map { case (ind) => {
-      bitEncoder.bitEncodeString(randoGenerator.next())
+      bitEncoder.bitEncodeString(randoGenerator.next().fullTarget)
     }
     }.toArray
 
@@ -58,10 +58,6 @@ class BlockManagerTest extends FlatSpec with Matchers with LazyLogging {
     (indexedAggreagator.wrappedGuides.size) should be (linearAggreagator.wrappedGuides.size)
 
     (indexedAggreagator.wrappedGuides.zip(linearAggreagator.wrappedGuides)).zipWithIndex.foreach{case((lguide, iguide),index) => {
-      //logger.info(lguide.size + " should be " + iguide.size)
-
-      //lguide
-      //(lguide.otSite.offTargets.toArray.size) should be (iguide.otSite.offTargets.toArray.size)
     }}
 
   }
@@ -95,10 +91,10 @@ class BlockManagerTest extends FlatSpec with Matchers with LazyLogging {
 
     binIterator.iterator.foreach { bin => {
       if (rando.nextDouble() <= binProp) {
-        val ranoCR = new RandoCRISPR(21, Cas9ParameterPack.pam, false, prefix + bin, 0, 0)
+        val ranoCR = new RandoCRISPR(21, Cas9ParameterPack.pam, false, prefix + bin, 0, 0, None)
         val nxt = ranoCR.next
-        assert(nxt.size == 23)
-        blockOffTargets += bitEncoding.bitEncodeString(nxt)
+        assert(nxt.fullTarget.size == 23)
+        blockOffTargets += bitEncoding.bitEncodeString(nxt.fullTarget)
         blockOffTargets += posEncoder.encode("chr22", 1, 23, true)
       }
     }

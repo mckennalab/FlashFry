@@ -21,16 +21,14 @@ package modules
 
 import java.io.{File, PrintWriter}
 
-import bitcoding.{BitEncoding}
-import com.typesafe.scalalogging.LazyLogging
-import crispr.{CRISPRSite}
-import picocli.CommandLine.{Command, Option}
-
+import bitcoding.BitEncoding
+import crispr.CRISPRSite
 import standards.ParameterPack
 import utils.RandoCRISPR
 
-import scala.collection.mutable.ArrayBuffer
-
+import scala.collection.mutable
+import picocli.CommandLine.{Command, Option}
+import com.typesafe.scalalogging.LazyLogging
 
 
 /**
@@ -57,6 +55,15 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
   @Option(names = Array("-sequenceContextRight", "--sequenceContextRight"), required = false, paramLabel = "INT", description = Array("sequence context to add on the right"))
   private var randomBack: Int = 0
 
+  @Option(names = Array("-patterned", "--patterned"), required = false, paramLabel = "STRING", description = Array("draw bases using an extended FASTA format"))
+  private var patterned: String = ""
+
+  @Option(names = Array("-duplicatesAllowed", "--duplicatesAllowed"), required = false, paramLabel = "BOOL", description = Array("should we allow duplicate guides in our output"))
+  private var duplicatesAllowed: Boolean = false
+
+  @Option(names = Array("-maxSuccessiveDesignFailures", "--maxSuccessiveDesignFailures"), required = false, paramLabel = "INT", description = Array("Maximum number of design failures before we quit"))
+  private var maxSuccessiveDesignFailures: Int = 50
+
   def run() {
 
     // get our enzyme's (cas9, cpf1) settings
@@ -66,34 +73,50 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
     val bitEcoding = new BitEncoding(params)
 
     // our collection of random CRISPR sequences
-    val sequences = new ArrayBuffer[CRISPRSite]()
+    val sequences = new mutable.HashMap[String, Array[CRISPRSite]]()
 
     val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength,
       params.paddedPam,
       params.fivePrimePam,
       "",
       randomFront,
-      randomBack)
+      randomBack,
+      if (patterned == "") None else Some(patterned))
 
-    while (sequences.size < randomCount) {
+
+    // watch to make sure we haven't exhausted our possible guides
+    var successiveFailures = 0
+
+    while ((sequences.size < randomCount) && (successiveFailures <= maxSuccessiveDesignFailures)) {
       val randomSeq = crisprMaker.next()
-      val crisprSeq = new CRISPRSite(randomSeq, randomSeq, true, 0, None)
 
-      // it's valid, also now check to make sure there's only one hit if they asked for the filter
-      if (!onlyUnidirectional ||
-        (onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq).size + params.revRegex.findAllIn(randomSeq).size == 1))) {
-        sequences.append(crisprSeq)
+      if (!(sequences contains randomSeq.guide) || duplicatesAllowed) {
+        val crisprSeq = new CRISPRSite(randomSeq.fullTarget, randomSeq.fullTarget, true, 0, None)
+
+        // it's valid, also now check to make sure there's only one hit if they asked for the filter
+        if (!onlyUnidirectional ||
+          (onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq.fullTarget).size + params.revRegex.findAllIn(randomSeq.fullTarget).size == 1))) {
+          val existing = sequences.getOrElse(randomSeq.guide,Array[CRISPRSite]())
+          sequences(randomSeq.guide) = existing ++ Array[CRISPRSite](crisprSeq)
+        } else {
+          logger.debug("Tossing " + crisprSeq.bases + " as its contains more than one CRISPR site")
+        }
+        successiveFailures = 0
       } else {
-        logger.debug("Tossing " + crisprSeq.bases + " as its contains more than one CRISPR site")
+        successiveFailures += 1
       }
     }
 
+    if (successiveFailures >= maxSuccessiveDesignFailures)
+      logger.info("Stopping random CRISPR generation as we're struggling to find new, unique guides")
+
     logger.info("Writing final output for " + sequences.size + " guides")
     val outputFasta = new PrintWriter(outputFile)
-    sequences.foreach { sequence =>
-      outputFasta.write(">random" + sequence.contig + "\n" + sequence.bases + "\n")
+    sequences.foreach { case(guide,sequence_set) =>
+      sequence_set.foreach { sequence =>
+        outputFasta.write(">random" + sequence.contig + "\n" + sequence.bases + "\n")
+      }
     }
     outputFasta.close()
   }
 }
-
