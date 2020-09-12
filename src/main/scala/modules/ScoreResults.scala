@@ -59,6 +59,9 @@ class ScoreResults extends Runnable with LazyLogging {
     description = Array("include the off-target hits in the output file"))
   private var writeOTsToOutput: Boolean = false
 
+  @Option(names = Array("-numericOutput", "--numericOutput"), required = false, paramLabel = "FLAG",
+    description = Array("Write counts for dangerous components without annotations (no IN_GENOME=)"))
+  private var numericOutput: Boolean = false
 
   // parameters inherited from scoring modules
   // -----------------------------------------
@@ -103,6 +106,7 @@ class ScoreResults extends Runnable with LazyLogging {
         shortestGuideEnergy,
         genomeTransform,
         countOnTargetInScore,
+        numericOutput,
         maxReciprocalMismatch)
 
       if (model.validOverEnzyme(bitEnc.mParameterPack)) {
@@ -159,6 +163,7 @@ object ScoreResults {
                                  shortestGuideEnergy: Int,
                                  genomeTransform: String,
                                  countOnTargetInScore: Boolean,
+                                 numericOutput: Boolean,
                                  maxReciprocalMismatch: Int): ScoreModel = {
 
     val newMetric: ScoreModel = name.toLowerCase() match {
@@ -184,7 +189,11 @@ object ScoreResults {
         sm
       }
       case "dangerous" => {
-        new DangerousSequences()
+        val dng = new DangerousSequences()
+        if (numericOutput) {
+          dng.cleanOutput = true
+        }
+        dng
       }
       case "minot" => {
         new ClosestHit()

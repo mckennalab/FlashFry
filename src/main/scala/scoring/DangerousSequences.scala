@@ -38,6 +38,7 @@ import utils.Utils
   */
 class DangerousSequences extends SingleGuideScoreModel {
   var bitEncoder : Option[BitEncoding] = None
+  var cleanOutput = false
 
   /**
     * score an individual guide
@@ -46,19 +47,21 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @return a score (as a string)
     */
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
-    var problems = Array.fill[String](3)("NONE")
+    var problems = if (cleanOutput) Array.fill[String](3)("0") else Array.fill[String](3)("NONE")
 
-    if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
+    if (cleanOutput)
+      problems(0) = Utils.gcContent(guide.target.bases).toString
+    else if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
       problems(0) = "GC_" + Utils.gcContent(guide.target.bases)
 
     // thanks to D. Simeonov for the bug catch here
     if (guide.target.bases.slice(bitEncoder.get.mParameterPack.guideRange._1,bitEncoder.get.mParameterPack.guideRange._2).contains("TTTT"))
-      problems(1) = "PolyT"
+      problems(1) = if (cleanOutput) "1" else "PolyT"
 
     if (guide.offTargets.size > 0) {
       val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) bitEncoder.get.getCount(ot.sequence) else 0}.sum
       if (inGenomeCount > 0)
-        problems(2) = "IN_GENOME=" + inGenomeCount
+        problems(2) = if (cleanOutput) inGenomeCount.toString else "IN_GENOME=" + inGenomeCount
     }
 
     problems.map{prob => Array[String](prob)}

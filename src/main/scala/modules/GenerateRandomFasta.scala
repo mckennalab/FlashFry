@@ -43,6 +43,9 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
   @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
   private var enzyme: String = ""
 
+  @Option(names = Array("-namePrefix", "--namePrefix"), required = false, paramLabel = "STRING", description = Array("the prefix for the random target name; default is 'random'"))
+  private var randomPrefix: String = "random"
+
   @Option(names = Array("-onlyUnidirectional", "--onlyUnidirectional"), required = false, paramLabel = "FLAG", description = Array("should we ensure that the guides only work in one direction?"))
   private var onlyUnidirectional: Boolean = false
 
@@ -114,7 +117,7 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
     val outputFasta = new PrintWriter(outputFile)
     sequences.foreach { case(guide,sequence_set) =>
       sequence_set.foreach { sequence =>
-        outputFasta.write(">random" + sequence.contig + "\n" + sequence.bases + "\n")
+        outputFasta.write(">" + randomPrefix + sequence.contig + "\n" + sequence.bases + "\n")
       }
     }
     outputFasta.close()
