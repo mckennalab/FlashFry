@@ -11,7 +11,7 @@
 
 FlashFry is a fast and flexible command-line tool for characterizing large numbers of potential CRISPR target sequences. FlashFry can be used with any genome, and can run against non-traditional model organisms or transcriptomes. If you're looking to characterize a smaller region or would like a nice web interface we recommend the [GT-scan](http://gt-scan.csiro.au) or [crispor.org](http://crispor.org) websites.
 
-The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry.
+The easiest way to get started it to try out the quick-start procedure to make sure everything works on your system. If everything looks good, there are few more in-depth tutorials to try out various capacities of FlashFry. Thanks to @drivenbyentropy for the Java implementation of the ViennaRNA energy calculations.
 
 #### links:
 - [Quick start](https://github.com/aaronmck/FlashFry#quickstart)
@@ -31,7 +31,7 @@ The easiest way to get started it to try out the quick-start procedure to make s
 First, make sure you're running Java version 8 (type ```java -version``` on the command line to see the version). From the UNIX or Mac command line, download the latest release version of the FlashFry jar file:
 
 ```shell
-wget https://github.com/mckennalab/FlashFry/releases/download/1.10/FlashFry-assembly-1.10.jar
+wget https://github.com/mckennalab/FlashFry/releases/download/1.11/FlashFry-assembly-1.11.jar
 ```
 Download and then un-gzip the sample data for human chromosome 22:
 
@@ -44,7 +44,7 @@ Then run the database creation step (this should take a few minutes, it takes ~7
 
 ```shell
 mkdir tmp
-java -Xmx4g -jar FlashFry-assembly-1.10.jar \
+java -Xmx4g -jar FlashFry-assembly-1.11.jar \
  index \
  --tmpLocation ./tmp \
  --database chr22_cas9ngg_database \
@@ -55,7 +55,7 @@ java -Xmx4g -jar FlashFry-assembly-1.10.jar \
 Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.10.jar \
+java -Xmx4g -jar FlashFry-assembly-1.11.jar \
  discover \
  --database chr22_cas9ngg_database \
  --fasta EMX1_GAGTCCGAGCAGAAGAAGAAGGG.fasta \
@@ -65,7 +65,7 @@ java -Xmx4g -jar FlashFry-assembly-1.10.jar \
 Finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.10.jar \
+java -Xmx4g -jar FlashFry-assembly-1.11.jar \
  score \
  --input EMX1.output \
  --output EMX1.output.scored \
