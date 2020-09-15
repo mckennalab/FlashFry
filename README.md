@@ -65,7 +65,7 @@ java -Xmx4g -jar FlashFry-assembly-1.12.jar \
 Finally we score the discovered sites (a few seconds):
 
 ```shell
-java -Xmx4g -jar FlashFry-assembly-1.11.jar \
+java -Xmx4g -jar FlashFry-assembly-1.12.jar \
  score \
  --input EMX1.output \
  --output EMX1.output.scored \
