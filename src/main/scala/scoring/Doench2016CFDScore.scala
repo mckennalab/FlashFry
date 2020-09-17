@@ -69,7 +69,8 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
         var pam = Doench2016CFDScore.pamLookup(otScore.str.slice(otScore.str.length - 2, otScore.str.length))
 
         val candidateScore = scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20))
-        scores += Tuple2[Double,Int](pam * scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20)),bitCode.get.getCount(ot.sequence))
+        ot.addScore(this.scoreName(),(pam * candidateScore).toString)
+        scores += Tuple2[Double,Int](pam * candidateScore,bitCode.get.getCount(ot.sequence))
       }
       //val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
       //totalScore *= candidateScore

@@ -1,18 +1,41 @@
 package targetio
 
+import bitcoding.{BitEncoding, BitPosition}
+import crispr.{CRISPRSite, CRISPRSiteOT}
+import org.scalatest.{FlatSpec, Matchers}
+import standards.Cas9ParameterPack
 import java.io.File
 
-import bitcoding.{BitEncoding, BitPosition}
-import crispr.CRISPRSite
-import org.scalatest.{FlatSpec, Matchers}
 import scoring.ScoreModel
-import standards.Cas9ParameterPack
 
 class TabDelimitedHanderTest extends FlatSpec with Matchers {
   val bitEncoder = new BitEncoding(Cas9ParameterPack)
   val target = new CRISPRSite("fakeChrom", "GACTTGCATCCGAAGCCGGTGGG", true, 150, None)
   val posEnc = new BitPosition()
   TabDelimitedHanderTest.hg19ChromeOrder.foreach{t => {posEnc.addReference(t)}}
+
+  "TabDelimitedHander" should "regex a position correctly" in {
+
+    val ot = new CRISPRSiteOT(target, 0L, 100, false)
+    "AAAACCAGGCCAGCTGACAGTGG_1_4<1:55796894^R>"
+
+    val positions = TabDelimitedOutput.extractPositionBlock.
+      findAllIn("AAAACCAGGCCAGCTGACAGTGG_1_4{SCORE=VALUE}<1:55796894^R>").group(1)
+
+    (positions) should be ("1:55796894^R")
+  }
+
+  "TabDelimitedHander" should "regex a score correctly" in {
+
+    val ot = new CRISPRSiteOT(target, 0L, 100, false)
+    "AAAACCAGGCCAGCTGACAGTGG_1_4<1:55796894^R>"
+
+    val positions = TabDelimitedOutput.extractScoreBlock.
+      findAllIn("AAAACCAGGCCAGCTGACAGTGG_1_4{SCORE=VALUE}<1:55796894^R>").group(1).split("=")
+
+    (positions(0)) should be ("SCORE")
+    (positions(1)) should be ("VALUE")
+  }
 
   "TabDelimitedHander" should "read the same file it just wrote" in {
     val inputFile = new File("test_data/fake.sites")
