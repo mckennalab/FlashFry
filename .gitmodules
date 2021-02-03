@@ -1,0 +1,3 @@
+[submodule "src/main/java/rnafold4j"]
+	path = src/main/java/rnafold4j
+	url = https://github.com/drivenbyentropy/rnafold4j
