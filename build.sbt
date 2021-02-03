@@ -24,6 +24,12 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
 libraryDependencies += "info.picocli" % "picocli" % "3.8.1"
 
+//libraryDependencies += "org.apache.commons" % "lang" % "2.6.0"
+libraryDependencies += "commons-lang" % "commons-lang" % "2.6"
+
+
+
+
 //startYear := Some(2015)
 
 //headerLicense := Some(HeaderLicense.MIT("2015", "Aaron McKenna"))

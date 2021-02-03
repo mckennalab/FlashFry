@@ -5,7 +5,7 @@ import java.io.File
 
 import bitcoding.BitEncoding
 import crispr.CRISPRSiteOT
-import rnafold4j.src.main.java.rnafold4j.RNAFoldAPI
+import rnafold4j.RNAFoldAPI
 import standards.ParameterPack
 
 import scala.collection.mutable
