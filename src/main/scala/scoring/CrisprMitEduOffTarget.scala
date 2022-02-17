@@ -153,7 +153,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @param params the enzyme
     * @return truth about our ability to score this enzyme
     */
-  override def validOverScoreModel(params: ParameterPack): Boolean = {
+  override def validOverEnzyme(params: ParameterPack): Boolean = {
     params.enzyme.enzymeParent == Cas9Type && params.totalScanLength == ParameterPack.cas9ScanLength20mer
   }
 
@@ -180,7 +180,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = validOverScoreModel(enzyme)
+  override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = validOverEnzyme(enzyme)
 
   /**
     * @return get a listing of the header columns for this score metric

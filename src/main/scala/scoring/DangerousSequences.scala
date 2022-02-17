@@ -38,6 +38,7 @@ import utils.Utils
   */
 class DangerousSequences extends SingleGuideScoreModel {
   var bitEncoder : Option[BitEncoding] = None
+  var cleanOutput = false
 
   /**
     * score an individual guide
@@ -46,19 +47,21 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @return a score (as a string)
     */
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
-    var problems = Array.fill[String](3)("NONE")
+    var problems = if (cleanOutput) Array.fill[String](3)("0") else Array.fill[String](3)("NONE")
 
-    if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
+    if (cleanOutput)
+      problems(0) = Utils.gcContent(guide.target.bases).toString
+    else if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
       problems(0) = "GC_" + Utils.gcContent(guide.target.bases)
 
     // thanks to D. Simeonov for the bug catch here
     if (guide.target.bases.slice(bitEncoder.get.mParameterPack.guideRange._1,bitEncoder.get.mParameterPack.guideRange._2).contains("TTTT"))
-      problems(1) = "PolyT"
+      problems(1) = if (cleanOutput) "1" else "PolyT"
 
     if (guide.offTargets.size > 0) {
       val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) bitEncoder.get.getCount(ot.sequence) else 0}.sum
       if (inGenomeCount > 0)
-        problems(2) = "IN_GENOME=" + inGenomeCount
+        problems(2) = if (cleanOutput) inGenomeCount.toString else "IN_GENOME=" + inGenomeCount
     }
 
     problems.map{prob => Array[String](prob)}
@@ -80,7 +83,7 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @param enzyme the enzyme (as a parameter pack)
     * @return if the model is valid over this data
     */
-  override def validOverScoreModel(enzyme: ParameterPack): Boolean = true
+  override def validOverEnzyme(enzyme: ParameterPack): Boolean = true
 
   /**
     * given a enzyme and guide information, can we score this sequence? For instance the on-target sequence
@@ -90,7 +93,7 @@ class DangerousSequences extends SingleGuideScoreModel {
     * @param guide  the guide sequence we want to score
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
-  override def validOverGuideSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
+  override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
 
   /**
     * parse out any command line arguments that are optional or required for this scoring metric

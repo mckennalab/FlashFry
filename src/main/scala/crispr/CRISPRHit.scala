@@ -20,7 +20,10 @@
 package crispr
 
 import bitcoding.{BitEncoding, BitPosition}
-import targetio.{TabDelimitedOutput}
+import targetio.TabDelimitedOutput
+import com.typesafe.scalalogging.LazyLogging
+
+import scala.collection.mutable
 
 /**
   * stores an off-target hit from the genome
@@ -37,12 +40,21 @@ class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean
   val sequence = sq
   private val coordinates = coord
   def getOffTargetCount = coordinates.size
+  var scores : Option[mutable.HashMap[String,String]] = None
 
+
+  /**
+    * Generate a string representation of the CRISPR Hit
+    * @param bitEncoding our bitencoder
+    * @param posEnc the position encodier
+    * @param guide our guide as a Long
+    * @param outputPositions should we output the position information
+    * @return a collapsed string representation
+    */
   def toOutput(bitEncoding: BitEncoding, posEnc: BitPosition, guide: Long, outputPositions: Boolean): String = {
-    // now output the off-target information --
-    if (outputPositions) {
-        val otDecoded = bitEncoding.bitDecodeString(sequence)
+    val otDecoded = bitEncoding.bitDecodeString(sequence)
 
+    if (outputPositions) {
         val positions = if (validOffTargetCoordinates) coordinates.map { otPos => {
           val decoded = posEnc.decode(otPos)
           decoded.contig + TabDelimitedOutput.contigSeparator + decoded.start + TabDelimitedOutput.strandSeparator +
@@ -50,7 +62,7 @@ class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean
         }
         } else Array[Long]()
 
-        if (positions.size == 0 || !validOffTargetCoordinates) {
+        val retString = if (positions.size == 0 || !validOffTargetCoordinates) {
           otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator +
             otDecoded.count + TabDelimitedOutput.withinOffTargetSeparator +
             bitEncoding.mismatches(guide, sequence)
@@ -60,13 +72,41 @@ class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean
             bitEncoding.mismatches(guide, sequence) + TabDelimitedOutput.positionListTerminatorFront +
             positions.mkString(TabDelimitedOutput.positionListSeparator) + TabDelimitedOutput.positionListTerminatorBack
         }
+      if (scores.isDefined) {
+        val scoreString = toOutputScores()
+        retString + scoreString.get
+      } else {
+        retString
+      }
       }
     else {
       {
-        val otDecoded = bitEncoding.bitDecodeString(sequence)
         otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator + otDecoded.count +
           TabDelimitedOutput.withinOffTargetSeparator + bitEncoding.mismatches(guide,sequence)
       }
     }
+  }
+
+  /**
+    *
+    * @return a string of
+    */
+  def toOutputScores(): Option[String] = {
+    if (!scores.isDefined) {
+      None
+    } else {
+      Some(TabDelimitedOutput.offTargetScoresTerminatorFront + scores.get.map{case(k,v) => {
+        k + TabDelimitedOutput.offTargetScoresPairing + v
+      }}.mkString(TabDelimitedOutput.offTargetScoresSeparator) + TabDelimitedOutput.offTargetScoresTerminatorBack)
+    }
+
+  }
+
+  def addScore(key: String, value: String) = {
+    if (!scores.isDefined)
+      scores = Some(new mutable.HashMap[String,String]())
+
+    assert(!scores.get.contains(key),"Scores already contains " + key + "(sequence " + sequence + ")")
+    scores.get(key) = value
   }
 }

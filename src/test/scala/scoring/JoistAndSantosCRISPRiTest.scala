@@ -12,7 +12,7 @@ class JoistAndSantosCRISPRiTest extends FlatSpec with Matchers {
 
   val bitEncoder = new BitEncoding(Cas9ParameterPack)
   val dScore = new JostAndSantosCRISPRi()
-  dScore.validOverScoreModel(Cas9ParameterPack)
+  dScore.validOverEnzyme(Cas9ParameterPack)
   dScore.bitEncoder(bitEncoder)
 
   "JostAndSantosCRISPRi" should "correctly tally a set of simple one-mismatch off-targets" in {
@@ -69,7 +69,7 @@ class JoistAndSantosCRISPRiTest extends FlatSpec with Matchers {
 
     val bitEncoder19 = new BitEncoding(Cas9ParameterPack19bp)
     val dScore19 = new JostAndSantosCRISPRi()
-    dScore19.validOverScoreModel(Cas9ParameterPack19bp)
+    dScore19.validOverEnzyme(Cas9ParameterPack19bp)
     dScore19.bitEncoder(bitEncoder19)
 
 

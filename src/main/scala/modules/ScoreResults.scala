@@ -22,13 +22,14 @@ package modules
 import java.io.File
 
 import bitcoding.BitEncoding
-import com.typesafe.scalalogging.LazyLogging
 import crispr.ResultsAggregator
-import picocli.CommandLine.{Command, Option}
 import reference.binary.BinaryHeader
 import scoring._
-
+import standards.ParameterPack
 import targetio.{TabDelimitedInput, TabDelimitedOutput}
+import picocli.CommandLine.{Command, Option, Parameters}
+import com.typesafe.scalalogging.LazyLogging
+
 
 /**
   * Given a results bed file from off-target discovery, annotate it with scores using established scoring schemes
@@ -58,12 +59,20 @@ class ScoreResults extends Runnable with LazyLogging {
     description = Array("include the off-target hits in the output file"))
   private var writeOTsToOutput: Boolean = false
 
+  @Option(names = Array("-numericOutput", "--numericOutput"), required = false, paramLabel = "FLAG",
+    description = Array("Write counts for dangerous components without annotations (no IN_GENOME=)"))
+  private var numericOutput: Boolean = false
 
   // parameters inherited from scoring modules
   // -----------------------------------------
   @Option(names = Array("-inputAnnotationBed", "--inputAnnotationBed"), required = false, paramLabel = "FILE",
     description = Array("the bed file to annotate overlapping targets with in the format name:bedfile"))
   var inputBed = ""
+
+  // -----------------------------------------
+  @Option(names = Array("-shortestGuideEnergy", "--shortestGuideEnergy"), required = false, paramLabel = "FILE",
+    description = Array("the RNAFold will be calculated on subsets of the guides from the specified length to the full guide"))
+  var shortestGuideEnergy = -1
 
   @Option(names = Array("-transformPositions", "--transformPositions"), required = false, paramLabel = "FILE",
     description = Array("attempt to annotate each target with its genomic location by using matching (zero-mismatch) in-genome targets"))
@@ -86,17 +95,30 @@ class ScoreResults extends Runnable with LazyLogging {
     val guides = (new TabDelimitedInput(new File(inputBED), bitEnc, header.bitPosition, maxMismatch, writeOTsToOutput, true)).guides.toArray
 
     var scoringModels = List[ScoreModel]()
+
     def scoringAnnotations = scoringModels.map { mdl => mdl.scoreName() }.toArray
 
     scoringMetrics.split(",").foreach { modelParameter => {
-      val model = ScoreResults.getRegisteredScoringMetric(modelParameter, bitEnc, inputBed, genomeTransform, countOnTargetInScore, maxReciprocalMismatch)
-      if (model.validOverScoreModel(bitEnc.mParameterPack)) {
+      val model = ScoreResults.getRegisteredScoringMetric(modelParameter,
+        bitEnc,
+        inputBed,
+        header.parameterPack,
+        shortestGuideEnergy,
+        genomeTransform,
+        countOnTargetInScore,
+        numericOutput,
+        maxReciprocalMismatch)
+
+      if (model.validOverEnzyme(bitEnc.mParameterPack)) {
         logger.info("adding score: " + model.scoreName())
         model.bitEncoder(bitEnc)
         model.setup()
         scoringModels :+= model
-      } else { logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack)}
-    }}
+      } else {
+        logger.error("DROPPING SCORING METHOD: " + model.scoreName() + "; it's not valid over enzyme parameter pack: " + bitEnc.mParameterPack)
+      }
+    }
+    }
 
     // feed any aggregate scoring metrics the full list of other metrics
     val nonAggregate = scoringModels.filter { case (m) => m.isInstanceOf[RankedScore] }.map { e => e.asInstanceOf[RankedScore] }
@@ -108,7 +130,8 @@ class ScoreResults extends Runnable with LazyLogging {
       model => {
         logger.info("Scoring with model " + model.scoreName())
         model.scoreGuides(guides, bitEnc, header.bitPosition, header.parameterPack)
-      }}
+      }
+    }
 
     logger.info("Aggregating results...")
     val results = new ResultsAggregator(guides)
@@ -125,7 +148,8 @@ class ScoreResults extends Runnable with LazyLogging {
 
     results.wrappedGuides.foreach { gd => {
       output.write(gd.otSite)
-    }}
+    }
+    }
     output.close()
   }
 }
@@ -135,11 +159,14 @@ object ScoreResults {
   def getRegisteredScoringMetric(name: String,
                                  bitEncoder: BitEncoding,
                                  inputBed: String,
+                                 parameterPack: ParameterPack,
+                                 shortestGuideEnergy: Int,
                                  genomeTransform: String,
                                  countOnTargetInScore: Boolean,
+                                 numericOutput: Boolean,
                                  maxReciprocalMismatch: Int): ScoreModel = {
 
-    val newMetric : ScoreModel = name.toLowerCase() match {
+    val newMetric: ScoreModel = name.toLowerCase() match {
       case "hsu2013" => {
         val sm = new CrisprMitEduOffTarget()
         sm.bitEncoder(bitEncoder)
@@ -162,7 +189,11 @@ object ScoreResults {
         sm
       }
       case "dangerous" => {
-        new DangerousSequences()
+        val dng = new DangerousSequences()
+        if (numericOutput) {
+          dng.cleanOutput = true
+        }
+        dng
       }
       case "minot" => {
         new ClosestHit()
@@ -178,6 +209,15 @@ object ScoreResults {
       case "jostandsantos" => {
         new JostAndSantosCRISPRi()
       }
+      case "folding" => {
+        val fold = new RNAFold4j()
+        if (shortestGuideEnergy >= 0)
+          fold.smallestGuide = Some(shortestGuideEnergy)
+        else
+          fold.smallestGuide = Some(math.abs(parameterPack.guideRange._1 - parameterPack.guideRange._2))
+        fold
+      }
+
       case _ => {
         throw new IllegalArgumentException("Unknown scoring metric: " + name)
       }
