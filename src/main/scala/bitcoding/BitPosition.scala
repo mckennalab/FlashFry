@@ -19,14 +19,10 @@
 
 package bitcoding
 
-import java.io.{IOException, PrintWriter}
-
 import bitcoding.BitPosition.PositionLong
 import com.typesafe.scalalogging.LazyLogging
-import utils.Utils
 
 import scala.collection.mutable
-import scala.io.Source
 
 /**
   * the bit position mapping - encode a genomic position into a long value. We encode a position as a long value
@@ -47,6 +43,9 @@ class BitPosition extends LazyLogging {
     contigMap(refName) = nextSeqId
     indexToContig(nextSeqId) = refName
     nextSeqId += 1
+    assert(nextSeqId < (BitPosition.contigMask >> BitPosition.shiftToIntContig),
+      "Contig count exceeds the current capacity of " + (BitPosition.contigMask >> BitPosition.shiftToIntContig))
+
   }
 
   def encode(refName: String, position: Int, targetLength: Int, forwardStrand: Boolean): Long = {
