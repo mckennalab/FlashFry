@@ -52,7 +52,7 @@ java -Xmx4g -jar FlashFry-assembly-1.12.jar \
  --enzyme spcas9ngg
 ```
 
-Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some random sequence flanking the target site:
+Now we discover candidate targets and their potential off-target in the test data (takes a few seconds). Here we're using the EMX1 target with some  sequence flanking the target site. This flanking sequnce is needed by on-target scoring metrics to fully evaluate the target's efficiency:
 
 ```shell
 java -Xmx4g -jar FlashFry-assembly-1.12.jar \
