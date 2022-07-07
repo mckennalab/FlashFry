@@ -138,6 +138,8 @@ class BedAnnotation() extends ScoreModel {
         inputBedNames = inputBedNames :+ nameAndFile(0)
       }
       }
+    } else {
+      throw new IllegalStateException("If you request bed annotation you must provide a valid BED file")
     }
 
     if (genomeTransform != "") {

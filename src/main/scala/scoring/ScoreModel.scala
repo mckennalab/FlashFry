@@ -113,7 +113,7 @@ abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     guides.zipWithIndex.foreach { case(hit,index) => {
       if ((index + 1) % 10000 == 0) {
-        logger.info("For scoing metric " + this.scoreName() + " we're scoring our " + index + " guide")
+        logger.info("For scoring metric " + this.scoreName() + " we're scoring our " + index + " guide")
       }
 
       if (this.validOverTargetSequence(pack, hit)) {
