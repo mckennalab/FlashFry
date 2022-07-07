@@ -22,6 +22,7 @@ package utils
 import scala.annotation._
 import elidable._
 import java.io._
+import java.nio.Buffer
 import java.math.BigInteger
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
@@ -154,7 +155,7 @@ object Utils extends LazyLogging {
     val bbuf = java.nio.ByteBuffer.allocate(8*larray.length)
     bbuf.order(java.nio.ByteOrder.nativeOrder)
     bbuf.asLongBuffer.put(larray)
-    bbuf.flip()
+    bbuf.asInstanceOf[Buffer].flip()
     bbuf.array()
   }
 
@@ -169,7 +170,7 @@ object Utils extends LazyLogging {
     val bbuf = java.nio.ByteBuffer.allocate(larray.length)
     bbuf.order(java.nio.ByteOrder.nativeOrder)
     bbuf.put(larray)
-    bbuf.flip()
+    bbuf.asInstanceOf[Buffer].flip()
     bbuf.asLongBuffer()
 
     // we should have a long return that's (byte size / 8) longs

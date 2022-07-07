@@ -65,8 +65,6 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
 
     // while-loop for speed
     var index = 0
-
-
     while (index < targets.size) {
       val mm = bitEncoding.mismatches(targets(index).target, binComparitor.binLong, binComparitor.guideMask)
       /*
@@ -101,7 +99,6 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
         throw e
       }
     }
-
 
     val toSortResults = toSort.toArray
     scala.util.Sorting.quickSort(toSortResults)

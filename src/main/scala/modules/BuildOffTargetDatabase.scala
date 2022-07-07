@@ -61,7 +61,7 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
     // get our settings
     val params = ParameterPack.nameToParameterPack(enzyme)
 
-    // create out output bins
+    // create our output bins
     val outputBins = BinWriter(tmp, binGenerator, params)
 
     logger.info("Discovering target sites in the input genome file...")
