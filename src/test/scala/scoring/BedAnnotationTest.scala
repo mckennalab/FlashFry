@@ -30,6 +30,18 @@ class BedAnnotationTest extends FlatSpec with Matchers {
     (crisprOT.target.position) should be (150)
   }
 
+  "BedAnnotation" should "throw an exception when no BED is provided" in {
+    val bitEncoder = new BitEncoding(Cas9ParameterPack)
+    val target = new CRISPRSite("chr8", "GACTTGCATCCGAAGCCGGTGGG", true, 150, None)
+    val crisprOT = new CRISPRSiteOT(target, bitEncoder.bitEncodeString(StringCount(target.bases, 1)),1000)
+    crisprOT.addOT(new CRISPRHit(bitEncoder.bitEncodeString(StringCount("CACTAGCATCCCAGGCCGGTGGG",1)),Array[Long]()))
+    val bedAnnot = new BedAnnotation()
+    assertThrows[java.lang.IllegalStateException] {
+      bedAnnot.setup()
+    }
+
+  }
+
   "BedAnnotation" should "correctly not annotation a guide that doesnt match a contig" in {
     val bitEncoder = new BitEncoding(Cas9ParameterPack)
     val target = new CRISPRSite("chr7", "GACTTGCATCCGAAGCCGGTGGG", true, 150000, None)
