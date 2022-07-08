@@ -78,7 +78,7 @@ class BedAnnotation() extends ScoreModel {
               val newPos = mappingIntervals.get(ref)
 
               val oldTarget = guide.target
-              val newTarget = CRISPRSite(newPos._1, oldTarget.bases, oldTarget.forwardStrand, (oldTarget.position - 1) + newPos._2, oldTarget.sequenceContext)
+              val newTarget = CRISPRSite(newPos._1, oldTarget.bases, oldTarget.forwardStrand, oldTarget.position + newPos._2, oldTarget.sequenceContext)
               guide.target = newTarget
               guide.namedAnnotations(oldContigTag) = guide.namedAnnotations.getOrElse(oldContigTag, Array[String]()) :+ ref
             }

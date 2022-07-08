@@ -72,7 +72,7 @@ class BedAnnotationTest extends FlatSpec with Matchers {
     val posEnc = new BitPosition()
     bedAnnot.scoreGuides(Array[crispr.CRISPRSiteOT](crisprOT), bitEncoder, posEnc, Cas9ParameterPack)
 
-    (crisprOT.target.position) should be (10000 + 49) // we want to adjust for our one-based intervals
+    (crisprOT.target.position) should be (10000 + 50)
     (crisprOT.namedAnnotations("test")) should be (Array[String]("region2"))
   }
 }
