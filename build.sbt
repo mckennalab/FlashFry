@@ -1,6 +1,6 @@
 name := "FlashFry"
 
-version := "1.13"
+version := "1.14"
 
 scalaVersion := "2.12.1"
 
@@ -9,6 +9,8 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("releases")
 )
+
+
 
 unmanagedBase := (baseDirectory.value / "project" )
 
