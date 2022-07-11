@@ -68,7 +68,18 @@ class OffTargetDiscovery extends Runnable with LazyLogging {
     description = Array("the maximum number of off-targets for a guide, after which we stop adding new off-targets"))
   private var maximumOffTargets: Int = 2000
 
+  @Option(names = Array("-minGC", "--minGC"), required = false, paramLabel = "DOUBLE",
+    description = Array("the minimum GC needed to include a guide, from 0.0 (all A/T) to 1.0 (all G/C); default 0.0"))
+  private var minGC: Double = 0.0
+
+  @Option(names = Array("-maxGC", "--maxGC"), required = false, paramLabel = "DOUBLE",
+    description = Array("the maximum GC needed to include a guide, from 0.0 (all A/T) to 1.0 (all G/C); default 1.0"))
+  private var maxGC: Double = 1.0
+
   def run() {
+
+    assert(minGC >= 0 && minGC <= 1.0)
+    assert(maxGC >= 0 && maxGC <= 1.0)
 
     val stopSmartTraversalProp = 0.95
 
@@ -80,10 +91,13 @@ class OffTargetDiscovery extends Runnable with LazyLogging {
     // load up the input file, and scan for any potential targets
     val guideHits = new GuideMemoryStorage()
     val encoders = ReferenceEncoder.findTargetSites(new File(inputFasta), guideHits, header.inputParameterPack, flankingSequence)
+    logger.info("Setting up the guide recording for our " + guideHits.guideHits.size + " candidate guides....")
+
+    val filteredGuides = GuideMemoryStorage.filter_by_GC(guideHits,minGC,maxGC)
 
     // transform our targets into a list for off-target collection
-    logger.info("Setting up the guide recording for our " + guideHits.guideHits.size + " candidate guides....")
-    val guideOTs = guideHits.guideHits.map {
+    logger.info("Filtered GC guide count " + filteredGuides.guideHits.size)
+    val guideOTs = filteredGuides.guideHits.map {
       guide => new CRISPRSiteOT(guide, header.bitCoder.bitEncodeString(StringCount(guide.bases, 1)), maximumOffTargets)
     }.toArray
 
@@ -95,7 +109,7 @@ class OffTargetDiscovery extends Runnable with LazyLogging {
     if (!forceLinear)
       mTraversalFactory = Some(new OrderedBinTraversalFactory(header.binGenerator, maxMismatch, header.bitCoder, stopSmartTraversalProp, guideStorage))
 
-    logger.info("scanning against the known targets from the genome with " + guideHits.guideHits.toArray.size + " guides")
+    logger.info("scanning against the known targets from the genome with " + filteredGuides.guideHits.toArray.size + " guides")
 
     val isTraversalSaturated = if (mTraversalFactory.isDefined) mTraversalFactory.get.saturated else false
 
@@ -121,7 +135,7 @@ class OffTargetDiscovery extends Runnable with LazyLogging {
     }
 
     logger.info("Performed a total of " + formatter.format(Traverser.allComparisons) + " guide to target comparisons")
-    logger.info("Writing final output for " + guideHits.guideHits.toArray.size + " guides")
+    logger.info("Writing final output for " + filteredGuides.guideHits.toArray.size + " guides")
 
     // now output the scores per site
     val output = new TabDelimitedOutput(new File(outputFile),

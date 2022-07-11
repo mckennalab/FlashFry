@@ -69,7 +69,6 @@ object ReferenceEncoder extends LazyLogging {
     (bitEncoder, posEncoder)
   }
 
-
   /**
     * @param file the input file, either gzipped (.gz) or plain text
     * @return a Source object for this file
