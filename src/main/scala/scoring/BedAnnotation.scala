@@ -128,9 +128,9 @@ class BedAnnotation() extends ScoreModel {
   override def setup(): Unit = {
     if (inputBed != "") {
       inputBed.split(",").foreach { bedFile => {
-        assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
+        assert(bedFile contains ":", "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file. These should be separated with a colon, like name:bedfile.bed")
         val nameAndFile = bedFile.split(":")
-        assert(nameAndFile.size == 2, "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file")
+        assert(nameAndFile.size == 2, "Bedfile command line argument " + bedFile + " doesn't contain both a name and a file. These should be separated with a colon, like name:bedfile.bed")
 
         require((new File(nameAndFile(1))).exists(), "The input bed file doesn't exist for a name/file pair: " + inputBed)
 
