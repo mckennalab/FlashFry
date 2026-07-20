@@ -26,24 +26,30 @@ import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuilder, Map}
 
 /**
-  * Created by aaronmck on 3/9/17.
+  * Iterates over the database bins that may contain off-targets for a set of
+  * guides.
+  *
+  * Implementations may use progressively broader search strategies. Callers
+  * can remove guides with [[overflowGuide]] once they have accumulated enough
+  * hits, allowing later traversal steps to skip unnecessary comparisons.
   */
 trait BinTraversal extends Iterator[BinToGuidesLookup] {
   /**
-    * @return how many traversal calls we'll need to traverse the whole off-target space; just a loosely bounded value here
+    * An approximate upper bound on the number of iterator steps required to
+    * cover the configured off-target search space.
     */
   def traversalSize: Int
 
   /**
-    * have we saturated: when we'd traverse the total number of bins, and any enhanced search strategy
-    * would be useless
-    * @return
+    * Whether the strategy already visits every database bin, so broadening the
+    * traversal cannot add candidates.
     */
   def saturated: Boolean
 
   /**
+    * Removes a guide that no longer needs additional off-target candidates.
     *
-    * @param guide a guide that no longer should be considered for off-target sequences
+    * @param guide index of the guide to exclude from subsequent iterator steps
     */
   def overflowGuide(guide: GuideIndex)
 

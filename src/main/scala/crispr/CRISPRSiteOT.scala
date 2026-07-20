@@ -26,7 +26,15 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * store off-target hits associated with a specific CRISPR target
+  * Candidate guide together with its discovered off-target sequences and scoring annotations.
+  *
+  * `currentTotal` counts genomic occurrences, not merely distinct `CRISPRHit` objects. Normal pipeline callers provide
+  * a positive overflow threshold.
+  *
+  * @param tgt discovered candidate target
+  * @param encoding two-bit target encoding
+  * @param overflow maximum aggregate off-target count
+  * @param inputOverflow whether an upstream input had already marked this guide as overflowed
   */
 class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int, inputOverflow: Boolean = false) extends Ordered[CRISPRSiteOT] with LazyLogging {
   var target = tgt
@@ -36,8 +44,10 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int, inputOverflow
   val namedAnnotations = new mutable.HashMap[String,Array[String]]
   val inheritedOverflow = inputOverflow
 
+  /** Whether the aggregate occurrence count has reached the configured limit. */
   def full: Boolean = currentTotal >= overflow
 
+  /** Add one distinct sequence and advance the aggregate total by its occurrence count. */
   def addOT(offTarget: CRISPRHit): Unit = {
     assert(currentTotal < overflow || overflow == 0,
       "We should not add off-targets to an overflowed guide: " + encoding + " overflow value: " + overflow + " current size " + currentTotal)
@@ -45,16 +55,14 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int, inputOverflow
     currentTotal += offTarget.getOffTargetCount
   }
 
+  /** Add hits in order until the configured aggregate occurrence limit is reached. */
   def addOTs(offTargetList: Array[CRISPRHit]): Unit = {
-    // so the double ifs are a little weird -- but we'd prefer to both:
-    // 1) not even cycle on the buffer they provide if we're already overfull
-    // 2) if we do fill up while we're adding from their buffer, again we should stop
-    //
+    // Check both before iteration and per item because a hit can cross the aggregate occurrence limit.
     if (currentTotal < overflow || overflow == 0) {
       offTargetList.foreach { t => {
         if (currentTotal < overflow || overflow == 0) {
           offTargets += t
-          currentTotal += 1
+          currentTotal += t.getOffTargetCount
         }
       }
       }
@@ -64,8 +72,9 @@ class CRISPRSiteOT(tgt: CRISPRSite, encoding: Long, overflow: Int, inputOverflow
   def compare(that: CRISPRSiteOT): Int = (target.start) compare (that.target.start)
 
   /**
-    * filter down the off-target list by a maximal off-target distance
-     * @param maxMismatch the maximum number of mismatches allowed, otherwise we drop the off-target hit
+    * Retain only off-target sequences within the requested spacer mismatch distance.
+    *
+    * @param maxMismatch maximum allowed spacer mismatches
     * @param bitEnc the bit encoder to use
     */
   def filterOffTargets(maxMismatch: Int, bitEnc: BitEncoding): Unit = {

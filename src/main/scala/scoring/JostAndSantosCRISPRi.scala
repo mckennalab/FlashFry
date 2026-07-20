@@ -3,12 +3,14 @@ package scoring
 import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.{CRISPRHit, CRISPRSiteOT}
-import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
+import standards.ParameterPack
 import utils.Utils
 
 import scala.collection.mutable
 
 class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with RankedScore {
+
+  override val applicability: ScoreApplicability = ScoreApplicability.SpCas9NineteenOrTwentyBase
 
   private var bitEncoder: Option[BitEncoding] = None
 
@@ -21,11 +23,12 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
   /**
     * score an individual guide's off-targets
     *
-    * @param guide the guide with it's off-targets
+    * @param guide guide with its off-targets
     * @return an array of scores
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
-    require(validOverTargetSequence(Cas9ParameterPack, guide), "We're not a valid score over this guide: " + guide.target.bases)
+    require(parameterPack.exists(pack => applicability.accepts(pack) && guide.target.bases.length == pack.totalScanLength),
+      "We're not a valid score over this guide: " + guide.target.bases)
 
     val sequence = bitEncoder.get.bitDecodeString(guide.longEncoding)
 
@@ -53,15 +56,10 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
   override def validOverEnzyme(pack: ParameterPack): Boolean = {
     this.parameterPack = Some(pack)
 
-    pack.enzyme.enzymeParent == Cas9Type &&
-      (pack.totalScanLength == ParameterPack.cas9ScanLength20mer || pack.totalScanLength == ParameterPack.cas9ScanLength19mer)
+    applicability.accepts(pack)
   }
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup() {}
 
   /**
@@ -82,7 +80,7 @@ class JostAndSantosCRISPRi extends SingleGuideScoreModel with LazyLogging with R
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverTargetSequence(pack: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    if (pack.enzyme == SpCAS9) true else false
+    validOverEnzyme(pack)
   }
 
   /**

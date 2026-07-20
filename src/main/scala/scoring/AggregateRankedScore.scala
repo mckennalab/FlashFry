@@ -133,7 +133,6 @@ class AggregateRankedScore(trancheCount: Int = 4) extends ScoreModel with Aggreg
     * the real genome positions - if this parameter is set lookup any 0 mismatch hits and put their
     * annotation info onto the guide. A way to recover genomic info
     *
-    * @param args the command line arguments
     */
   override def setup() {}
 

@@ -22,13 +22,15 @@ import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
 import picocli.CommandLine.Command
-import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
+import standards.{Cas9ParameterPack, ParameterPack}
 
 /**
   * Implementation of Moreno-Mateos et. al. 2015 Nature Methods. Much (or all) credit goes to the team behind CRISPOR who's
   * reference implementation I worked from.
   */
 class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore {
+
+  override val applicability: ScoreApplicability = ScoreApplicability.SpCas9TwentyBase
 
   /**
     * @return true, a high score is good
@@ -62,7 +64,7 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
   /**
     * score an individual guide
     *
-    * @param guide the guide with it's off-targets
+    * @param guide guide with its required sequence context
     * @return a score (as a string)
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
@@ -77,14 +79,10 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
     * @return if the model is valid over this data
     */
   override def validOverEnzyme(enzyme: ParameterPack): Boolean = {
-    enzyme.enzyme.enzymeParent == Cas9Type && enzyme.totalScanLength == ParameterPack.cas9ScanLength20mer
+    applicability.accepts(enzyme)
   }
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup() {}
 
   /**
@@ -104,7 +102,7 @@ class CRISPRscan extends SingleGuideScoreModel with LazyLogging with RankedScore
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    if (enzyme.enzyme != SpCAS9) {
+    if (!validOverEnzyme(enzyme)) {
       false
     }
     else if (!guide.target.sequenceContext.isDefined) {

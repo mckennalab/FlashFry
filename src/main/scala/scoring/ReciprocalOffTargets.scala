@@ -48,7 +48,7 @@ class ReciprocalOffTargets() extends ScoreModel {
     * look at reciprocal off-targets, or are better suited to traverse an input file once
     * while considering all guides (like BED annotation)
     *
-    * @param guides the guide with it's off-targets
+    * @param guides guides with their off-targets
     * @return a score (as a string)
     */
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
@@ -78,11 +78,7 @@ class ReciprocalOffTargets() extends ScoreModel {
     */
   override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup(){}
 
   /**
@@ -97,4 +93,3 @@ class ReciprocalOffTargets() extends ScoreModel {
     */
   override def headerColumns(): Array[String] = Array[String]("ReciprocalOffTargets")
 }
-

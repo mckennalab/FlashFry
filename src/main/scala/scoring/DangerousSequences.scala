@@ -43,23 +43,25 @@ class DangerousSequences extends SingleGuideScoreModel {
   /**
     * score an individual guide
     *
-    * @param guide the guide with it's off-targets
+    * @param guide guide with its off-targets
     * @return a score (as a string)
     */
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     var problems = if (cleanOutput) Array.fill[String](3)("0") else Array.fill[String](3)("NONE")
+    val spacer = bitEncoder.get.mParameterPack.profile.layout.spacer(guide.target.bases)
+    val spacerGC = Utils.gcContent(spacer)
 
     if (cleanOutput)
-      problems(0) = Utils.gcContent(guide.target.bases).toString
-    else if (Utils.gcContent(guide.target.bases) < .25 || Utils.gcContent(guide.target.bases) > .75)
-      problems(0) = "GC_" + Utils.gcContent(guide.target.bases)
+      problems(0) = spacerGC.toString
+    else if (spacerGC < .25 || spacerGC > .75)
+      problems(0) = "GC_" + spacerGC
 
     // thanks to D. Simeonov for the bug catch here
-    if (guide.target.bases.slice(bitEncoder.get.mParameterPack.guideRange._1,bitEncoder.get.mParameterPack.guideRange._2).contains("TTTT"))
+    if (spacer.contains("TTTT"))
       problems(1) = if (cleanOutput) "1" else "PolyT"
 
     if (guide.offTargets.size > 0) {
-      val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) bitEncoder.get.getCount(ot.sequence) else 0}.sum
+      val inGenomeCount = guide.offTargets.map{ot => if (bitEncoder.get.mismatches(ot.sequence,guide.longEncoding) == 0) ot.getOffTargetCount else 0}.sum
       if (inGenomeCount > 0)
         problems(2) = if (cleanOutput) inGenomeCount.toString else "IN_GENOME=" + inGenomeCount
     }
@@ -95,11 +97,7 @@ class DangerousSequences extends SingleGuideScoreModel {
     */
   override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup() {}
 
   /**

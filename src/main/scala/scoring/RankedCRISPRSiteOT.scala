@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 /**
   * This class wraps a CRISPRSiteOT with ranking information
-  * @param site the CRISPR target with it's off-target information
+  * @param site CRISPR target with its off-target information
   */
 case class RankedCRISPRSiteOT(site: CRISPRSiteOT) {
 

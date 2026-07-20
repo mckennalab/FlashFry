@@ -38,25 +38,27 @@ import standards.ParameterPack
 
 import scala.util.Random
 
-/**
-  * Created by aaronmck on 5/9/17.
-  */
+/** Exports selected targets from a FlashFry binary database as FASTA. */
 object DumpAllGuides extends LazyLogging {
 
   /**
-    * scan against the binary database of off-target sites in an implmenetation specific way
+    * Streams database targets to a FASTA file, filtering by occurrence count
+    * and optionally retaining a random sample.
     *
-    * @param binaryFile    the file we're scanning from
-    * @param header        we have to parse the header ahead of time so that we know
-    * @param aggregator    guides
-    * @param maxMismatch   how many mismatches we support
-    * @param configuration our enzyme configuration
-    * @param bitCoder      our bit encoder
-    * @param posCoder      the position encoder
-    * @param minOccurances emitted targets can have this minimum number of occurrences
-    * @param maxOccurrences emitted targets can have this maximum number of occurrences
-    * @param subsampleProportion the downsampling proportion
-    * @return a guide to OT hit array
+    * Each retained record is named `<sequence>_<occurrences>`. The
+    * `subsampleProportion` is compared with a uniform random value for every
+    * target; callers should normally supply a value in the range `[0.0, 1.0]`.
+    *
+    * @param binaryFile database file to read
+    * @param header parsed header for `binaryFile`
+    * @param configuration nuclease configuration associated with the database
+    * @param bitCoder sequence and record codec selected from the header
+    * @param posCoder genomic-position codec selected from the header
+    * @param outputFile destination FASTA path
+    * @param minOccurrences minimum occurrence count to emit, inclusive
+    * @param maxOccurrences maximum occurrence count to emit, inclusive
+    * @param subsampleProportion probability of emitting a target that passes
+    *                            the occurrence filters
     */
   def toFile(binaryFile: File,
              header: BinaryHeader,
@@ -110,9 +112,10 @@ object DumpAllGuides extends LazyLogging {
 
         targets.foreach { target => {
           val sequence = bitCoder.bitDecodeString(target.sequence)
-          if (sequence.count <= maxOccurrences && sequence.count >= minOccurrences)
+          val count = target.getOffTargetCount
+          if (count <= maxOccurrences && count >= minOccurrences)
             if (random.nextDouble() <= subsampleProportion) {
-              outputTargets.write(">" + sequence.str + "_" + sequence.count + "\n" + sequence.str + "\n")
+              outputTargets.write(">" + sequence.str + "_" + count + "\n" + sequence.str + "\n")
             }
         }}
 
@@ -130,12 +133,14 @@ object DumpAllGuides extends LazyLogging {
   }
 
   /**
-    * fill a block of off-targets from the database
+    * Reads one uncompressed bin payload from the current stream position.
     *
     * @param blockCompressedInput the block compressed stream to pull from
-    * @param blockInformation     information about the block we'd like to fetch
-    * @param file                 file name to use
-    * @return
+    * @param blockInformation metadata describing the block to read
+    * @param file database file containing the block
+    * @param bin sequence prefix identifying the block
+    * @param bitCoder codec used for sequence records in the block
+    * @return the block payload decoded into 64-bit words
     */
   private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File, bin: String, bitCoder: BitEncoding): (Array[Long]) = {
 

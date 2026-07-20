@@ -47,7 +47,7 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
   private var tmp: File = new File("UNKNOWN")
 
   @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING",
-    description = Array("the CRISPR enzyme to use; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
+    description = Array("the nuclease targeting profile to use; profile IDs and aliases are accepted"))
   private var enzyme: String = "spCas9ngg"
 
   @Option(names = Array("-binSize", "--binSize"), required = false, paramLabel = "INT",
@@ -55,11 +55,14 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
   private var binSize: Int = 7
 
   override def run() {
-    // setup a decent sized iterator over bases patterns for finding sites
-    val binGenerator = BaseCombinationGenerator(6)
-
     // get our settings
     val params = ParameterPack.nameToParameterPack(enzyme)
+
+    require(binSize > 0 && binSize <= params.profile.spacerLength,
+      "Bin size must be between 1 and the spacer length (" + params.profile.spacerLength + ")")
+
+    // The temporary bins only need to be as wide as both the requested output bins and the spacer allow.
+    val binGenerator = BaseCombinationGenerator(math.min(6, binSize))
 
     // create our output bins
     val outputBins = BinWriter(tmp, binGenerator, params)

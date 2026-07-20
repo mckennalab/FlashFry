@@ -37,23 +37,14 @@ import standards.ParameterPack
 
 import scala.collection.mutable
 
-/**
-  * traverse a binary database file, seeking to the correct bins
-  */
+/** Traverser that seeks directly to every requested compressed block. */
 object SeekTraverser extends Traverser with LazyLogging {
 
   /**
-    * scan against the binary database of off-target sites in an implmenetation specific way
+    * Scans selected bins by seeking to their indexed block offsets.
     *
-    * @param binaryFile    the file we're scanning from
-    * @param header        we have to parse the header ahead of time so that we know
-    * @param traversal     the traversal over bins we'll use
-    * @param aggregator    the array of candidate guides we have
-    * @param maxMismatch   how many mismatches we support
-    * @param configuration our enzyme configuration
-    * @param bitCoder      our bit encoder
-    * @param posCoder      the position encoder
-    * @return a guide to OT hit array
+    * Parameters follow the [[Traverser.scan]] contract. This implementation
+    * is useful when the traversal visits only a subset of the database bins.
     */
   def scan(binaryFile: File,
            header: BinaryHeader,
@@ -104,11 +95,11 @@ object SeekTraverser extends Traverser with LazyLogging {
   }
 
   /**
-    * fill a block of off-targets from the database
+    * Seeks to and reads one uncompressed bin payload.
     *
-    * @param blockInformation     information about the block we'd like to fetch
+    * @param blockInformation metadata describing the block to read
     * @param blockCompressedInput the compressed seekable stream
-    * @return
+    * @return the block payload decoded into 64-bit words
     */
   private def fillBlock(blockInformation: BlockOffset, blockCompressedInput: BlockCompressedInputStream): (Array[Long]) = {
     assert(blockInformation.uncompressedSize >= 0, "Bin sizes must be positive (or zero)")

@@ -28,12 +28,13 @@ class RNAFold4j extends SingleGuideScoreModel {
   def setupGuideLengths(): Unit = {
     assert(smallestGuide.isDefined)
 
-    val guideLength = math.abs(mParameterPack.get.guideRange._1 - mParameterPack.get.guideRange._2)
+    val layout = mParameterPack.get.profile.layout
+    val guideLength = layout.spacerLength
     for (i <- smallestGuide.get to guideLength) {
-      if (mParameterPack.get.fivePrimePam) {
-        lengthPairPositions(i) = (mParameterPack.get.guideRange._1, mParameterPack.get.guideRange._1 + i)
+      if (layout.pam.side == standards.FivePrimePam) {
+        lengthPairPositions(i) = (layout.spacerRange._1, layout.spacerRange._1 + i)
       } else {
-        lengthPairPositions(i) = (mParameterPack.get.guideRange._2 - i, mParameterPack.get.guideRange._2)
+        lengthPairPositions(i) = (layout.spacerRange._2 - i, layout.spacerRange._2)
       }
     }
   }
@@ -41,9 +42,8 @@ class RNAFold4j extends SingleGuideScoreModel {
   /**
     * score an individual guide
     *
-    * @param guide the guide with it's off-targets
-    * @return an array of arrays (ugh). For each column the scoring method can return multiple pieces of information
-    *         which are then merged at the output stage
+    * @param guide guide whose spacer subsequences will be folded
+    * @return one energy annotation for each configured spacer length
     */
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
     var energies = Array[Array[String]]()
@@ -111,11 +111,7 @@ class RNAFold4j extends SingleGuideScoreModel {
     true
   }
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** Build the spacer-length-to-slice lookup after the active profile is known. */
   override def setup(): Unit = {
     setupGuideLengths()
   }

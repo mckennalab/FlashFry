@@ -22,6 +22,7 @@ package crispr
 import java.io.File
 
 import utils.Utils
+import standards.ParameterPack
 
 import scala.collection.mutable
 
@@ -38,10 +39,27 @@ class GuideMemoryStorage extends GuideContainer {
 }
 
 object GuideMemoryStorage {
+  /** Compatibility overload for callers storing arbitrary sequences rather than nuclease targets. */
   def filter_by_GC(oldGC: GuideMemoryStorage, lowGC: Double, highGC: Double) : GuideMemoryStorage = {
+    filter_by_GC(oldGC, lowGC, highGC, None)
+  }
+
+  /** Filter on the guide spacer, explicitly excluding the PAM. */
+  def filter_by_GC(oldGC: GuideMemoryStorage,
+                   lowGC: Double,
+                   highGC: Double,
+                   parameterPack: ParameterPack): GuideMemoryStorage = {
+    filter_by_GC(oldGC, lowGC, highGC, Some(parameterPack))
+  }
+
+  private def filter_by_GC(oldGC: GuideMemoryStorage,
+                           lowGC: Double,
+                           highGC: Double,
+                           parameterPack: Option[ParameterPack]): GuideMemoryStorage = {
     val newGC = new GuideMemoryStorage()
     oldGC.guideHits.foreach({guide => {
-      val gc = Utils.gcContent(guide.bases)
+      val sequence = parameterPack.map(_.profile.layout.spacer(guide.bases)).getOrElse(guide.bases)
+      val gc = Utils.gcContent(sequence)
       if (gc >= lowGC && gc <= highGC) {
         newGC.addHit(guide)
       }

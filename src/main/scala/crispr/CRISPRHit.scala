@@ -26,30 +26,41 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.collection.mutable
 
 /**
-  * stores an off-target hit from the genome
+  * One distinct off-target sequence and its aggregate genomic occurrence information.
   *
-  * @param sq the sequence
-  * @param coord it's coordinates
-  * @param validOffTargetCoordinates do we encode the positional information about off targets? What happens is that
-  *                                  we have to pass off-target information through from input files that don't contain
-  *                                  positional information. Since we've erased that information we have to mark it here
+  * `occurrenceCount` is separate from `sq` so wide target encodings can use all 64 bits for sequence. When callers omit
+  * it, the class first uses the number of supplied coordinates and then falls back to the count embedded in a legacy
+  * packed sequence. New code that lacks coordinates should always pass the count explicitly.
   *
-  *
+  * @param sq two-bit encoded target sequence
+  * @param coord encoded genomic positions; may be empty when an input file omitted positions
+  * @param validOffTargetCoordinates whether `coord` represents real positions suitable for output
+  * @param occurrenceCount explicit aggregate count, or `-1` to use the compatibility fallback
   */
-class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean = true) {
+class CRISPRHit(sq: Long,
+                coord: Array[Long],
+                validOffTargetCoordinates: Boolean = true,
+                occurrenceCount: Int = -1) {
   val sequence = sq
   private val coordinates = coord
-  def getOffTargetCount = coordinates.size
+  private val legacyEncodedCount = (sq >> 48).toShort.toInt
+  private val storedOccurrenceCount = if (occurrenceCount >= 0) occurrenceCount
+    else if (coordinates.nonEmpty) coordinates.length
+    else math.max(0, legacyEncodedCount)
+  require(storedOccurrenceCount >= 0, "Off-target occurrence count cannot be negative")
+  /** Number of genomic occurrences represented by this distinct sequence. */
+  def getOffTargetCount: Int = storedOccurrenceCount
   var scores : Option[mutable.HashMap[String,String]] = None
 
 
   /**
-    * Generate a string representation of the CRISPR Hit
-    * @param bitEncoding our bitencoder
-    * @param posEnc the position encodier
-    * @param guide our guide as a Long
-    * @param outputPositions should we output the position information
-    * @return a collapsed string representation
+    * Render this hit in FlashFry's tab-delimited off-target field format.
+    *
+    * @param bitEncoding target decoder and mismatch calculator
+    * @param posEnc genomic position decoder
+    * @param guide encoded guide used to calculate mismatch distance
+    * @param outputPositions include positions when valid coordinates are available
+    * @return serialized off-target entry, including per-hit scores when present
     */
   def toOutput(bitEncoding: BitEncoding, posEnc: BitPosition, guide: Long, outputPositions: Boolean): String = {
     val otDecoded = bitEncoding.bitDecodeString(sequence)
@@ -64,11 +75,11 @@ class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean
 
         val retString = if (positions.size == 0 || !validOffTargetCoordinates) {
           otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator +
-            otDecoded.count + TabDelimitedOutput.withinOffTargetSeparator +
+            getOffTargetCount + TabDelimitedOutput.withinOffTargetSeparator +
             bitEncoding.mismatches(guide, sequence)
         } else {
           otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator +
-            otDecoded.count + TabDelimitedOutput.withinOffTargetSeparator +
+            getOffTargetCount + TabDelimitedOutput.withinOffTargetSeparator +
             bitEncoding.mismatches(guide, sequence) + TabDelimitedOutput.positionListTerminatorFront +
             positions.mkString(TabDelimitedOutput.positionListSeparator) + TabDelimitedOutput.positionListTerminatorBack
         }
@@ -81,16 +92,13 @@ class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean
       }
     else {
       {
-        otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator + otDecoded.count +
+        otDecoded.str + TabDelimitedOutput.withinOffTargetSeparator + getOffTargetCount +
           TabDelimitedOutput.withinOffTargetSeparator + bitEncoding.mismatches(guide,sequence)
       }
     }
   }
 
-  /**
-    *
-    * @return a string of
-    */
+  /** Serialize attached per-hit scores, or return `None` when no score has been attached. */
   def toOutputScores(): Option[String] = {
     if (!scores.isDefined) {
       None
@@ -102,6 +110,7 @@ class CRISPRHit(sq: Long, coord: Array[Long], validOffTargetCoordinates: Boolean
 
   }
 
+  /** Attach a score exactly once under `key`. */
   def addScore(key: String, value: String) = {
     if (!scores.isDefined)
       scores = Some(new mutable.HashMap[String,String]())

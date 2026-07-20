@@ -22,7 +22,7 @@ import bitcoding.BitEncoding
 import crispr.CRISPRSiteOT
 import picocli.CommandLine.Command
 import utils.Utils
-import standards.{Cas9Type, ParameterPack}
+import standards.ParameterPack
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,6 +31,8 @@ import scala.collection.mutable.ArrayBuffer
   * doi:10.1038/nbt.3437
   */
 class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
+
+  override val applicability: ScoreApplicability = ScoreApplicability.SpCas9TwentyBase
   var bitCode: Option[BitEncoding] = None
 
 
@@ -47,7 +49,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
   /**
     * score an individual guide
     *
-    * @param guide the guide with it's off-targets
+    * @param guide guide with its off-targets
     * @return a score (as a string)
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
@@ -70,7 +72,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
 
         val candidateScore = scoreCFD(bases.slice(0, 20), otScore.str.slice(0, 20))
         ot.addScore(this.scoreName(),(pam * candidateScore).toString)
-        scores += Tuple2[Double,Int](pam * candidateScore,bitCode.get.getCount(ot.sequence))
+        scores += Tuple2[Double,Int](pam * candidateScore,ot.getOffTargetCount)
       }
       //val candidateScore = scoreCFD(bases.slice(0,20), otScore.str.slice(0,20))
       //totalScore *= candidateScore
@@ -94,7 +96,7 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     * @return if the model is valid over this data
     */
   override def validOverEnzyme(enzyme: ParameterPack): Boolean = {
-    enzyme.enzyme.enzymeParent == Cas9Type && enzyme.totalScanLength == ParameterPack.cas9ScanLength20mer
+    applicability.accepts(enzyme)
   }
 
   /**
@@ -106,14 +108,10 @@ class Doench2016CFDScore extends SingleGuideScoreModel with RankedScore {
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    (enzyme.totalScanLength == 23) && enzyme.enzyme.enzymeParent == Cas9Type
+    validOverEnzyme(enzyme)
   }
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup(){}
 
   /**

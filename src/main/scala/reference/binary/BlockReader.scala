@@ -136,26 +136,23 @@ class BlockReader(binsToFile: mutable.HashMap[String, File],
 }
 
 case class TargetPos(target: Long, positions: Array[Long], bitEnc: BitEncoding) {
-  assert(bitEnc.bitDecodeString(target).str.size <= 24,"Size of decoded string is too long. The string was " + bitEnc.bitDecodeString(target).str)
+  assert(bitEnc.bitDecodeString(target).str.size <= bitEnc.targetCodec.maximumBases,
+    "Size of decoded string is too long. The string was " + bitEnc.bitDecodeString(target).str)
 
   def combine(other: TargetPos) = {
     assert(bitEnc.mismatches(other.target, target) == 0)
-    assert(bitEnc.bitDecodeString(target).str.size <= 24,"Size of decoded string is too long. The string was " + bitEnc.bitDecodeString(target).str)
-    assert(bitEnc.bitDecodeString(other.target).str.size <= 24,"Size of other decoded string is too long. The string was " + bitEnc.bitDecodeString(other.target).str)
+    assert(bitEnc.bitDecodeString(target).str.size <= bitEnc.targetCodec.maximumBases,
+      "Size of decoded string is too long. The string was " + bitEnc.bitDecodeString(target).str)
+    assert(bitEnc.bitDecodeString(other.target).str.size <= bitEnc.targetCodec.maximumBases,
+      "Size of other decoded string is too long. The string was " + bitEnc.bitDecodeString(other.target).str)
 
-
-    var newTotal = bitEnc.getCount(target) + bitEnc.getCount(other.target)
-    if (newTotal > Short.MaxValue)
-      newTotal = Short.MaxValue
-
-
-    TargetPos(bitEnc.bitEncodeString(StringCount(bitEnc.bitDecodeString(target).str,newTotal.toShort)),
-      (positions ++ other.positions).slice(0,Short.MaxValue), bitEnc)
+    val maximumPositions = if (bitEnc.targetCodec.countStoredInSequence) Short.MaxValue else Int.MaxValue
+    TargetPos(target, (positions ++ other.positions).take(maximumPositions), bitEnc)
   }
 
-  def sz = 1 + positions.size
+  def sz = positions.size + (if (bitEnc.targetCodec.countStoredInSequence) 1 else 2)
 
-  def toLongBuffer: Array[Long] = Array[Long](target) ++ positions
+  def toLongBuffer: Array[Long] = bitEnc.encodeTargetRecord(target, positions)
 }
 
 case class BlockDescriptor(bin: String, block: Array[Long], numberOfTargets: Int)
@@ -165,9 +162,7 @@ object BlockDescriptor {
   def toBlockDescriptor(bin: String, targets: Array[TargetPos]): BlockDescriptor = {
     val blockBuilder = mutable.ArrayBuilder.make[Long]()
     targets.foreach{case(tgt) => {
-      blockBuilder += tgt.target
-      blockBuilder ++= tgt.positions
-      assert(tgt.bitEnc.getCount(tgt.target) == tgt.positions.size)
+      blockBuilder ++= tgt.toLongBuffer
     }}
     BlockDescriptor(bin,blockBuilder.result(),targets.size)
   }

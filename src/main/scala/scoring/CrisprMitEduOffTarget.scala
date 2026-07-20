@@ -23,7 +23,7 @@ import java.io.File
 
 import bitcoding.BitEncoding
 import crispr.{CRISPRHit, CRISPRSiteOT}
-import standards.{Cas9Type, ParameterPack}
+import standards.ParameterPack
 
 
 /**
@@ -36,6 +36,8 @@ import standards.{Cas9Type, ParameterPack}
   *
   */
 class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
+
+  override val applicability: ScoreApplicability = ScoreApplicability.SpCas9TwentyBase
 
   var countOnTargetInScore: Boolean = false
 
@@ -154,7 +156,7 @@ class CrisprMitEduOffTarget() extends SingleGuideScoreModel with RankedScore {
     * @return truth about our ability to score this enzyme
     */
   override def validOverEnzyme(params: ParameterPack): Boolean = {
-    params.enzyme.enzymeParent == Cas9Type && params.totalScanLength == ParameterPack.cas9ScanLength20mer
+    applicability.accepts(params)
   }
 
   /**

@@ -19,28 +19,33 @@
 
 package reference.binary
 
-import java.io._
+import java.io.PrintWriter
 
-import bitcoding.{BitEncoding, BitPosition}
+import bitcoding.{BitEncoding, BitPosition, TargetCodec}
 import com.typesafe.scalalogging.LazyLogging
+import standards.{NucleaseProfileSerialization, ParameterPack}
 import utils.BaseCombinationGenerator
-import reference.traverser.Traverser._
-import standards.{Enzyme, ParameterPack}
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 import scala.io.Source
-import scala.math._
+import scala.math.pow
 
 /**
-  * Container for information about the sequence bin and their locations within the file
+  * Parsed metadata required to traverse a FlashFry binary database.
   *
+  * @param inputBinGenerator enumerates the fixed-width outer spacer bins
+  * @param inputParameterPack targeting profile stored in the header
+  * @param bitCoder sequence codec configured for that profile
+  * @param bitPosition contig/position codec reconstructed from the header dictionary
+  * @param blockOffsets compressed-file location and size for each outer bin
+  * @param formatVersion header format version read from disk, or the current version for a new database
   */
 case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
                         inputParameterPack: ParameterPack,
                         bitCoder: BitEncoding,
                         bitPosition: BitPosition,
-                        blockOffsets: mutable.HashMap[String,BlockOffset]) {
+                        blockOffsets: mutable.HashMap[String,BlockOffset],
+                        formatVersion: Long = BinaryConstants.version) {
 
   def binWidth: Int = inputBinGenerator.width
 
@@ -51,6 +56,7 @@ case class BinaryHeader(inputBinGenerator: BaseCombinationGenerator,
   def binGenerator: BaseCombinationGenerator = inputBinGenerator
 }
 
+/** Location and logical size of one compressed database block. */
 case class BlockOffset(blockPosition: Long, uncompressedSize: Int, numberOfTargets: Int) {
   def prettyString: String = "BLOCKPOS:" + blockPosition + ",UNCOMPSIZE:" + uncompressedSize + ",NUMTARGET:" + numberOfTargets
 }
@@ -61,24 +67,20 @@ object BinaryHeader extends LazyLogging {
   val unitBase = 4
 
 
-  /**
-    * write the header information to the binary format
-    *
-    * @param header the header to convert into a binary block for output
-    */
+  /** Write a version-2 text header for a binary database. */
   def writeHeader(header: BinaryHeader, writer: PrintWriter) {
 
-    // some header information
     writer.write(BinaryConstants.magicNumber.toString + "\n")
     writer.write(BinaryConstants.version.toString + "\n")
 
-    // our enzyme type
-    writer.write(ParameterPack.parameterPackToIndex(header.parameterPack) + "\n")
+    writer.write("profile=" + NucleaseProfileSerialization.serialize(header.parameterPack) + "\n")
+    writer.write("profileFingerprint=" + NucleaseProfileSerialization.fingerprint(header.parameterPack) + "\n")
+    writer.write("targetCodec=" + header.bitCoder.targetCodec.id + "\n")
 
-    // the number of bins is the 4^binSize
+    // The bin count is 4^width; the width is reconstructed from this value when reading.
     writer.write(pow(4, header.binGenerator.width).toLong.toString + "\n")
 
-    // write a number of longs equal to the block lookup table size -- we'll come back and fill these in later
+    // One line per lexicographically generated DNA bin.
     header.binGenerator.iterator.zipWithIndex.foreach { case(bin,index) => {
       if (header.blockOffsets contains bin) {
         writer.write(bin + "=" +
@@ -97,45 +99,58 @@ object BinaryHeader extends LazyLogging {
   }
 
   /**
-    * read the header from the top of the file
-    * Headers are defined as:
+    * Read either supported text-header format.
     *
-    * magic version - long
-    * version - long
-    * enzyme index - long
-    * bin count - long
+    * Common prefix:
     *
-    * for each bin:
-    * number of longs in the bin - long
-    * offset in the file - long
+    *  1. magic number
+    *  2. format version
     *
-    * @param filename the file name, just to print in error messages
-    * @return a bin-lookup object
+    * Version 1 then stores a numeric legacy profile ID and the bin count. Version 2 stores `profile=`,
+    * `profileFingerprint=`, and `targetCodec=` lines followed by the bin count. Both formats continue with one
+    * `BIN=compressedOffset,uncompressedBytes,targetCount` line per bin and then `contig=id` dictionary lines.
+    *
+    * The version-2 fingerprint validates targeting identity, and the codec ID is checked against the decoded profile
+    * before the returned object can be used.
+    *
+    * @param filename path to the `.header` file
+    * @return validated metadata and matching codecs
     */
   def readHeader(filename: String): BinaryHeader = {
 
-    // setup our input file
     val inputText = Source.fromFile(filename).getLines()
 
-    // some header checks
     assert(inputText.next.toLong == BinaryConstants.magicNumber,
       "Binary file " + filename + " doesn't have the magic number expected at the top of the file")
-    assert(inputText.next.toLong == BinaryConstants.version,
-      "Binary file " + filename + " doesn't have the correct version, expecting " + BinaryConstants.version)
+    val formatVersion = inputText.next.toLong
+    require(formatVersion == BinaryConstants.legacyVersion || formatVersion == BinaryConstants.version,
+      "Binary file " + filename + " has unsupported format version " + formatVersion)
 
-    // get the enzyme type
-    val enzymeType = ParameterPack.indexToParameterPack(inputText.next.toInt)
+    val (enzymeType, codecId, binCount) = if (formatVersion == BinaryConstants.legacyVersion) {
+      val pack = ParameterPack.indexToParameterPack(inputText.next.toInt)
+      (pack, TargetCodec.legacyId, inputText.next.toLong)
+    } else {
+      val profileLine = inputText.next
+      require(profileLine.startsWith("profile="), "Version-2 header is missing its profile definition")
+      val pack = NucleaseProfileSerialization.deserialize(profileLine.stripPrefix("profile="))
+
+      val fingerprintLine = inputText.next
+      require(fingerprintLine.startsWith("profileFingerprint="), "Version-2 header is missing its profile fingerprint")
+      require(fingerprintLine.stripPrefix("profileFingerprint=") == NucleaseProfileSerialization.fingerprint(pack),
+        "Version-2 header profile fingerprint does not match its targeting definition")
+
+      val codecLine = inputText.next
+      require(codecLine.startsWith("targetCodec="), "Version-2 header is missing its target codec")
+      (pack, codecLine.stripPrefix("targetCodec="), inputText.next.toLong)
+    }
     logger.info("Loading header: enzyme type is " + enzymeType.enzyme)
 
-    // now process the bins
-    val binCount = inputText.next.toLong
     val binWidth = (math.log(binCount) / math.log(unitBase)).toInt
     logger.debug("Number of characters used to generate this lookup file: " + binWidth)
 
     val binGenerator = BaseCombinationGenerator(binWidth)
     val blockInformation     = new mutable.HashMap[String, BlockOffset]()
 
-    // read in the bins and their sizes
     val binRegex = """(\w+)=(\d+),(\d+),(\d+)""".r
     binGenerator.iterator.zipWithIndex.foreach { case (bin, index) => {
       val binLine = inputText.next
@@ -155,7 +170,10 @@ object BinaryHeader extends LazyLogging {
     })
 
     val binEncoder = new BitEncoding(enzymeType)
+    require(binEncoder.targetCodec.id == codecId,
+      "Header target codec " + codecId + " is incompatible with profile " + enzymeType.profile.id +
+        "; expected " + binEncoder.targetCodec.id)
 
-    BinaryHeader(binGenerator, enzymeType, binEncoder, positionEncoder, blockInformation)
+    BinaryHeader(binGenerator, enzymeType, binEncoder, positionEncoder, blockInformation, formatVersion)
   }
 }

@@ -40,7 +40,7 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
   @Option(names = Array("-outputFile", "--outputFile"), required = true, paramLabel = "FILE", description = Array("the output file"))
   private var outputFile: File = new File("")
 
-  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the CRISPR enzyme; Currently supported enzymes: SPCAS9,SPCAS9NGG,SPCAS9NAG,CPF1"))
+  @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING", description = Array("the nuclease targeting profile; profile IDs and aliases are accepted"))
   private var enzyme: String = ""
 
   @Option(names = Array("-namePrefix", "--namePrefix"), required = false, paramLabel = "STRING", description = Array("the prefix for the random target name; default is 'random'"))
@@ -78,9 +78,9 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
     // our collection of random CRISPR sequences
     val sequences = new mutable.HashMap[String, Array[CRISPRSite]]()
 
-    val crisprMaker = new RandoCRISPR(params.totalScanLength - params.pamLength,
-      params.paddedPam,
-      params.fivePrimePam,
+    val crisprMaker = new RandoCRISPR(params.profile.spacerLength,
+      params.profile.pamSpec.normalizedPatterns.toArray,
+      params.profile.pamSpec.side == standards.FivePrimePam,
       "",
       randomFront,
       randomBack,
@@ -98,7 +98,7 @@ class GenerateRandomFasta extends Runnable with LazyLogging {
 
         // it's valid, also now check to make sure there's only one hit if they asked for the filter
         if (!onlyUnidirectional ||
-          (onlyUnidirectional && (params.fwdRegex.findAllIn(randomSeq.fullTarget).size + params.revRegex.findAllIn(randomSeq.fullTarget).size == 1))) {
+          (onlyUnidirectional && (params.profile.fwdTargetRegex.findAllIn(randomSeq.fullTarget).size + params.profile.revTargetRegex.findAllIn(randomSeq.fullTarget).size == 1))) {
           val existing = sequences.getOrElse(randomSeq.guide,Array[CRISPRSite]())
           sequences(randomSeq.guide) = existing ++ Array[CRISPRSite](crisprSeq)
         } else {

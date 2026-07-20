@@ -114,13 +114,15 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
   override def reset(contig: String): Unit = {
     // first processes the sequence supplied, looking for guides
     val contigBuffer = currentBuffer.result().mkString("")
+    val profile = params.profile
+    val targetLength = profile.layout.totalLength
 
     if (currentContig.isDefined) {
 
       // check forward
-      (params.fwdRegex findAllMatchIn contigBuffer).foreach { fwdMatch => {
+      (profile.fwdTargetRegex findAllMatchIn contigBuffer).foreach { fwdMatch => {
         val start = fwdMatch.start
-        val end = fwdMatch.start + params.totalScanLength
+        val end = fwdMatch.start + targetLength
         val subStr = contigBuffer.slice(start, end)
 
         val context = contigBuffer.slice(math.max(0, start - flankingSequence), end + flankingSequence)
@@ -130,7 +132,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
           subStr,
           true,
           start,
-          if (context.size == params.totalScanLength + (2 * flankingSequence))
+          if (context.size == targetLength + (2 * flankingSequence))
             Some(context)
           else
             None)
@@ -142,9 +144,9 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
       }
 
       // check reverse
-      (params.revRegex findAllMatchIn contigBuffer).foreach { revMatch => {
+      (profile.revTargetRegex findAllMatchIn contigBuffer).foreach { revMatch => {
         val start = revMatch.start
-        val end = revMatch.start + params.totalScanLength
+        val end = revMatch.start + targetLength
 
         val subStr = Utils.reverseCompString(contigBuffer.slice(start, end))
 
@@ -153,7 +155,7 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
           subStr,
           false,
           start,
-          if (context.size == params.totalScanLength + (2 * flankingSequence))
+          if (context.size == targetLength + (2 * flankingSequence))
             Some(context)
           else
             None)
@@ -173,4 +175,3 @@ case class SimpleSiteFinder(binWriter: GuideContainer, params: ParameterPack, fl
   }
 
 }
-

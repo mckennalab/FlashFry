@@ -46,15 +46,7 @@ class RandoCRISPR(sz: Int,
     val randomFrt = randomString(randomFront)
     val randomRvs = randomString(randomRear)
 
-    val unpaddedPam =
-        (pams(r.nextInt(pams.length)).map { base => {
-          if (base == 'N') {
-            numberToBase(r.nextInt(numberOfBases))
-          } else {
-            base
-          }
-        }
-        }.mkString(""))
+    val unpaddedPam = pams(r.nextInt(pams.length)).map(PatternedTarget.drawRandom).mkString("")
 
 
     val guideDraw = if (patternedTarget.isDefined)
@@ -101,7 +93,7 @@ object PatternedTarget {
     case 'W' => randomDraw(Array[Char]('A', 'T'))
     case 'B' => randomDraw(Array[Char]('C', 'G', 'T'))
     case 'D' => randomDraw(Array[Char]('A', 'G', 'T'))
-    case 'H' => randomDraw(Array[Char]('A', 'A', 'T'))
+    case 'H' => randomDraw(Array[Char]('A', 'C', 'T'))
     case 'V' => randomDraw(Array[Char]('A', 'C', 'G'))
     case 'N' => randomDraw(Array[Char]('A', 'C', 'G', 'T'))
     case _ => throw new IllegalStateException("Unknown or not allowed FASTA character: " + base)

@@ -45,7 +45,7 @@ class ScoreResults extends Runnable with LazyLogging {
 
   @Option(names = Array("-scoringMetrics", "--scoringMetrics"), required = true, paramLabel = "STRING",
     description = Array("scoring methods to include, separated by a comma (no spaces). " +
-      "\nCurrently supported scoring metrics: hsu2013,doench2014ontarget,doench2016cfd,moreno2015,bedannotator,dangerous,minot,reciprocalofftargets,rank"))
+      "\nCurrently supported scoring metrics: hsu2013,doench2014ontarget,doench2016cfd,moreno2015,encas12a,cas12a2xnls,bedannotator,dangerous,minot,reciprocalofftargets,rank"))
   private var scoringMetrics = ""
 
   @Option(names = Array("-maxMismatch", "--maxMismatch"), required = false, paramLabel = "INT",
@@ -209,12 +209,18 @@ object ScoreResults {
       case "jostandsantos" => {
         new JostAndSantosCRISPRi()
       }
+      case "encas12a" => {
+        new EnCas12aOffTargetScore()
+      }
+      case "cas12a2xnls" | "2xnlscas12a" => {
+        new Cas12aTwoNLSOffTargetScore()
+      }
       case "folding" => {
         val fold = new RNAFold4j()
         if (shortestGuideEnergy >= 0)
           fold.smallestGuide = Some(shortestGuideEnergy)
         else
-          fold.smallestGuide = Some(math.abs(parameterPack.guideRange._1 - parameterPack.guideRange._2))
+          fold.smallestGuide = Some(parameterPack.profile.spacerLength)
         fold
       }
 

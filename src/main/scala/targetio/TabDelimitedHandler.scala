@@ -304,13 +304,15 @@ object TabDelimitedInput extends LazyLogging {
         }
 
         assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-        val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions)
+        val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), positions,
+          validOffTargetCoordinates = true, occurrenceCount = offTargetCount)
         if (!ot.full)
           ot.addOT(otHit)
         Some(otHit)
       } else {
         assert(offTargetCount <= Short.MaxValue, "The count was too large to encode in a Scala Short value")
-        val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)), new Array[Long](offTargetCount), false)
+        val otHit = new CRISPRHit(bitEncoding.bitEncodeString(StringCount(offTargetSeq, offTargetCount.toShort)),
+          Array.empty[Long], validOffTargetCoordinates = false, occurrenceCount = offTargetCount)
         if (!ot.full)
           ot.addOT(otHit)
         Some(otHit)

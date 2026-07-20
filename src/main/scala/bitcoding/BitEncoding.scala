@@ -19,32 +19,38 @@
 
 package bitcoding
 
-import java.lang.{Long => JavaLong}
-import java.math.BigInteger
-
 import bitcoding.BitEncoding.TargetLong
-import utils.Utils
 import standards.ParameterPack
 
 import scala.annotation.switch
 
 /**
-  * perform high-speed encoding and decoding of strings to longs, supporting comparison functions
+  * Two-bit target encoding and spacer-aware comparison operations for one nuclease profile.
   *
-  * @param parameterPack the parameter pack
+  * Bases are right-aligned in one `Long` (`A=00`, `C=01`, `G=10`, `T=11`). Targets up to 24 bases use the historical
+  * packed codec, whose upper 16 bits contain an occurrence count. Targets of 25 through 32 bases use all 64 bits for
+  * sequence and store occurrence counts in target records instead. Persisted data must therefore go through
+  * `encodeTargetRecord` and `decodeTargetRecord`.
+  *
+  * @param parameterPack profile-backed targeting configuration
   */
 class BitEncoding(parameterPack: ParameterPack) {
 
   val mParameterPack = parameterPack
+  val targetCodec: TargetCodec = TargetCodec.forParameterPack(parameterPack)
+  private val layout = parameterPack.profile.layout
 
   /**
-    * encode our target string and count into a 64-bit Long
+    * Encode a DNA sequence and compatibility count into one `Long`.
+    *
+    * For the wide codec the returned value contains sequence only; the count is retained only when a full target record
+    * is created.
     *
     * @param strEncoding the string and count to encode
-    * @return the Long encoding of this string
+    * @return two-bit sequence value, with an embedded count only under the legacy codec
     */
   def bitEncodeString(strEncoding: StringCount): Long = {
-    require(strEncoding.str.size <= 24, "String " + strEncoding.str + " is too long to be encoded (" + strEncoding.str.size + " > 24)")
+    require(strEncoding.str.size <= targetCodec.maximumBases, "String " + strEncoding.str + " is too long to be encoded (" + strEncoding.str.size + " > " + targetCodec.maximumBases + ")")
     require(strEncoding.count >= 1, "String count " + strEncoding.toStr + " has a count <= 0")
 
     var encoding: Long = 0l
@@ -62,12 +68,11 @@ class BitEncoding(parameterPack: ParameterPack) {
     }
     }
 
-    // now shift the counts to the top of the 64 bit encoding
-    encoding | ((strEncoding.count.toLong << 48))
+    targetCodec.addCount(encoding, strEncoding.count.toInt)
   }
 
   /**
-    * encode our target string and a count of 1 into a 64-bit Long
+    * Encode a DNA sequence with a compatibility count of one.
     *
     * @param str the string
     * @return the Long encoding of this string
@@ -77,14 +82,17 @@ class BitEncoding(parameterPack: ParameterPack) {
   }
 
   /**
-    * decode the string and count into an object
+    * Decode a sequence value.
+    *
+    * Wide sequence values do not carry their record count, so the returned `StringCount` has count one. Use
+    * `decodeTargetRecord` when the occurrence count is required.
     *
     * @param encoding the encoding as a long
-    * @return an object representation
+    * @return decoded DNA string and embedded compatibility count
     */
   def bitDecodeString(encoding: TargetLong, actualSize: Int = mParameterPack.totalScanLength): StringCount = {
     val stringEncoding = new Array[Char](actualSize)
-    val count: Short = (encoding >> 48).toShort
+    val count = targetCodec.countFromSequence(encoding)
 
     (0 until actualSize).foreach { index => {
       (0x3 & (encoding >> (index * 2))) match {
@@ -95,45 +103,54 @@ class BitEncoding(parameterPack: ParameterPack) {
       }
     }
     }
-    StringCount(stringEncoding.mkString("").reverse, count)
+    StringCount(stringEncoding.mkString("").reverse, math.min(count, Short.MaxValue).toShort)
   }
 
   /**
-    * add a counter value this this long's encoding
+    * Replace the embedded compatibility count under the legacy codec.
+    *
+    * The wide codec validates `count` and returns the unchanged sequence because its count belongs in the record.
     *
     * @param encodedTarget the currently encoded target
     * @param count         the count to add
-    * @return
+    * @return updated packed value, or the unchanged wide sequence value
     */
   def updateCount(encodedTarget: TargetLong, count: Short): Long = {
-    // now shift the counts to the top of the 64 bit encoding
-    (encodedTarget & BitEncoding.stringMask) | ((count.toLong << 48))
+    targetCodec.addCount(encodedTarget, count.toInt)
   }
 
-  // return the current count of a long-encoded string
-  def getCount(encoding: TargetLong): Short = (encoding >> 48).toShort
+  /** Return the embedded compatibility count; wide sequence values return one. */
+  def getCount(encoding: TargetLong): Short = math.min(targetCodec.countFromSequence(encoding), Short.MaxValue).toShort
+
+  /** Encode a persisted record containing the sequence, count, and genomic positions. */
+  def encodeTargetRecord(sequence: TargetLong, positions: Array[Long]): Array[Long] =
+    targetCodec.encodeRecord(sequence, positions)
+
+  /** Decode a persisted target record at the supplied block offset. */
+  def decodeTargetRecord(block: Array[Long], offset: Int): EncodedTargetRecord =
+    targetCodec.decodeRecord(block, offset)
 
 
   /**
-    * return the number of mismatches between two strings (encoded in longs), given both our set comparison mask
-    * as well as an additional mask (optional). This uses the Java bitCount, which on any modern platform should call out
-    * to the underlying POPCNT instruction. With bit-shifting it's about 20X faster than any loop you'll come up with
+    * Count spacer mismatches between two encoded targets.
+    *
+    * PAM bits are always excluded by the profile's comparison mask. `additionalMask` can narrow the comparison further,
+    * as indexed traversal does for bin prefixes. Occurrence-count bits are never compared.
     *
     * @param encoding1      the first string encoded as a long
     * @param encoding2      the second string
     * @param additionalMask consider only the specified bases
     * @return their differences, as a number of bases
     */
-  def mismatches(encoding1: TargetLong, encoding2: TargetLong, additionalMask: Long = BitEncoding.stringMask): Int = {
+  def mismatches(encoding1: TargetLong, encoding2: TargetLong, additionalMask: Long = -1L): Int = {
     BitEncoding.allComparisons += 1
-    val firstComp = ((encoding1 ^ encoding2) & additionalMask & mParameterPack.comparisonBitEncoding)
+    val firstComp = ((encoding1 ^ encoding2) & additionalMask & layout.comparisonMask)
     java.lang.Long.bitCount((firstComp & BitEncoding.upperBits) | ((firstComp << 1) & BitEncoding.upperBits))
 
   }
 
   /**
-    * given a bin sequence -- a short sequence we've used for binning targets, find the number of mismatches
-    * between this bin and the guide of interest. Count values are not considered
+    * Count mismatches between an encoded spacer bin and a target.
     *
     * @param bin   the bin sequence as a string
     * @param guide the guide sequences
@@ -144,10 +161,10 @@ class BitEncoding(parameterPack: ParameterPack) {
   }
 
   /**
-    * generate a long encoding and a mask for this bin
+    * Align a spacer substring with its position in the full target encoding.
     *
     * @param bin              the bin sequence as a string
-    * @param rightShiftXBases if the bin isn't the first bin, we need to offset by this many bases (bits * 2)
+    * @param rightShiftXBases offset in spacer bases, not bits
     * @return a bin and mask object
     */
   def binToLongComparitor(bin: String, rightShiftXBases: Int = 0): BinAndMask = {
@@ -158,36 +175,40 @@ class BitEncoding(parameterPack: ParameterPack) {
 
 
   /**
-    * create a bitshifting mask for a binary comparison.
+    * Create a comparison mask for a spacer substring.
     *
     * @param binSize          the size of the bin
-    * @param rightShiftXBases if the bin isn't the first bin, we need to offset by this many bases (bits * 2)
+    * @param rightShiftXBases offset in spacer bases, not bits
     * @return a comparison mask for the bin of interest, which you can use to compare a bin to a target site
     */
   def compBitmaskForBin(binSize: Int, rightShiftXBases: Int = 0): Long = {
-    val base = (BitEncoding.stringMask >> (48 - (binSize * 2)))
+    require(binSize > 0 && binSize <= layout.spacerLength,
+      "Bin size must be between 1 and spacer length " + layout.spacerLength)
+    val bitCount = binSize * 2
+    val base = if (bitCount == 64) -1L else (1L << bitCount) - 1L
     binShift(binSize, base, rightShiftXBases)
   }
 
   /**
-    * given a bin and our base parameter set, shift the bin to the correct comparison position
+    * Shift a right-aligned value into a spacer-relative position in the full target.
+    *
     * @param binSize the size of the bin
     * @param base the base bit vector to shift into the correct place; we assume this is currently right-justified (lowest bits)
     * @param rightShiftXBases adjust to the right by X bases
-    * @return the long value of the shifted bit-vector, AND'ed to the standard string mask
+    * @return shifted value restricted to the current target layout
     */
   def binShift(binSize: Int, base: Long, rightShiftXBases: Int = 0): Long = {
-    if (parameterPack.fivePrimePam) {
-      base << (2 * (parameterPack.totalScanLength - (binSize + parameterPack.pamLength + rightShiftXBases))) & BitEncoding.stringMask
-    } else {
-      base << (2 * (parameterPack.totalScanLength - (binSize + rightShiftXBases))) & BitEncoding.stringMask
-    }
+    require(rightShiftXBases >= 0 && rightShiftXBases + binSize <= layout.spacerLength,
+      "Bin offset and width exceed spacer length " + layout.spacerLength)
+    val targetStart = layout.spacerRange._1 + rightShiftXBases
+    val shift = 2 * (layout.totalLength - (targetStart + binSize))
+    (base << shift) & layout.fullSequenceMask
   }
 
 }
 
 /**
-  * handle encoding and decoding strings into packed bit vectors (currently a long -- 64 bits)
+  * Constants for the two-bit DNA representation.
   */
 object BitEncoding {
   var allComparisons = 0L
@@ -199,21 +220,25 @@ object BitEncoding {
 
   val characterMask = 0x3
 
-  val stringLimit = 24
+  val stringLimit = 32
 
-  val stringMask = 0xFFFFFFFFFFFFL
-  val upperBits = 0xAAAAAAAAAAAAL
-  val stringMaskHighBits = 0xAAAAAAAAAAAAL
-  val stringMaskLowBits = 0x555555555555L
+  val legacyStringMask = 0xFFFFFFFFFFFFL
+  val stringMask = legacyStringMask
+  val upperBits = 0xAAAAAAAAAAAAAAAAL
+  val stringMaskHighBits = upperBits
+  val stringMaskLowBits = 0x5555555555555555L
 
   type TargetLong = Long
 }
 
 /**
-  * a case class for passing target strings and their counts back and forth
+  * Compatibility value for a DNA string and a short occurrence count.
+  *
+  * Wide database records can represent larger counts independently; this type remains short-valued for source
+  * compatibility with the original sequence API.
   *
   * @param str   the base string
-  * @param count it's count
+  * @param count positive compatibility count
   */
 case class StringCount(str: String, count: Short) {
   require(str.size <= BitEncoding.stringLimit, "string size is too large for encoding (limit " +
@@ -225,4 +250,5 @@ case class StringCount(str: String, count: Short) {
 }
 
 
+/** Spacer bin text together with its aligned two-bit value and comparison mask. */
 case class BinAndMask(bin: String, binLong: Long, guideMask: Long)

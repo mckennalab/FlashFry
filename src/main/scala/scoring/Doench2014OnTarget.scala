@@ -23,7 +23,7 @@ import bitcoding.BitEncoding
 import com.typesafe.scalalogging.LazyLogging
 import crispr.CRISPRSiteOT
 import picocli.CommandLine.Command
-import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
+import standards.{Cas9ParameterPack, ParameterPack}
 
 /**
   * Implementation of:
@@ -38,6 +38,8 @@ import standards.{Cas9ParameterPack, Cas9Type, ParameterPack, SpCAS9}
   */
 class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with RankedScore {
 
+  override val applicability: ScoreApplicability = ScoreApplicability.SpCas9TwentyBase
+
   private var bitEncoder: Option[BitEncoding] = None
 
   override def scoreName(): String = "Doench2014OnTarget"
@@ -50,7 +52,7 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with Ran
   /**
     * score an individual guide
     *
-    * @param guide the guide with it's off-targets
+    * @param guide guide with its off-targets and required sequence context
     * @return a score (as a string)
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
@@ -68,14 +70,10 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with Ran
     * @return if the model is valid over this data
     */
   override def validOverEnzyme(pack: ParameterPack): Boolean = {
-    pack.enzyme.enzymeParent == Cas9Type && pack.totalScanLength == ParameterPack.cas9ScanLength20mer
+    applicability.accepts(pack)
   }
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup() {}
 
   /**
@@ -94,7 +92,7 @@ class Doench2014OnTarget extends SingleGuideScoreModel with LazyLogging with Ran
     * @return are we valid. Scoring methods should also lazy log a warning that guides will be droppped, and why
     */
   override def validOverTargetSequence(pack: ParameterPack, guide: CRISPRSiteOT): Boolean = {
-    if (pack.enzyme != SpCAS9) return false
+    if (!validOverEnzyme(pack)) return false
     if (!guide.target.sequenceContext.isDefined) return false
 
     // find the guide within the context, and determine if we have enough flanking sequence for the scoring metric

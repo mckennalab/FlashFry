@@ -38,23 +38,14 @@ import standards.ParameterPack
 
 import scala.collection.mutable
 
-/**
-  * traverse a binary database file, seeking to the correct bins
-  */
+/** Traverser that consumes requested blocks in database order. */
 object LinearTraverser extends Traverser with LazyLogging {
 
   /**
-    * scan against the binary database of off-target sites in an implmenetation specific way
+    * Scans selected bins without seeking between compressed blocks.
     *
-    * @param binaryFile    the file we're scanning from
-    * @param header        we have to parse the header ahead of time so that we know
-    * @param traversal     the traversal over bins we'll use
-    * @param aggregator    guides
-    * @param maxMismatch   how many mismatches we support
-    * @param configuration our enzyme configuration
-    * @param bitCoder      our bit encoder
-    * @param posCoder      the position encoder
-    * @return a guide to OT hit array
+    * Parameters follow the [[Traverser.scan]] contract. The supplied traversal
+    * must visit bins in the same order as their blocks in the database.
     */
   def scan(binaryFile: File,
            header: BinaryHeader,
@@ -112,12 +103,14 @@ object LinearTraverser extends Traverser with LazyLogging {
   }
 
   /**
-    * fill a block of off-targets from the database
+    * Reads one uncompressed bin payload from the current stream position.
     *
     * @param blockCompressedInput the block compressed stream to pull from
-    * @param blockInformation information about the block we'd like to fetch
-    * @param file             file name to use
-    * @return
+    * @param blockInformation metadata describing the block to read
+    * @param file database file containing the block
+    * @param bin sequence prefix identifying the block
+    * @param bitCoder codec used for sequence records in the block
+    * @return the block payload decoded into 64-bit words
     */
   private def fillBlock(blockCompressedInput: BlockCompressedInputStream, blockInformation: BlockOffset, file: File, bin: String, bitCoder: BitEncoding): (Array[Long]) = {
 

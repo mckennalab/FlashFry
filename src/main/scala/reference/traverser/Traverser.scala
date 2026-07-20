@@ -32,22 +32,20 @@ import standards.ParameterPack
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ArrayBuilder, LinkedHashMap, Map}
 
-/**
-  * an object that traverses over a file of off-target blocks
-  */
+/** Strategy for scanning off-target blocks in a binary database. */
 trait Traverser {
   /**
-    * scan against the binary database of off-target sites in an implmenetation specific way
+    * Scans the bins selected by `traversal` and adds matching off-targets to
+    * `aggregator`.
     *
-    * @param binaryFile    the file we're scanning from
-    * @param header        we have to parse the header ahead of time so that we know
-    * @param traversal     the traversal over bins we'll use
-    * @param aggregator    the array of candidate guides we have
-    * @param maxMismatch   how many mismatches we support
-    * @param configuration our enzyme configuration
-    * @param bitCoder      our bit encoder
-    * @param posCoder      the position encoder
-    * @return a guide to OT hit array
+    * @param binaryFile database file to scan
+    * @param header parsed metadata and block index for `binaryFile`
+    * @param traversal iterator selecting bins and guides to compare
+    * @param aggregator destination for discovered guide/off-target matches
+    * @param maxMismatch maximum number of spacer mismatches to retain
+    * @param configuration nuclease configuration associated with the database
+    * @param bitCoder sequence and target-record codec selected from the header
+    * @param posCoder genomic-position codec selected from the header
     */
   def scan(binaryFile: File,
            header: BinaryHeader,
@@ -60,33 +58,37 @@ trait Traverser {
 
 }
 
-/**
-  * common methods that any traverser may need -- unified here to help future parallelism
-  */
+/** Shared comparison routines and diagnostic counters for traversers. */
 object Traverser extends LazyLogging {
-  // count all the targets we look at
+  /** Number of distinct encoded targets examined by [[compareBlock]]. */
   var allTargets = 0l
 
-  // count all the targets we look at
+  /** Number of encoded genomic positions examined by [[compareBlock]]. */
   var allTargetsAndPositions = 0l
 
-  // record the total number of comparisons we do
+  /** Number of guide-to-target sequence comparisons performed. */
   var allComparisons = 0l
 
-  // compute the mismatch count between two strings
+  /** Counts differing characters at corresponding positions. */
   def mismatches(str1: String, str2: String): Int = str1.zip(str2).map { case (a, b) => if (a == b) 0 else 1 }.sum
 
-  // format a number into a comma-seperated list
+  /** Locale-aware formatter used for traversal progress messages. */
   val formatter = java.text.NumberFormat.getInstance()
 
 
   /**
-    * given a block of longs representing the targets and their positions, add any potential off-targets sequences to
-    * each guide it matches
+    * Compares an encoded target block with candidate guides.
     *
-    * @param blockOfTargetsAndPositions an array of longs representing a block of encoded target and positions
-    * @param guides                     the guides
-    * @return an mapping from a potential guide to it's discovered off target sequences
+    * The returned array follows the input `guides` order. Each nested array
+    * contains the off-target hits discovered for that guide in this block.
+    *
+    * @param blockOfTargetsAndPositions encoded target records and positions
+    * @param numberOfTargets number of target records in the block
+    * @param guides encoded guide sequences to compare
+    * @param bitEncoding codec used by the block
+    * @param maxMismatches maximum spacer mismatches to retain
+    * @param bin comparison mask and encoded bin prefix
+    * @return discovered hits grouped by input guide
     */
   def compareBlock(blockOfTargetsAndPositions: Array[Long],
                    numberOfTargets: Int,
@@ -111,14 +113,15 @@ object Traverser extends LazyLogging {
       allTargets += 1
 
       assert(offset < blockOfTargetsAndPositions.size, "we were about to fetch the " + targetIndex + " target and failed because " + offset + " is  >= to total block " + blockOfTargetsAndPositions.size)
-      val currentTarget = blockOfTargetsAndPositions(offset)
-      val count = bitEncoding.getCount(currentTarget)
+      val record = bitEncoding.decodeTargetRecord(blockOfTargetsAndPositions, offset)
+      val currentTarget = record.target
+      val count = record.count
       assert(count > 0,"Encoded position count should be greater than zero: " + bitEncoding.bitDecodeString(currentTarget).toStr)
 
       require(blockOfTargetsAndPositions.size >= offset + count,
         "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size)
 
-      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
+      val positions = record.positions
       assert(positions.size > 0,"Position count should be greater than zero")
 
       allTargetsAndPositions += positions.size
@@ -134,7 +137,7 @@ object Traverser extends LazyLogging {
         }
         guideIndex += 1
       }
-      offset += count + 1
+      offset = record.nextOffset
     }
 
     val returnMap = new mutable.HashMap[Long, Array[CRISPRHit]]()
@@ -160,20 +163,14 @@ object Traverser extends LazyLogging {
 
     while (pointer < numberOfLongs) {
 
-      // get the target, and it's count of positions
-      val target = bitEnc.bitDecodeString(larray(pointer))
+      val record = bitEnc.decodeTargetRecord(larray, pointer)
+      val target = bitEnc.bitDecodeString(record.target)
 
       // validate that the target belongs in the block
-      assert(bitEnc.mismatchBin(bin,larray(pointer)) == 0, "There were mismatches between the bin and the target: " + bin + " and " + target.str)
+      assert(bitEnc.mismatchBin(bin,record.target) == 0, "There were mismatches between the bin and the target: " + bin + " and " + target.str)
 
-      pointer += 1
-      assert(target.count + pointer <= larray.size, "Fetching the current block of positions would underflow our buffer: curpos = " +
-        pointer + " positions = " + target.count + " arraysize = " + larray.size)
-
-      ret += new CRISPRHit(larray(pointer - 1),larray.slice(pointer, pointer + target.count))
-
-      // now move the counter the number of positions
-      pointer += target.count
+      ret += new CRISPRHit(record.target, record.positions)
+      pointer = record.nextOffset
 
       // record we processed a target
       targetsSeen += 1
@@ -220,14 +217,15 @@ object Traverser extends LazyLogging {
       allTargets += 1
 
       assert(offset < blockOfTargetsAndPositions.size, "we were about to fetch the " + targetIndex + " target and failed because " + offset + " is  >= to total block " + blockOfTargetsAndPositions.size)
-      val currentTarget = blockOfTargetsAndPositions(offset)
-      val count = bitEncoding.getCount(currentTarget)
+      val record = bitEncoding.decodeTargetRecord(blockOfTargetsAndPositions, offset)
+      val currentTarget = record.target
+      val count = record.count
       assert(count > 0,"Encoded position count should be greater than zero: " + bitEncoding.bitDecodeString(currentTarget).toStr)
 
       require(blockOfTargetsAndPositions.size >= offset + count,
         "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size)
 
-      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
+      val positions = record.positions
       assert(positions.size > 0,"Position count should be greater than zero")
 
       allTargetsAndPositions += positions.size
@@ -243,7 +241,7 @@ object Traverser extends LazyLogging {
         }
         guideIndex += 1
       }
-      offset += count + 1
+      offset = record.nextOffset
     }
 
     val returnMap = new mutable.HashMap[Long, Array[CRISPRHit]]()

@@ -228,15 +228,16 @@ object BlockManager extends LazyLogging {
 
       assert(offset < blockOfTargetsAndPositions.size, "we were about to fetch the " + targetIndex + " target and failed because " + offset + " is  >= to total block " + blockOfTargetsAndPositions.size)
 
-      val currentTarget = blockOfTargetsAndPositions(offset)
-      val count = bitEncoding.getCount(currentTarget)
+      val record = bitEncoding.decodeTargetRecord(blockOfTargetsAndPositions, offset)
+      val currentTarget = record.target
+      val count = record.count
 
       assert(count > 0, "Encoded position count should be greater than zero: " + bitEncoding.bitDecodeString(currentTarget).toStr + " targets seen " + allTargets)
 
       require(blockOfTargetsAndPositions.size >= offset + count,
         "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size + " bin " + bin)
 
-      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
+      val positions = record.positions
 
       allTargetsAndPositions += positions.size
 
@@ -249,7 +250,7 @@ object BlockManager extends LazyLogging {
         }
         guideIndex += 1
       }
-      offset += count + 1
+      offset = record.nextOffset
     }
   }
 
@@ -330,20 +331,21 @@ object BlockManager extends LazyLogging {
 
       assert(offset < blockOfTargetsAndPositions.size, "we were about to fetch the " + targetIndex + " target and failed because " + offset + " is  >= to total block " + blockOfTargetsAndPositions.size)
 
-      val currentTarget = blockOfTargetsAndPositions(offset)
-      val count = bitEncoding.getCount(currentTarget)
+      val record = bitEncoding.decodeTargetRecord(blockOfTargetsAndPositions, offset)
+      val currentTarget = record.target
+      val count = record.count
 
       assert(count > 0, "Encoded position count should be greater than zero: " + bitEncoding.bitDecodeString(currentTarget).toStr + " targets seen " + allTargets)
 
       require(blockOfTargetsAndPositions.size >= offset + count,
         "Failed to correctly parse block, the number of position entries exceeds the buffer size, count = " + count + " offset = " + offset + " block size " + blockOfTargetsAndPositions.size)
 
-      val positions = blockOfTargetsAndPositions.slice(offset + 1, (offset + 1) + count)
+      val positions = record.positions
 
       allTargetsAndPositions += positions.size
       returnGuides += new CRISPRHit(currentTarget, positions)
 
-      offset += count + 1
+      offset = record.nextOffset
     }
 
     returnGuides.toArray
@@ -351,75 +353,81 @@ object BlockManager extends LazyLogging {
   }
 
   /**
-    * create an indexed block from a set of targets
+    * Serialize targets as a two-level indexed block.
     *
-    * @param targetsAndPositions the targets
-    * @param prefix              the bin string
+    * Layout: `[2][lookup entry x 4^lookupBinSize][grouped target records]`. Each lookup entry packs the relative `Long`
+    * offset into its high 32 bits and group size into its low 32 bits; `-1` marks an empty group. Records are grouped by
+    * spacer sequence explicitly because full-target sort order begins with the PAM for 5-prime-PAM profiles.
+    *
+    * @param targetsAndPositions distinct targets assigned to the outer bin
+    * @param prefix              outer spacer-bin sequence
     * @param bitEncoding         the bit encoder
-    * @param lookupBinSize       the size of the inner bin lookup
-    * @return a block of longs
+    * @param lookupBinSize       number of additional spacer bases in the inner index
+    * @return complete block including the block-type marker
     */
   def createIndexedBlock(targetsAndPositions: Array[TargetPos],
                          prefix: String,
                          bitEncoding: BitEncoding,
                          lookupBinSize: Int): Array[Long] = {
 
-
     val block = mutable.ArrayBuilder.make[Long]()
-
-
-    // now make the lookup table
-    // --------------------------------------------
+    val binOrder = new BaseCombinationGenerator(lookupBinSize).toVector
     val binLookup = new mutable.LinkedHashMap[String, Int]()
     val binLookupSize = new mutable.LinkedHashMap[String, Int]()
+    val targetsByBin = new mutable.LinkedHashMap[String, ArrayBuffer[TargetPos]]()
 
-    new BaseCombinationGenerator(lookupBinSize).iterator.foreach { case (bin) => {
+    binOrder.foreach { bin =>
       binLookup(bin) = -1
       binLookupSize(bin) = 0
+      targetsByBin(bin) = new ArrayBuffer[TargetPos]()
     }
+
+    // Full target ordering begins with the PAM for 5-prime-PAM nucleases, so it cannot be used to infer that
+    // spacer sub-bins are contiguous. Group explicitly before serializing the indexed block.
+    targetsAndPositions.foreach { targetAndPos =>
+      val decoded = bitEncoding.bitDecodeString(targetAndPos.target).str
+      val bn = bitEncoding.mParameterPack.profile.layout.binSequence(decoded, lookupBinSize, prefix.size)
+      targetsByBin(bn) += targetAndPos
     }
 
     var currentPos = 0
-
-    targetsAndPositions.zipWithIndex.foreach { case (targetAndPos, index) => {
-      val bn = bitEncoding.bitDecodeString(targetAndPos.target).str.slice(prefix.size, prefix.size + lookupBinSize)
-      if (binLookup(bn) >= currentPos | binLookup(bn) < 0) {
-        binLookup(bn) = currentPos
+    binOrder.foreach { bin =>
+      if (targetsByBin(bin).nonEmpty) {
+        binLookup(bin) = currentPos
       }
 
-      currentPos += (1 + targetAndPos.positions.size)
-      binLookupSize(bn) = binLookupSize.getOrElse(bn, 0) + (1 + targetAndPos.positions.size)
-
-      block += targetAndPos.target
-      block ++= targetAndPos.positions
-    }
+      targetsByBin(bin).foreach { targetAndPos =>
+        val encodedRecord = targetAndPos.toLongBuffer
+        currentPos += encodedRecord.length
+        binLookupSize(bin) += encodedRecord.length
+        block ++= encodedRecord
+      }
     }
 
     val arrayOfOffsetsAndSizes = mutable.ArrayBuilder.make[Long]()
     arrayOfOffsetsAndSizes += 2l // our block type
 
     var blockSumCheck = 0
-    binLookup.foreach { case (key, value) => {
-      arrayOfOffsetsAndSizes += (binLookup(key).toLong << 32 | binLookupSize(key).toLong)
-      blockSumCheck += binLookupSize(key)
-    }
+    binOrder.foreach { bin =>
+      arrayOfOffsetsAndSizes += (binLookup(bin).toLong << 32 | binLookupSize(bin).toLong)
+      blockSumCheck += binLookupSize(bin)
     }
 
-
-    val res = arrayOfOffsetsAndSizes.result() ++ block.result()
-    blockSumCheck += arrayOfOffsetsAndSizes.result().size
-    assert(blockSumCheck == res.size, "Our sum of targets and positions doesn't add up the total block size (minus our header long): " + blockSumCheck + " vrs " + (res.size))
+    val header = arrayOfOffsetsAndSizes.result()
+    val res = header ++ block.result()
+    blockSumCheck += header.size
+    assert(blockSumCheck == res.size, "Our sum of targets and positions doesn't add up to the total block size: " + blockSumCheck + " vs. " + res.size)
     res
   }
 
 
   /**
-    * create a linear bin representation of this set of targets
+    * Serialize targets as `[1][target record 1]...[target record n]`.
     *
     * @param targetsAndPositions the targets and positions
-    * @param prefix              the bin prefix
-    * @param bitEncoding         the bit encoding
-    * @return array of longs
+    * @param prefix              outer bin prefix; retained for API symmetry with indexed blocks
+    * @param bitEncoding         active encoding; each `TargetPos` already retains the same encoder
+    * @return complete block including the block-type marker
     */
   def createLinearBlock(targetsAndPositions: Array[TargetPos],
                         prefix: String,
@@ -430,16 +438,15 @@ object BlockManager extends LazyLogging {
     var blockSum = 0
     block += 1l // our block ID
     targetsAndPositions.zipWithIndex.foreach { case (targetAndPos, index) => {
-      block += targetAndPos.target
-      block ++= targetAndPos.positions
-      blockSum += (1 + targetAndPos.positions.size)
+      val encodedRecord = targetAndPos.toLongBuffer
+      block ++= encodedRecord
+      blockSum += encodedRecord.length
     }
     }
 
     val res = block.result()
-    assert(blockSum == res.size - 1, "Our sum of targets and positions doesn't add up the total block size (minus our header long): " + blockSum + " vrs " + (res.size - 1))
+    assert(blockSum == res.size - 1, "Our sum of targets and positions doesn't add up to the total block size (minus our header long): " + blockSum + " vs. " + (res.size - 1))
     res
   }
 
 }
-

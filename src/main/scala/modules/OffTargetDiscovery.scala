@@ -93,7 +93,7 @@ class OffTargetDiscovery extends Runnable with LazyLogging {
     val encoders = ReferenceEncoder.findTargetSites(new File(inputFasta), guideHits, header.inputParameterPack, flankingSequence)
     logger.info("Setting up the guide recording for our " + guideHits.guideHits.size + " candidate guides....")
 
-    val filteredGuides = GuideMemoryStorage.filter_by_GC(guideHits,minGC,maxGC)
+    val filteredGuides = GuideMemoryStorage.filter_by_GC(guideHits,minGC,maxGC,header.inputParameterPack)
 
     // transform our targets into a list for off-target collection
     logger.info("Filtered GC guide count " + filteredGuides.guideHits.size)

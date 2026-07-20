@@ -22,94 +22,97 @@ package scoring
 import bitcoding.{BitEncoding, BitPosition}
 import crispr.CRISPRSiteOT
 import standards.ParameterPack
+import standards.EnzymeType
 import com.typesafe.scalalogging.LazyLogging
 
-/**
-  * our trait object for scoring guides -- any method that implements this trait can be used to
-  * score on and off-target effects
-  */
+/** Extension point for guide-level, off-target, and annotation scoring models. */
 trait ScoreModel extends LazyLogging {
 
-  /**
-    * @return the name of this score model, used to look up the models when initalizing scoring
-    */
+  /** Biological and layout constraints checked before this model is initialized. */
+  def applicability: ScoreApplicability = ScoreApplicability.Any
+
+  /** Stable metric name used in registration and output annotations. */
   def scoreName(): String
 
-  /**
-    * @return the description of method for the header of the output file
-    */
+  /** Human-readable description written to output metadata. */
   def scoreDescription(): String
 
-  /**
-    * @return get a listing of the header columns for this score metric
-    */
+  /** Output columns produced by this model, in the same order as values returned during scoring. */
   def headerColumns(): Array[String]
 
   /**
-    * score an array of guides. We provide all the guides at once because some metrics
-    * look at reciprocal off-targets, or are better suited to traverse an input file once
-    * while considering all guides (like BED annotation)
+    * Score or annotate a batch of guides.
     *
-    * @param guide the guide with it's off-targets
+    * Batch access supports models that compare guides with each other or traverse an annotation source once.
+    * Implementations place results in each guide's `namedAnnotations` map.
+    *
+    * @param guide guides and their discovered off-targets
+    * @param bitEnc sequence encoder matching `pack`
+    * @param posEnc genomic position encoder for the active database
+    * @param pack active nuclease profile
     */
   def scoreGuides(guide: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack)
 
-  /**
-    * are we valid over the enzyme of interest?
-    *
-    * @param enzyme the enzyme (as a parameter pack)
-    * @return if the model is valid over this data
-    */
-  def validOverEnzyme(enzyme: ParameterPack): Boolean
+  /** Return whether this model is calibrated for the supplied profile. */
+  def validOverEnzyme(enzyme: ParameterPack): Boolean = applicability.accepts(enzyme)
 
   /**
-    * given a enzyme and guide information, can we score this sequence? For instance the on-target sequence
-    * scores sometimes take base-context on each side, and without that cannot score the guide
+    * Return whether one guide has the sequence/context required by this model.
     *
-    * @param enzyme the enzyme of choice, with parameters
-    * @param guide  the guide sequence we want to score
-    * @return if we can score this target. Scoring methods should also log a warning that guides will be dropped, and why
+    * This is evaluated after profile-level applicability. For example, an on-target model may additionally require
+    * flanking sequence context.
     */
   def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** Load resources or finalize configuration after the encoder and profile have been accepted. */
   def setup()
 
-  /**
-    * set the bit encoder for this scoring metric
-    *
-    * @param bitEncoding
-    */
+  /** Supply the sequence encoder associated with the active database. */
   def bitEncoder(bitEncoding: BitEncoding): Unit
 
 }
 
-// sometimes it's easier to define scores over a single guide, not the collection of guides --
-// this abstract class automates scoring each
+/**
+  * Declarative constraints for a scoring model.
+  *
+  * Empty sets are unconstrained. Non-empty sets are combined with logical AND, so a profile must satisfy every
+  * configured dimension. Use exact profile IDs for empirically calibrated models unless the evidence supports a whole
+  * nuclease family.
+  */
+final case class ScoreApplicability(profileIds: Set[String] = Set.empty,
+                                    nucleaseIds: Set[String] = Set.empty,
+                                    families: Set[EnzymeType] = Set.empty,
+                                    spacerLengths: Set[Int] = Set.empty) {
+  def accepts(pack: ParameterPack): Boolean = {
+    val profile = pack.profile
+    (profileIds.isEmpty || profileIds.contains(profile.id)) &&
+      (nucleaseIds.isEmpty || nucleaseIds.contains(profile.nuclease.stringEncoding.toLowerCase)) &&
+      (families.isEmpty || families.contains(profile.nuclease.enzymeParent)) &&
+      (spacerLengths.isEmpty || spacerLengths.contains(profile.spacerLength))
+  }
+}
+
+object ScoreApplicability {
+  val Any: ScoreApplicability = ScoreApplicability()
+
+  val SpCas9TwentyBase: ScoreApplicability = ScoreApplicability(profileIds = Set(
+    "spcas9-ngg-nag-20", "spcas9-ngg-20", "spcas9-nag-20"))
+
+  val SpCas9NineteenOrTwentyBase: ScoreApplicability = ScoreApplicability(profileIds = Set(
+    "spcas9-ngg-nag-20", "spcas9-ngg-20", "spcas9-nag-20",
+    "spcas9-ngg-nag-19", "spcas9-ngg-19"))
+}
+
+/** Adapter for models that independently score one guide at a time. */
 abstract class SingleGuideScoreModel extends ScoreModel with LazyLogging {
   /**
-    * score an individual guide
+    * Score one guide.
     *
-    * @param guide the guide with it's off-targets
-    * @return an array of arrays (ugh). For each column the scoring method can return multiple pieces of information
-    *         which are then merged at the output stage
+    * @return one array per `headerColumns` entry; an inner array may contain multiple annotations for that column
     */
   def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]]
 
-  /**
-    * score an array of guides. We provide all the guides at once because some metrics
-    * look at reciprocal off-targets, or are better suited to traverse an input file once
-    * while considering all guides (like BED annotation)
-    *
-    * @param guides the guide with it's off-targets
-    * @param bitEnc the bit encoding
-    * @param posEnc the position encoding
-    * @return a score (as a string)
-    */
+  /** Apply `scoreGuide` to valid guides and write `NA` for invalid ones. */
   override def scoreGuides(guides: Array[CRISPRSiteOT], bitEnc: BitEncoding, posEnc: BitPosition, pack: ParameterPack) {
     guides.zipWithIndex.foreach { case(hit,index) => {
       if ((index + 1) % 10000 == 0) {
@@ -136,11 +139,10 @@ object SingleGuideScoreModel {
   val missingAnnotation = "NA"
 
   /**
-    * the sequence stored with a guide can have additional 'context' on each side; find the guide position within that context,
-    * handling conditions where the guide is repeated within the context.  In that case we choose the instance most centered
-    * within the context
+    * Return the expected start of a guide inside its symmetrically captured context, or `-1` when no context exists.
     *
-    * @param guide the guide, including the sequence context
+    * Discovery stores equal requested flanks on both sides, so the centered offset is deterministic even when the guide
+    * sequence itself occurs more than once in the context.
     */
   def findGuideSequenceWithinContext(guide: CRISPRSiteOT): Int = {
     if (!guide.target.sequenceContext.isDefined) return -1

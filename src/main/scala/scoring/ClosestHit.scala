@@ -37,7 +37,7 @@ class ClosestHit extends SingleGuideScoreModel {
   /**
     * score an individual guide
     *
-    * @param guide the guide with it's off-targets
+    * @param guide guide with its off-targets
     * @return a score (as a string)
     */
   override def scoreGuide(guide: CRISPRSiteOT): Array[Array[String]] = {
@@ -51,7 +51,7 @@ class ClosestHit extends SingleGuideScoreModel {
     if (guide.offTargets.size > 0) {
       guide.offTargets.foreach { ot => {
         val mismatches = bitEncoder.get.mismatches(ot.sequence, guide.longEncoding)
-        val otCount = bitEncoder.get.getCount(ot.sequence)
+        val otCount = ot.getOffTargetCount
 
         if (mismatches <= maxMisMatchStoredInArray) {
           otCounts(mismatches) += otCount
@@ -103,11 +103,7 @@ class ClosestHit extends SingleGuideScoreModel {
     */
   override def validOverTargetSequence(enzyme: ParameterPack, guide: CRISPRSiteOT): Boolean = true
 
-  /**
-    * parse out any command line arguments that are optional or required for this scoring metric
-    *
-    * @param args the command line arguments
-    */
+  /** No additional setup is required. */
   override def setup() {}
 
   /**
