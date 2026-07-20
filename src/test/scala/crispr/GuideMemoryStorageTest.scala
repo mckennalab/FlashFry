@@ -20,6 +20,7 @@
 package crispr
 
 import org.scalatest.{FlatSpec, Matchers}
+import standards.Cas9NGGParameterPack
 
 class GuideMemoryStorageTest extends FlatSpec with Matchers {
 
@@ -45,5 +46,13 @@ class GuideMemoryStorageTest extends FlatSpec with Matchers {
 
     val filtered = GuideMemoryStorage.filter_by_GC(gm,0.0,1.0)
     assert(filtered.guideHits.size == 2)
+  }
+
+  it should "calculate GC content from the spacer rather than the PAM" in {
+    val gm = new GuideMemoryStorage()
+    gm.addHit(new CRISPRSite("test", "A" * 20 + "GGG", true, 1, None))
+
+    val filtered = GuideMemoryStorage.filter_by_GC(gm, 0.1, 1.0, Cas9NGGParameterPack)
+    filtered.guideHits should be (empty)
   }
 }

@@ -69,12 +69,25 @@ class DangerousSequencesTest extends FlatSpec with Matchers {
     val danger = new DangerousSequences()
     danger.bitEncoder(encodeDevice)
     
-    val strCount = StringCount("TTTT CCCCC GGGGG TATTT".filter { c => c != ' ' }.mkString(""), 1000)
+    val strCount = StringCount("TTTT CCCCC GGGGG TATTT AAAAA".filter { c => c != ' ' }.mkString(""), 1000)
 
     val encoding = encodeDevice.bitEncodeString(strCount)
     val tgt = new CRISPRSiteOT(CRISPRSite("test",strCount.str,true,0,None),encoding,1000)
 
     val eval = danger.scoreGuide(tgt)
     (eval.map{t => t.mkString("")}.mkString(",")) should be("NONE,NONE,NONE")
+  }
+
+  "DangerousSequences" should "calculate GC content from the spacer without the PAM" in {
+    val encodeDevice = new BitEncoding(Cpf1ParameterPack)
+    val danger = new DangerousSequences()
+    danger.cleanOutput = true
+    danger.bitEncoder(encodeDevice)
+
+    val sequence = "TTTT" + "AC" * 10
+    val target = new CRISPRSiteOT(CRISPRSite("test", sequence, true, 0, None),
+      encodeDevice.bitEncodeString(sequence), 1000)
+
+    danger.scoreGuide(target)(0)(0).toDouble should be (0.5)
   }
 }
