@@ -3,7 +3,7 @@ package scoring
 import bitcoding.{BitEncoding, StringCount}
 import crispr.{CRISPRSite, CRISPRSiteOT}
 import org.scalatest.{FlatSpec, Matchers}
-import standards.{Cas9ParameterPack, ParameterPack, SpCAS9}
+import standards.{Cas9ParameterPack, NucleaseProfiles, ParameterPack, SpCAS9}
 
 /**
   * Created by aaronmck on 3/31/17.
@@ -22,6 +22,11 @@ class ScoreModelTest extends FlatSpec with Matchers {
 
     (SingleGuideScoreModel.findGuideSequenceWithinContext(cOT)) should be(6)
 
+  }
+
+  it should "not treat SaCas9 profiles as SpCas9 score-compatible" in {
+    ScoreApplicability.SpCas9TwentyBase.accepts(NucleaseProfiles.saCas9NNGRRT21) should be (false)
+    ScoreApplicability.SpCas9TwentyBase.accepts(NucleaseProfiles.saCas9NNGRRT22) should be (false)
   }
 
 

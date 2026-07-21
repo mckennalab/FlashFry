@@ -36,8 +36,20 @@ case object SpCAS9 extends Enzyme{
   override def stringEncoding: String = "spCas9"
   override def enzymeParent: EnzymeType = Cas9Type
 }
+case object SaCAS9 extends Enzyme{
+  override def stringEncoding: String = "SaCas9"
+  override def enzymeParent: EnzymeType = Cas9Type
+}
 case object CPF1 extends Enzyme{
   override def stringEncoding: String = "Cpf1"
+  override def enzymeParent: EnzymeType = Cpf1Type
+}
+case object AsCas12a extends Enzyme{
+  override def stringEncoding: String = "AsCas12a"
+  override def enzymeParent: EnzymeType = Cpf1Type
+}
+case object LbCas12a extends Enzyme{
+  override def stringEncoding: String = "LbCas12a"
   override def enzymeParent: EnzymeType = Cpf1Type
 }
 case object EnCas12a extends Enzyme{
@@ -74,7 +86,10 @@ object Enzyme {
   /** Resolve a built-in nuclease when possible, otherwise preserve it as a configured identity. */
   def fromEncoding(encoding: String, family: EnzymeType): Enzyme = encoding.toLowerCase match {
     case "spcas9" if family == Cas9Type => SpCAS9
+    case "sacas9" if family == Cas9Type => SaCAS9
     case "cpf1" if family == Cpf1Type => CPF1
+    case "ascas12a" if family == Cpf1Type => AsCas12a
+    case "lbcas12a" if family == Cpf1Type => LbCas12a
     case "encas12a" if family == Cpf1Type => EnCas12a
     case "2xnls-cas12a" if family == Cpf1Type => Cas12a2xNLS
     case _ => ConfiguredEnzyme(encoding, family)

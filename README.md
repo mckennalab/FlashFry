@@ -80,13 +80,15 @@ The scored sites are written to `EMX1.output.scored`.
 Target geometry is defined by a nuclease profile: spacer length, PAM side, and one or more fixed-width IUPAC PAM patterns. FlashFry derives discovery regular expressions, spacer and PAM ranges, mismatch masks, and bin positions from that definition. The built-in profile IDs are:
 
 - `cpf1-tttn-20`, `spcas9-ngg-nag-20`, `spcas9-ngg-20`, `spcas9-nag-20`, `spcas9-ngg-nag-19`, and `spcas9-ngg-19` (the original aliases and database IDs remain supported)
+- `sacas9-nngrrt-21` and `sacas9-nngrrt-22`
+- `ascas12a-tttv-23` and `lbcas12a-tttv-23`
 - `encas12a-tttn-23` and `cas12a-2xnls-tttn-23`
 
-New databases use a version-2 header that stores the complete profile definition and target codec. Version-1 databases remain readable. Targets through 24 bases retain the original packed representation; longer targets, including the 27-base Cas12a profiles, use the wide codec with an independent occurrence count. The `encas12a` and `cas12a2xnls` scoring metrics use the bundled 23-position CFD matrices. See the [nuclease profile developer guide](docs/nuclease-profiles.md) for extension and compatibility details.
+New databases use a version-2 header that stores the complete profile definition and target codec. Version-1 databases remain readable. Targets through 24 bases retain the original packed representation; longer targets, including the SaCas9 and 23-base Cas12a profiles, use the wide codec with an independent occurrence count. The `encas12a` and `cas12a2xnls` scoring metrics use bundled 23-position CFD matrices and do not apply to AsCas12a or LbCas12a. See the [nuclease profile developer guide](docs/nuclease-profiles.md) for extension and compatibility details.
 
 ## Cite
 
-FlashFry is published in [BMC Biology](https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-018-0545-0); if you find it useful please cite: 
+FlashFry is published in [BMC Biology](https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-018-0545-0); if you find it useful please cite:
 
 ```
 TY  - JOUR
