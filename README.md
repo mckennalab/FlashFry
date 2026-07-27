@@ -90,10 +90,10 @@ New databases use a version-2 header that stores the complete profile definition
 
 ### Custom fixed-width profiles
 
-Custom fixed-width profiles can now be used for enzymes not covered by existing, pre-programmed sets. To use these you'll need to make a profile for your enzyme; the details of which can be found in the Nuclease profiles
+Custom fixed-width profiles can now be used for enzymes not covered by existing, pre-programmed sets (say, if you want a custom PAM with Cas9 or some other CRISPR variant that's not yet supported). To use these you'll need to make a profile for your enzyme; the details of which can be found in the Nuclease profiles
 document in the docs folder. Custom profiels can be checked with `profile validate --profileFile PROFILE.properties` and used to build a
 dedicated database with `index --profileFile PROFILE.properties`. The validated definition is embedded in the database
-header, so discovery and scoring do not require the profile file again.
+header, so discovery and scoring do not require the profile file again. The requirements is that the PAM and spacer sequence combined (the matched pattern) is <= 32 bases long, as we use 64-bit words for fast lookup.
 
 ## Cite
 
