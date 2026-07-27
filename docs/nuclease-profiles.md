@@ -23,6 +23,7 @@ A profile contains:
 
 | Profile ID | Spacer | PAM | PAM side | CLI aliases |
 | --- | ---: | --- | --- | --- |
+| `spg-ngn-20` | 20 | `NGN` | 3-prime | `spg` |
 | `sacas9-nngrrt-21` | 21 | `NNGRRT` | 3-prime | `sacas9`, `sacas921` |
 | `sacas9-nngrrt-22` | 22 | `NNGRRT` | 3-prime | `sacas922` |
 | `ascas12a-tttv-23` | 23 | `TTTV` | 5-prime | `ascas12a`, `ascpf1` |
@@ -30,9 +31,11 @@ A profile contains:
 | `encas12a-tttn-23` | 23 | `TTTN` | 5-prime | `encas12a` |
 | `cas12a-2xnls-tttn-23` | 23 | `TTTN` | 5-prime | `cas12a2xnls`, `2xnlscas12a` |
 
-The unqualified `sacas9` alias selects the established 21-base SaCas9 profile. Use the stable profile ID or the
-length-specific alias when spacer length must be explicit. AsCas12a and LbCas12a intentionally have separate profiles:
-shared target geometry does not make ortholog-specific activity or off-target scores interchangeable.
+The SpG profile uses the full three-base `NGN` PAM context and remains distinct from SpCas9 so that targeting identity
+and score applicability are not conflated. The unqualified `sacas9` alias selects the established 21-base SaCas9
+profile. Use the stable profile ID or the length-specific alias when spacer length must be explicit. AsCas12a and
+LbCas12a intentionally have separate profiles: shared target geometry does not make ortholog-specific activity or
+off-target scores interchangeable.
 
 ## Normalized target orientation
 

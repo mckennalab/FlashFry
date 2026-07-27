@@ -268,6 +268,11 @@ scored row count can be lower than the discovery row count.
 | `closestHitCount` | Occurrences at that closest mismatch distance | Lower is better |
 | `0-1-2-3-4_mismatch` | Occurrence histogram by mismatch count | Fewer low-mismatch hits |
 
+`DoenchCFD_specificityscore` ranges from 0 to 1. As a practical screening guideline, prefer values above 0.5 when
+alternatives are available; this corresponds to a score above 50 on the
+[CRISPOR 0–100 scale](https://ds.dfci.harvard.edu/~gcyuan/mypaper/luca%3B%20crispr%3B%20np.pdf). Treat this as a
+ranking guideline rather than a safety boundary, and still inspect exact matches and high-risk off-targets.
+
 `DoenchCFD_maxOT` is thresholded by FlashFry at 0.023; values below that threshold are reported as zero. The
 `dangerous_in_genome` count includes the intended exact genomic target, so one—not zero—is the usual uniqueness check.
 
