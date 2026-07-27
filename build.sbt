@@ -1,6 +1,6 @@
 name := "FlashFry"
 
-version := "1.15"
+version := "2.00"
 
 scalaVersion := "2.12.1"
 
