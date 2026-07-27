@@ -50,6 +50,49 @@ Use `layout.spacer(sequence)`, `layout.pamSequence(sequence)`, and `layout.binSe
 
 PAM alternatives must have equal width. FlashFry accepts the DNA IUPAC symbols `A`, `C`, `G`, `T`, `R`, `Y`, `K`, `M`, `S`, `W`, `B`, `D`, `H`, `V`, and `N`.
 
+## Using a custom profile file
+
+The `index` command can build a database from a Java properties file instead of a built-in `--enzyme`. For example:
+
+```properties
+id=mycas-ngn-20
+aliases=mycas
+nuclease=MyCas
+family=cas9
+spacerLength=20
+pamSide=3prime
+pams=NGN
+```
+
+The required properties are `id`, `nuclease`, `family`, `spacerLength`, `pamSide`, and `pams`. `aliases` is optional.
+Use `5prime` or `3prime` for `pamSide`; separate multiple equal-width PAM patterns with commas.
+
+Validate the file before indexing:
+
+```bash
+java -jar FlashFry.jar profile validate \
+  --profileFile mycas.properties
+```
+
+Validation rejects missing or unknown properties, built-in name collisions, unsupported IUPAC symbols, unequal PAM
+widths, and profiles whose spacer plus PAM exceeds 32 bases. It prints the normalized profile, target layout, selected
+codec, and compatibility fingerprint.
+
+Build a dedicated genome database with the validated profile:
+
+```bash
+java -jar FlashFry.jar index \
+  --reference genome.fa \
+  --tmpLocation tmp \
+  --database mycas.db \
+  --profileFile mycas.properties
+```
+
+`--profileFile` and `--enzyme` are mutually exclusive. The profile definition is embedded in the version-2 database
+header, so subsequent `discover`, `score`, and `extract` commands need only the database path. Each database has one
+fixed target geometry; use separate databases for different spacer lengths or PAM widths. Profile-specific scoring
+models are accepted only when explicitly calibrated for the custom profile.
+
 ## Adding a built-in profile
 
 1. Define or reuse an `Enzyme` and `EnzymeType` in `standards/Enzyme.scala`.
@@ -71,7 +114,8 @@ val exampleCas12b = NucleaseProfile(
 )
 ```
 
-An unregistered profile can still round-trip through a version-2 header when constructed programmatically. Registration is required for CLI name resolution.
+An unregistered profile can round-trip through a version-2 header when constructed programmatically or loaded with
+`--profileFile`. Registration is required only for selection by `--enzyme`.
 
 ## Target codecs
 

@@ -26,7 +26,7 @@ import picocli.CommandLine.{Command, Option}
 import utils.BaseCombinationGenerator
 import reference.binary.DatabaseWriter
 import reference.{ReferenceEncoder}
-import standards.ParameterPack
+import standards.{NucleaseProfileFile, ParameterPack}
 
 
 /**
@@ -47,8 +47,12 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
   private var tmp: File = new File("UNKNOWN")
 
   @Option(names = Array("-enzyme", "--enzyme"), required = false, paramLabel = "STRING",
-    description = Array("the nuclease targeting profile to use; profile IDs and aliases are accepted"))
-  private var enzyme: String = "spCas9ngg"
+    description = Array("the built-in nuclease targeting profile to use; mutually exclusive with --profileFile; default spcas9-ngg-20"))
+  private var enzyme: String = ""
+
+  @Option(names = Array("-profileFile", "--profileFile"), required = false, paramLabel = "FILE",
+    description = Array("a validated custom nuclease profile properties file; mutually exclusive with --enzyme"))
+  private var profileFile: File = null
 
   @Option(names = Array("-binSize", "--binSize"), required = false, paramLabel = "INT",
     description = Array("how many bins (and subsequent open files) should we use when sorting our genome"))
@@ -56,7 +60,7 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
 
   override def run() {
     // get our settings
-    val params = ParameterPack.nameToParameterPack(enzyme)
+    val params = BuildOffTargetDatabase.resolveProfile(enzyme, profileFile)
 
     require(binSize > 0 && binSize <= params.profile.spacerLength,
       "Bin size must be between 1 and the spacer length (" + params.profile.spacerLength + ")")
@@ -89,5 +93,21 @@ class BuildOffTargetDatabase extends Runnable with LazyLogging {
       encoders._2,
       searchBinGenerator,
       params)
+  }
+}
+
+object BuildOffTargetDatabase {
+  val defaultProfileName = "spcas9-ngg-20"
+
+  /** Resolve either a built-in CLI profile or a custom profile file while preserving the historical default. */
+  def resolveProfile(enzyme: String, profileFile: File): ParameterPack = {
+    val requestedEnzyme = scala.Option(enzyme).map(_.trim).filter(_.nonEmpty)
+    val requestedFile = scala.Option(profileFile)
+
+    require(!(requestedEnzyme.isDefined && requestedFile.isDefined),
+      "Options --enzyme and --profileFile are mutually exclusive")
+
+    requestedFile.map(NucleaseProfileFile.load)
+      .getOrElse(ParameterPack.nameToParameterPack(requestedEnzyme.getOrElse(defaultProfileName)))
   }
 }

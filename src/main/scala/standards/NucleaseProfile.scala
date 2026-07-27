@@ -328,8 +328,11 @@ object NucleaseRegistry {
 
   private val byProfileId: Map[String, ParameterPack] = builtIns.map(pack => pack.profile.id -> pack).toMap
 
+  /** Look up a CLI alias or profile ID without throwing when it is absent. */
+  def fromNameOption(name: String): Option[ParameterPack] = byName.get(normalizeName(name))
+
   /** Resolve a CLI alias or profile ID, ignoring case and punctuation. */
-  def fromName(name: String): ParameterPack = byName.getOrElse(normalizeName(name),
+  def fromName(name: String): ParameterPack = fromNameOption(name).getOrElse(
     throw new IllegalArgumentException("Unknown nuclease profile '" + name + "'. Supported profiles: " + supportedNames))
 
   /** Resolve one of the six numeric profile IDs used by version-1 database headers. */

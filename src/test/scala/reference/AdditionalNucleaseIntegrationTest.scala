@@ -5,7 +5,9 @@ import java.nio.file.Files
 
 import bitcoding.{StringCount, TargetCodec}
 import crispr.{BinWriter, CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
+import modules.BuildOffTargetDatabase
 import org.scalatest.{FlatSpec, Matchers}
+import picocli.CommandLine
 import reference.binary.{BinaryHeader, DatabaseWriter}
 import reference.traversal.LinearTraversal
 import reference.traverser.LinearTraverser
@@ -13,6 +15,39 @@ import standards.{NucleaseProfile, NucleaseProfiles}
 import utils.BaseCombinationGenerator
 
 class AdditionalNucleaseIntegrationTest extends FlatSpec with Matchers {
+
+  "A custom profile file" should "build a readable database through the index CLI" in {
+    val temporaryDirectory = Files.createTempDirectory("flashfry-custom-profile-cli").toFile
+    temporaryDirectory.deleteOnExit()
+    val fasta = writeFile(new File(temporaryDirectory, "reference.fa"),
+      ">chr1\n" + "A" * 20 + "AGA\n")
+    val profileFile = writeFile(new File(temporaryDirectory, "custom.properties"),
+      """id=custom-ngn-20
+        |nuclease=CustomCas
+        |family=cas9
+        |spacerLength=20
+        |pamSide=3prime
+        |pams=NGN
+        |""".stripMargin)
+    val database = new File(temporaryDirectory, "targets.db")
+    val bins = new File(temporaryDirectory, "bins")
+    bins.mkdir() should be (true)
+
+    new CommandLine(new BuildOffTargetDatabase()).parseWithHandler(
+      new CommandLine.RunLast,
+      Array(
+        "--reference", fasta.getAbsolutePath,
+        "--database", database.getAbsolutePath,
+        "--tmpLocation", bins.getAbsolutePath,
+        "--profileFile", profileFile.getAbsolutePath,
+        "--binSize", "3"))
+
+    val header = BinaryHeader.readHeader(database.getAbsolutePath + BinaryHeader.headerExtension)
+    header.parameterPack.profile.id should be ("custom-ngn-20")
+    header.parameterPack.profile.pamSpec.normalizedPatterns should be (Vector("NGN"))
+    header.parameterPack.profile.spacerLength should be (20)
+    header.bitCoder.targetCodec should be (TargetCodec.forParameterPack(header.parameterPack))
+  }
 
   "SpG" should "index and rediscover an NGN target" in {
     assertDatabaseRoundTrip(NucleaseProfiles.spG, "A" * 20 + "AGA")
@@ -85,5 +120,16 @@ class AdditionalNucleaseIntegrationTest extends FlatSpec with Matchers {
     guideOT.currentTotal should be (1)
     guideOT.offTargets.length should be (1)
     header.bitCoder.bitDecodeString(guideOT.offTargets.head.sequence).str should be (target)
+  }
+
+  private def writeFile(file: File, contents: String): File = {
+    file.deleteOnExit()
+    val writer = new PrintWriter(new FileOutputStream(file))
+    try {
+      writer.print(contents)
+    } finally {
+      writer.close()
+    }
+    file
   }
 }
