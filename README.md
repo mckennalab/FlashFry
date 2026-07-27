@@ -88,7 +88,10 @@ Target geometry is defined by a nuclease profile: spacer length, PAM side, and o
 
 New databases use a version-2 header that stores the complete profile definition and target codec. Version-1 databases remain readable. Targets through 24 bases, including SpG, retain the original packed representation; longer targets, including the SaCas9 and 23-base Cas12a profiles, use the wide codec with an independent occurrence count. SpG is kept distinct from SpCas9, so SpCas9-calibrated scores are not applied automatically. The `encas12a` and `cas12a2xnls` scoring metrics use bundled 23-position CFD matrices and do not apply to AsCas12a or LbCas12a. See the [nuclease profile developer guide](docs/nuclease-profiles.md) for extension and compatibility details.
 
-Custom fixed-width profiles can be checked with `profile validate --profileFile PROFILE.properties` and used to build a
+### Custom fixed-width profiles
+
+Custom fixed-width profiles can now be used for enzymes not covered by existing, pre-programmed sets. To use these you'll need to make a profile for your enzyme; the details of which can be found in the Nuclease profiles
+document in the docs folder. Custom profiels can be checked with `profile validate --profileFile PROFILE.properties` and used to build a
 dedicated database with `index --profileFile PROFILE.properties`. The validated definition is embedded in the database
 header, so discovery and scoring do not require the profile file again.
 
