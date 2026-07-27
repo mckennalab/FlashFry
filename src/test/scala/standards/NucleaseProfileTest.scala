@@ -8,6 +8,8 @@ class NucleaseProfileTest extends FlatSpec with Matchers {
   "NucleaseRegistry" should "resolve legacy aliases and new profile IDs" in {
     ParameterPack.nameToParameterPack("spCas9NGG") should be (Cas9NGGParameterPack)
     ParameterPack.nameToParameterPack("spcas9-ngg-20") should be (Cas9NGGParameterPack)
+    ParameterPack.nameToParameterPack("SpG").profile should be (NucleaseProfiles.spG)
+    ParameterPack.nameToParameterPack("spg-ngn-20").profile should be (NucleaseProfiles.spG)
     ParameterPack.nameToParameterPack("enCas12a").profile should be (NucleaseProfiles.enCas12a)
     ParameterPack.nameToParameterPack("SaCas9").profile should be (NucleaseProfiles.saCas9NNGRRT21)
     ParameterPack.nameToParameterPack("sacas9-nngrrt-22").profile should be (NucleaseProfiles.saCas9NNGRRT22)
@@ -18,6 +20,10 @@ class NucleaseProfileTest extends FlatSpec with Matchers {
   "TargetLayout" should "derive spacer, PAM, and comparison offsets on either side" in {
     Cas9NGGParameterPack.guideRange should be ((0, 20))
     Cas9NGGParameterPack.pamSequence("A" * 20 + "AGG") should be ("AGG")
+
+    NucleaseProfiles.spG.layout.spacerRange should be ((0, 20))
+    NucleaseProfiles.spG.layout.pamRange should be ((20, 23))
+    NucleaseProfiles.spG.layout.pamSequence("A" * 20 + "AGA") should be ("AGA")
 
     NucleaseProfiles.enCas12a.layout.spacerRange should be ((4, 27))
     NucleaseProfiles.enCas12a.layout.spacer("TTTA" + "C" * 23) should be ("C" * 23)
@@ -54,6 +60,20 @@ class NucleaseProfileTest extends FlatSpec with Matchers {
     NucleaseProfiles.saCas9NNGRRT21.fwdRegex.findAllMatchIn("A" * 21 + "AAGCAT").size should be (0)
   }
 
+  it should "apply the SpG NGN PAM on both strands" in {
+    val spacer = "A" * 20
+    val forward = spacer + "AGA"
+    val reverseGenomic = Utils.reverseCompString(forward)
+    val bases = "ACGT"
+    val validPams = for (first <- bases; third <- bases) yield s"${first}G${third}"
+    val invalidPams = for (first <- bases; middle <- "ACT"; third <- bases) yield s"${first}${middle}${third}"
+
+    NucleaseProfiles.spG.fwdRegex.findAllMatchIn(forward).size should be (1)
+    NucleaseProfiles.spG.revRegex.findAllMatchIn(reverseGenomic).size should be (1)
+    validPams.foreach(pam => NucleaseProfiles.spG.fwdRegex.findAllMatchIn(spacer + pam).size should be (1))
+    invalidPams.foreach(pam => NucleaseProfiles.spG.fwdRegex.findAllMatchIn(spacer + pam).size should be (0))
+  }
+
   it should "accept TTTV but reject TTTT for AsCas12a and LbCas12a" in {
     val spacer = "ACGTACGTACGTACGTACGTACG"
     val validPams = Vector("TTTA", "TTTC", "TTTG")
@@ -70,6 +90,7 @@ class NucleaseProfileTest extends FlatSpec with Matchers {
     registered.profile should be (NucleaseProfiles.enCas12a)
 
     Vector(
+      NucleaseProfiles.spG,
       NucleaseProfiles.saCas9NNGRRT21,
       NucleaseProfiles.saCas9NNGRRT22,
       NucleaseProfiles.asCas12a,

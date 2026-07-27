@@ -268,6 +268,9 @@ object NucleaseProfiles {
   val spCas9NGG19: NucleaseProfile = NucleaseProfile(
     "spcas9-ngg-19", Set("spcas9ngg19"), SpCAS9, 19, PamSpec(ThreePrimePam, Vector("NGG")), Some(6))
 
+  val spG: NucleaseProfile = NucleaseProfile(
+    "spg-ngn-20", Set("spg"), SpG, 20, PamSpec(ThreePrimePam, Vector("NGN")), None)
+
   val saCas9NNGRRT21: NucleaseProfile = NucleaseProfile(
     "sacas9-nngrrt-21", Set("sacas9", "sacas921", "sacas9-21"), SaCAS9, 21,
     PamSpec(ThreePrimePam, Vector("NNGRRT")), None)
@@ -303,6 +306,7 @@ object NucleaseRegistry {
     Cas9NAGParameterPack,
     Cas9ParameterPack19bp,
     Cas9NGG19ParameterPack,
+    NucleaseProfiles.spG,
     NucleaseProfiles.saCas9NNGRRT21,
     NucleaseProfiles.saCas9NNGRRT22,
     NucleaseProfiles.asCas12a,

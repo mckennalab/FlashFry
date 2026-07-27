@@ -3,7 +3,7 @@ package reference
 import java.io.{File, FileOutputStream, PrintWriter}
 import java.nio.file.Files
 
-import bitcoding.{StringCount, WideTargetCodec}
+import bitcoding.{StringCount, TargetCodec}
 import crispr.{BinWriter, CRISPRSiteOT, GuideMemoryStorage, ResultsAggregator}
 import org.scalatest.{FlatSpec, Matchers}
 import reference.binary.{BinaryHeader, DatabaseWriter}
@@ -13,6 +13,10 @@ import standards.{NucleaseProfile, NucleaseProfiles}
 import utils.BaseCombinationGenerator
 
 class AdditionalNucleaseIntegrationTest extends FlatSpec with Matchers {
+
+  "SpG" should "index and rediscover an NGN target" in {
+    assertDatabaseRoundTrip(NucleaseProfiles.spG, "A" * 20 + "AGA")
+  }
 
   "SaCas9" should "index and rediscover its 21- and 22-base spacer profiles" in {
     val targets = Vector(
@@ -61,7 +65,7 @@ class AdditionalNucleaseIntegrationTest extends FlatSpec with Matchers {
 
     val header = BinaryHeader.readHeader(database.getAbsolutePath + BinaryHeader.headerExtension)
     header.parameterPack.profile should be (profile)
-    header.bitCoder.targetCodec should be (WideTargetCodec)
+    header.bitCoder.targetCodec should be (TargetCodec.forParameterPack(profile))
 
     val guides = new GuideMemoryStorage()
     ReferenceEncoder.findTargetSites(fasta, guides, header.parameterPack, 0)

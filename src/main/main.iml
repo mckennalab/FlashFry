@@ -9,5 +9,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="scala-sdk-2.13.1" level="application" />
+    <orderEntry type="library" name="scala-sdk-2.13.8" level="application" />
   </component>
 </module>

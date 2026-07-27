@@ -4,7 +4,7 @@ import java.lang.{Integer => JavaInteger}
 
 import utils.Utils
 import org.scalatest._
-import standards.{Cas9NGGParameterPack, Cas9ParameterPack, Cpf1ParameterPack, ParameterPack}
+import standards.{Cas9NGGParameterPack, Cas9ParameterPack, Cpf1ParameterPack, NucleaseProfiles, ParameterPack}
 import standards.ParameterPack._
 
 import scala.util.Random
@@ -148,6 +148,17 @@ class BitEncodingTest extends FlatSpec with Matchers {
     val encoding2 = encodeDevice.bitEncodeString(strCount2)
     val difference = encodeDevice.mismatches(encoding, encoding2)
     (difference) should be (5)
+  }
+
+  "A Bit Encoder" should "compare the full SpG spacer while excluding its NGN PAM" in {
+    val encodeDevice = new BitEncoding(NucleaseProfiles.spG)
+    val first = encodeDevice.bitEncodeString("A" * 20 + "AGA")
+    val pamOnlyChange = encodeDevice.bitEncodeString("A" * 20 + "TGT")
+    val spacerChange = encodeDevice.bitEncodeString("C" + "A" * 19 + "AGA")
+
+    encodeDevice.targetCodec should be (LegacyPackedTargetCodec)
+    encodeDevice.mismatches(first, pamOnlyChange) should be (0)
+    encodeDevice.mismatches(first, spacerChange) should be (1)
   }
 
   "A Bit Encoder" should "compare lots of differences correctly and quickly" in {

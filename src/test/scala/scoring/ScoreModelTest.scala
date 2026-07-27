@@ -24,7 +24,8 @@ class ScoreModelTest extends FlatSpec with Matchers {
 
   }
 
-  it should "not treat SaCas9 profiles as SpCas9 score-compatible" in {
+  it should "not treat other Cas9 nucleases as SpCas9 score-compatible" in {
+    ScoreApplicability.SpCas9TwentyBase.accepts(NucleaseProfiles.spG) should be (false)
     ScoreApplicability.SpCas9TwentyBase.accepts(NucleaseProfiles.saCas9NNGRRT21) should be (false)
     ScoreApplicability.SpCas9TwentyBase.accepts(NucleaseProfiles.saCas9NNGRRT22) should be (false)
   }
