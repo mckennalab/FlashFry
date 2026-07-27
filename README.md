@@ -21,6 +21,7 @@ The easiest way to get started is to try the quick-start procedure and confirm t
 - [FAQ](https://github.com/aaronmck/FlashFry/wiki/Frequently-asked-questions)
 - [Database format documentation](https://github.com/aaronmck/FlashFry/wiki/binary-format)
 - [Developer guide: nuclease profiles and database compatibility](docs/nuclease-profiles.md)
+- [Tutorial: profile the MYC coding locus with `spcas9-ngg-20`](docs/tutorial-spcas9-myc.md)
 - Tutorials on the [wiki](https://github.com/aaronmck/FlashFry/wiki):
   - [Call target sites in a FASTA and annotate with BED intervals](https://github.com/aaronmck/FlashFry/wiki/End-to-end-scoring-and-annotation-with-FlashFry)
   - [Create random target sequences and score them against the genome](https://github.com/aaronmck/FlashFry/wiki/Scoring-random-sequences-against-the-genome)
